@@ -51,13 +51,13 @@ end
 
 local M = {
 	tokens = {
-		keywords = {
-			_CONSTANT = {"const"        },
-			_LOCAL    = {"local"        },
-			_DEFINE   = {"define"       },
+		_KEYWORD = {
+			_CONSTANT = "const",
+			_LOCAL    = "local",
+			_DEFINE   = "define",
 			_FUNCTION = {"function", "ƒ"},
 		},
-		types = {
+		_TYPE = {
 			_NUMBER     = {"num",          "number"  },
 			_INTEGER    = {"int",          "integer" },
 			_DECIMAL    = {"flo", "float", "decimal" },
@@ -68,7 +68,43 @@ local M = {
 			_OBJECT     = {"obj", "map"  , "object"  },
 			_ARRAY      = {"arr",          "array"   },
 		},
-		identifier = {"_?%a?%w+"}
+		--_IDENTIFIER = "_?%a?%w+",
+		_OPERATOR = {
+			_ASSIGNMENT = {
+				_EQUALS            = "=",
+				_PLUSEQUALS        = "+=",
+				_MINUSEQUALS       = "-=",
+				_TIMESEQUALS       = "*=",
+				_DIVIDEEQUALS      = "/=",
+				_MODEQUALS         = "%=",
+				_EXPONENTIALEQUALS = "**=",
+				_ANDEQUALS         = "&&=",
+				_OREQUALS          = "||=",
+			},
+			_COMPARISON = {
+				_EQUAL              = "==",
+				_NOTEQUAL           = "!=",
+				_GREATERTHAN        = ">",
+				_GREATERTHANOREQUAL = ">=",
+				_LESSTHAN           = "<",
+				_LESSTHANOREQUAL    = "<="
+			},
+			_ARITHMETIC = {
+				_MODULUS   = "%",
+				_INCREMENT = "++",
+				_DECREMENT = "--",
+				_PLUS      = "+",
+				_MINUS     = "-"
+			},
+			_LOGICAL = {
+				_NOT = "!",
+				_AND = "&&",
+				_OR = "||",
+			}
+			_STRING = {
+				_CONCAT = ".."
+			}
+		}
 	}
 };
 
@@ -80,19 +116,7 @@ function M:getTokens (str)
 	local tokens = {};
 	--Get all tokens except for the last token (terminated with a semicolon)
 	for token in string.gmatch(str, "(.-)[ ;]") do
-		local tokenType = "_UNTYPED";
-		for _, __ in pairs(M.tokens) do
-			for typeName, patterns in pairs(__) do
-				if type(patterns) == "table" then
-					for i, pattern in ipairs(patterns) do
-						--
-					end
-				else
-					tokenType = typeName;
-				end
-			end
-		end
-		table.insert(tokens, Token(tokenType, token));
+		table.insert(tokens, Token("_UNTYPED", token));
 	end
 	table.insert(tokens, Token("_SEMICOLON", ";"));
 	return tokens;
