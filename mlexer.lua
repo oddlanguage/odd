@@ -1,16 +1,22 @@
---[[
+--[[ https://developer.mozilla.org/nl/docs/Web/JavaScript/Guide/Expressions_and_Operators for reference
 	declare a function with "function" or "ƒ"
 	datatypes:
-	-short        | num    | int     | flo     | str    | fun      | boo      | nil  | obj    | arr
-	-intermediate |        |         | float   |        | func     | bool     | nul  |        |    
-	-verbose      | number | integer | decimal | string | function | boolean  | null | object | array
+	-short        | num    | int     | flo     | str    | fun      | boo      | nil  | obj    | arr   | any      |
+	-intermediate |        |         | float   |        | func     | bool     | nul  |        |       |          |
+	-verbose      | number | integer | decimal | string | function | boolean  | null | object | array | anything |
 	Parser settings:
 		type checking: ignore, coerce, enforce
+	Multiple possible
+	type: create your own type by providing a type checking function. e.g.
+		type Vector {
+			return typeof this.x == "number" && typeof this.y == "number";
+		}
 ]]--
 
 local toBeCompiled = [[
 const int: a = 13;
-local int: b = 12;
+local flo: b = 12;
+const [str, obj]: peter = {};
 
 const str: function a (str: text = "Hallo") {
 	local arr: namen = ["Gert", "Harry", "Frank"];
@@ -25,9 +31,91 @@ local str: frank = (gert.gay) ? "Gerts vriendje" : "Eenzaam";
 ]];
 
 local testString = [[
-	const int: a = 13;
-	local int: b = 12;
+const str: name = "Gert";
+const int: age = 12;
+const str: greeting = `${name} is ${age} years old.`;
 ]];
+
+local M = {
+	tokens = {
+		DECLARATION_CONSTANT              = "const",
+		DECLARATION_LOCAL                 = "local",
+		DECLARATION_DEFINE                = "define",
+		DECLARATION_FUNCTION_VERBOSE      = "function",
+		DECLARATION_FUNCTION_SHORT        = "ƒ",
+		DECLARATION_TYPE_NUMBER_SHORT     = "num:",
+		DECLARATION_TYPE_NUMBER_VERBOSE   = "number:",
+		DECLARATION_TYPE_INTEGER_SHORT    = "int:",
+		DECLARATION_TYPE_INTEGER_VERBOSE  = "integer:",
+		DECLARATION_TYPE_DECIMAL_SHORT    = "flo:",
+		DECLARATION_TYPE_DECIMAL_INTERM   = "float:",
+		DECLARATION_TYPE_DECIMAL_VERBOSE  = "decimal:",
+		DECLARATION_TYPE_STRING_SHORT     = "str:",
+		DECLARATION_TYPE_STRING_VERBOSE   = "string:",
+		DECLARATION_TYPE_FUNCTION_SHORT   = "fun:",
+		DECLARATION_TYPE_FUNCTION_INTERM  = "func:",
+		DECLARATION_TYPE_FUNCTION_VERBOSE = "function:",
+		DECLARATION_TYPE_BOOLEAN_SHORT    = "boo:",
+		DECLARATION_TYPE_BOOLEAN_INTERM   = "bool:",
+		DECLARATION_TYPE_BOOLEAN_VERBOSE  = "boolean:" ,
+		DECLARATION_TYPE_NULL_SHORT       = "nil:",
+		DECLARATION_TYPE_NULL_INTERM      = "nul:",
+		DECLARATION_TYPE_NULL_VERBOSE     = "null:",
+		DECLARATION_TYPE_OBJECT_SHORT     = "obj:",
+		DECLARATION_TYPE_OBJECT_VERBOSE   = "object:",
+		DECLARATION_TYPE_ARRAY_SHORT      = "arr:",
+		DECLARATION_TYPE_ARRAY_VERBOSE    = "array:",
+		DECLARATION_TYPE_ANYTHING_SHORT   = "any:",
+		DECLARATION_TYPE_ANYTHING_VERBOSE = "anything:",
+		LITERAL_DIGIT                     = {"%d"},
+		LITERAL_STRING                    = {'[%b""]'},
+		LITERAL_TEMPLATE                  = {"%b``"},
+		LITERAL_ARRAY                     = {"%b%[%]"},
+		LITERAL_OBJECT                    = {"%b{}"},
+		LITERAL_BOOLEAN_TRUE              = "true",
+		LITERAL_BOOLEAN_FALSE             = "false",
+		EXPRESSION_THIS                   = "this",
+		EXPRESSION_NEW                    = "new",
+		SEPARATOR_SEMICOLON               = ";",
+		SEPARATOR_COMMA                   = ",",
+		SEPARATOR_LPAREN                  = "(",
+		SEPARATOR_RPAREN                  = ")",
+		SEPARATOR_LCURLBRACK              = "{",
+		SEPARATOR_RCURLBRACK              = "}",
+		OPERATOR_TERNARY                  = {"%(.-%) %? .- : .-"},
+		OPERATOR_UNARY_DELETE             = "delete",
+		OPERATOR_UNARY_RETURN             = "return",
+		OPERATOR_RELATIONAL_IN            = "in",
+		OPERATOR_RELATIONAL_TYPEOF        = "typeof",
+		OPERATOR_RELATIONAL_INSTOF        = "instanceof",
+		OPERATOR_ASSIGNMENT_EQL           = "=",
+		OPERATOR_ASSIGNMENT_ADDEQL        = "+=",
+		OPERATOR_ASSIGNMENT_MINEQL        = "-=",
+		OPERATOR_ASSIGNMENT_MULEQL        = "*=",
+		OPERATOR_ASSIGNMENT_DIVEQL        = "/=",
+		OPERATOR_ASSIGNMENT_MODEQL        = "%=",
+		OPERATOR_ASSIGNMENT_EXPEQL        = "**=",
+		OPERATOR_ASSIGNMENT_ANDEQL        = "&=",
+		OPERATOR_ASSIGNMENT_OREQL         = "|=",
+		OPERATOR_ASSIGNMENT_CONCATEQL     = "..=",
+		OPERATOR_COMPARISON_EQL           = "==",
+		OPERATOR_COMPARISON_NOTEQL        = "!=",
+		OPERATOR_COMPARISON_GRTRTHN       = ">",
+		OPERATOR_COMPARISON_GRTRTHNOREQL  = ">=",
+		OPERATOR_COMPARISON_LSSTHN        = "<",
+		OPERATOR_COMPARISON_LSSTHNOREQL   = "<=",
+		OPERATOR_ARITHMETIC_MOD           = "%",
+		OPERATOR_ARITHMETIC_INC           = "++",
+		OPERATOR_ARITHMETIC_DEC           = "--",
+		OPERATOR_ARITHMETIC_ADD           = "+",
+		OPERATOR_ARITHMETIC_MIN           = "-",
+		OPERATOR_LOGICAL_NOT              = "!",
+		OPERATOR_LOGICAL_AND              = "&",
+		OPERATOR_LOGICAL_OR               = "|",
+		OPERATOR_STRING_CONCAT            = ".."
+	--OPERATOR_ARITHMETIC_BOOLSHIFT     = "~~" -- transform true/false into 1/-1: ~~x == (2*x-1)
+	}
+};
 
 local function Token (type, value)
 	return {
@@ -43,108 +131,72 @@ local function Expression (raw, tokens)
 	}
 end
 
-local function Scope ()
+local function Scope (raw)
 	return {
+		raw = raw,
 		expressions = {}
 	}
 end
 
-local M = {
-	tokens = {
-		_KEYWORD = {
-			_CONSTANT = "const",
-			_LOCAL    = "local",
-			_DEFINE   = "define",
-			_FUNCTION = {"function", "ƒ"},
-		},
-		_TYPE = {
-			_NUMBER     = {"num",          "number"  },
-			_INTEGER    = {"int",          "integer" },
-			_DECIMAL    = {"flo", "float", "decimal" },
-			_STRING     = {"str",          "string"  },
-			_FUNCTION   = {"fun", "func" , "function"},
-			_BOOLEAN    = {"boo", "bool" , "boolean" },
-			_NULL       = {"nil", "nul"  , "null"    },
-			_OBJECT     = {"obj", "map"  , "object"  },
-			_ARRAY      = {"arr",          "array"   },
-		},
-		--_IDENTIFIER = "_?%a?%w+",
-		_OPERATOR = {
-			_ASSIGNMENT = {
-				_EQUALS            = "=",
-				_PLUSEQUALS        = "+=",
-				_MINUSEQUALS       = "-=",
-				_TIMESEQUALS       = "*=",
-				_DIVIDEEQUALS      = "/=",
-				_MODEQUALS         = "%=",
-				_EXPONENTIALEQUALS = "**=",
-				_ANDEQUALS         = "&&=",
-				_OREQUALS          = "||=",
-			},
-			_COMPARISON = {
-				_EQUAL              = "==",
-				_NOTEQUAL           = "!=",
-				_GREATERTHAN        = ">",
-				_GREATERTHANOREQUAL = ">=",
-				_LESSTHAN           = "<",
-				_LESSTHANOREQUAL    = "<="
-			},
-			_ARITHMETIC = {
-				_MODULUS   = "%",
-				_INCREMENT = "++",
-				_DECREMENT = "--",
-				_PLUS      = "+",
-				_MINUS     = "-"
-			},
-			_LOGICAL = {
-				_NOT = "!",
-				_AND = "&&",
-				_OR = "||",
-			}
-			_STRING = {
-				_CONCAT = ".."
-			}
-		}
-	}
-};
+local function escapeString (str)
+	return str:gsub("[%(%)%.%%%+%-%*%?%[%]%^%$]", "%%%0");
+end
 
-function M:escapeString (str)
-  return str:gsub("[%(%)%.%%%+%-%*%?%[%]%^%$]", "%%%0");
-end 
-
-function M:getTokens (str)
+local function getTokens (expressionString)
 	local tokens = {};
-	--Get all tokens except for the last token (terminated with a semicolon)
-	for token in string.gmatch(str, "(.-)[ ;]") do
-		table.insert(tokens, Token("_UNTYPED", token));
+	--Get all tokens
+	for token in string.gmatch(expressionString, "(.-)[ ;]") do
+		local saved = nil;
+		for tokenType, tokenValue in pairs(M.tokens) do
+			if type(tokenValue) == "table" then
+				if token:match(tokenValue[1]) then --Patterns are enclosed in tables
+					table.insert(tokens, Token(tokenType, token));
+					saved = tokenType;
+					break;
+				end
+			else
+				if token == tokenValue then --Generic tokens are just strings
+					table.insert(tokens, Token(tokenType, token));
+					saved = tokenType;
+					break;
+				end
+			end
+		end
+		if not saved then --If no token was matched, it must be an identifier.
+			table.insert(tokens, Token("IDENTIFIER", token));
+		end
 	end
-	table.insert(tokens, Token("_SEMICOLON", ";"));
+	--Re-insert semicolon
+	table.insert(tokens, Token("SEPARATOR_SEMICOLON", ";"));
 	return tokens;
 end
 
-function M:getLexicalDocumentModel (str)
-	str = M:escapeString(str:gsub("%c", ""));
-	print(str.."\n----------\n");
-  local currentScope = Scope();
+local function lex (str, scope)
 	for line in str:gmatch(".-;") do
 		line = line:gsub("%c", "");
-		table.insert(currentScope.expressions, Expression(line, self:getTokens(line)));
+		table.insert(scope.expressions, Expression(line, getTokens(line)));
 	end
-  return currentScope;
+	return scope;
+end
+
+function M:getLexicalDocumentModel (str)
+	str = escapeString(str:gsub("//.-\n", ""):gsub("%c", ""));
+  return lex(str, Scope(str));
 end
 
 function printTable (tbl, indent)
   if not indent then indent = 0 end
   for k, v in pairs(tbl) do
-    formatting = string.rep("  ", indent) .. k .. ":\t";
+    local formatting = string.rep(" ", indent) .. k .. ":\t";
     if type(v) == "table" then
       print(formatting);
       printTable(v, indent+1);
     else
-      print(formatting.."\""..tostring(v).."\"");
+      print(formatting..tostring(v));
     end
   end
 end
 
+print(testString:gsub("\t", "").."\n----------\n");
 local lexicalDocumentModel = M:getLexicalDocumentModel(testString);
 printTable(lexicalDocumentModel);
