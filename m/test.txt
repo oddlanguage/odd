@@ -1,0 +1,19 @@
+const int: a = 13;
+local flo: b = 12;
+const str{}: peter = {
+	name = "Peter";
+};
+
+const str: function a (str: text = "Hallo") {
+	local arr: namen = ["Gert", "Harry", "Frank"];
+	return `${text}         namen[3]`;
+}
+
+local obj: gert = {
+	bool: gay = true;
+};
+
+local str: frank = (gert.gay) ? "Gerts vriendje // vetervreter" : "Eenzaam";
+
+//lol
+/* hey dude */

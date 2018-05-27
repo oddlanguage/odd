@@ -1,0 +1,345 @@
+{
+  "expressions": [
+    {
+      "raw": "const int: a = 13",
+      "tokens": [
+        {
+          "value": "const",
+          "type": "DECLARATION_CONSTANT"
+        },
+        {
+          "value": "int:",
+          "type": "DECLARATION_TYPE_INTEGER_SHORT"
+        },
+        {
+          "value": "a",
+          "type": "IDENTIFIER"
+        },
+        {
+          "value": "=",
+          "type": "OPERATOR_ASSIGNMENT_EQL"
+        },
+        {
+          "value": "13",
+          "type": "LITERAL_NUMBER"
+        }
+      ]
+    },
+    {
+      "raw": "local flo: b = 12",
+      "tokens": [
+        {
+          "value": "local",
+          "type": "DECLARATION_LOCAL"
+        },
+        {
+          "value": "flo:",
+          "type": "DECLARATION_TYPE_DECIMAL_SHORT"
+        },
+        {
+          "value": "b",
+          "type": "IDENTIFIER"
+        },
+        {
+          "value": "=",
+          "type": "OPERATOR_ASSIGNMENT_EQL"
+        },
+        {
+          "value": "12",
+          "type": "LITERAL_NUMBER"
+        }
+      ]
+    },
+    {
+      "raw": "const str{}: peter = #&📦1#",
+      "tokens": [
+        {
+          "value": "const",
+          "type": "DECLARATION_CONSTANT"
+        },
+        {
+          "value": "str{}:",
+          "type": "IDENTIFIER"
+        },
+        {
+          "value": "peter",
+          "type": "IDENTIFIER"
+        },
+        {
+          "value": "=",
+          "type": "OPERATOR_ASSIGNMENT_EQL"
+        },
+        {
+          "value": "#&📦1#",
+          "type": "PARSER_PLACEHOLDER"
+        }
+      ]
+    },
+    {
+      "raw": "const str: function a (str: text = #&🔣2#) #&ƒ1#",
+      "tokens": [
+        {
+          "value": "const",
+          "type": "DECLARATION_CONSTANT"
+        },
+        {
+          "value": "str:",
+          "type": "DECLARATION_TYPE_STRING_SHORT"
+        },
+        {
+          "value": "function",
+          "type": "DECLARATION_FUNCTION_VERBOSE"
+        },
+        {
+          "value": "a",
+          "type": "IDENTIFIER"
+        },
+        {
+          "value": "(str:",
+          "type": "IDENTIFIER"
+        },
+        {
+          "value": "text",
+          "type": "IDENTIFIER"
+        },
+        {
+          "value": "=",
+          "type": "OPERATOR_ASSIGNMENT_EQL"
+        },
+        {
+          "value": "#&🔣2#)",
+          "type": "PARSER_PLACEHOLDER"
+        },
+        {
+          "value": "#&ƒ1#",
+          "type": "PARSER_PLACEHOLDER"
+        }
+      ]
+    },
+    {
+      "raw": "local obj: gert = #&📦2#",
+      "tokens": [
+        {
+          "value": "local",
+          "type": "DECLARATION_LOCAL"
+        },
+        {
+          "value": "obj:",
+          "type": "DECLARATION_TYPE_OBJECT_SHORT"
+        },
+        {
+          "value": "gert",
+          "type": "IDENTIFIER"
+        },
+        {
+          "value": "=",
+          "type": "OPERATOR_ASSIGNMENT_EQL"
+        },
+        {
+          "value": "#&📦2#",
+          "type": "PARSER_PLACEHOLDER"
+        }
+      ]
+    },
+    {
+      "raw": "local str: frank = (gert.gay) ? #&🔣6# : #&🔣7#",
+      "tokens": [
+        {
+          "value": "local",
+          "type": "DECLARATION_LOCAL"
+        },
+        {
+          "value": "str:",
+          "type": "DECLARATION_TYPE_STRING_SHORT"
+        },
+        {
+          "value": "frank",
+          "type": "IDENTIFIER"
+        },
+        {
+          "value": "=",
+          "type": "OPERATOR_ASSIGNMENT_EQL"
+        },
+        {
+          "value": "(gert.gay)",
+          "type": "IDENTIFIER"
+        },
+        {
+          "value": "?",
+          "type": "IDENTIFIER"
+        },
+        {
+          "value": "#&🔣6#",
+          "type": "PARSER_PLACEHOLDER"
+        },
+        {
+          "value": ":",
+          "type": "IDENTIFIER"
+        },
+        {
+          "value": "#&🔣7#",
+          "type": "PARSER_PLACEHOLDER"
+        }
+      ]
+    }
+  ],
+  "ƒ": [
+    {
+      "expressions": [
+        {
+          "raw": "{local arr: namen = [#&🔣3#, #&🔣4#, #&🔣5#]",
+          "tokens": [
+            {
+              "value": "{local",
+              "type": "IDENTIFIER"
+            },
+            {
+              "value": "arr:",
+              "type": "DECLARATION_TYPE_ARRAY_SHORT"
+            },
+            {
+              "value": "namen",
+              "type": "IDENTIFIER"
+            },
+            {
+              "value": "=",
+              "type": "OPERATOR_ASSIGNMENT_EQL"
+            },
+            {
+              "value": "[#&🔣3#,",
+              "type": "PARSER_PLACEHOLDER"
+            },
+            {
+              "value": "#&🔣4#,",
+              "type": "PARSER_PLACEHOLDER"
+            },
+            {
+              "value": "#&🔣5#]",
+              "type": "PARSER_PLACEHOLDER"
+            }
+          ]
+        },
+        {
+          "raw": "return #&📜1#",
+          "tokens": [
+            {
+              "value": "return",
+              "type": "OPERATOR_UNARY_RETURN"
+            },
+            {
+              "value": "#&📜1#",
+              "type": "PARSER_PLACEHOLDER"
+            }
+          ]
+        },
+        {
+          "raw": "}",
+          "tokens": [
+            {
+              "value": "}",
+              "type": "IDENTIFIER"
+            }
+          ]
+        }
+      ],
+      "ƒ": [],
+      "🔣": [],
+      "💬": [],
+      "📦": [],
+      "📜": [],
+      "raw": "{\n\tlocal arr: namen = [#&🔣3#, #&🔣4#, #&🔣5#];\n\treturn #&📜1#;\n}"
+    }
+  ],
+  "🔣": [
+    "\"Peter\"",
+    "\"Hallo\"",
+    "\"Gert\"",
+    "\"Harry\"",
+    "\"Frank\"",
+    "\"Gerts vriendje // vetervreter\"",
+    "\"Eenzaam\""
+  ],
+  "💬": [],
+  "📦": [
+    {
+      "expressions": [
+        {
+          "raw": "{name = #&🔣1#",
+          "tokens": [
+            {
+              "value": "{name",
+              "type": "IDENTIFIER"
+            },
+            {
+              "value": "=",
+              "type": "OPERATOR_ASSIGNMENT_EQL"
+            },
+            {
+              "value": "#&🔣1#",
+              "type": "PARSER_PLACEHOLDER"
+            }
+          ]
+        },
+        {
+          "raw": "}",
+          "tokens": [
+            {
+              "value": "}",
+              "type": "IDENTIFIER"
+            }
+          ]
+        }
+      ],
+      "ƒ": [],
+      "🔣": [],
+      "💬": [],
+      "📦": [],
+      "📜": [],
+      "raw": "{\n\tname = #&🔣1#;\n}"
+    },
+    {
+      "expressions": [
+        {
+          "raw": "{bool: gay = true",
+          "tokens": [
+            {
+              "value": "{bool:",
+              "type": "IDENTIFIER"
+            },
+            {
+              "value": "gay",
+              "type": "IDENTIFIER"
+            },
+            {
+              "value": "=",
+              "type": "OPERATOR_ASSIGNMENT_EQL"
+            },
+            {
+              "value": "true",
+              "type": "LITERAL_BOOLEAN_TRUE"
+            }
+          ]
+        },
+        {
+          "raw": "}",
+          "tokens": [
+            {
+              "value": "}",
+              "type": "IDENTIFIER"
+            }
+          ]
+        }
+      ],
+      "ƒ": [],
+      "🔣": [],
+      "💬": [],
+      "📦": [],
+      "📜": [],
+      "raw": "{\n\tbool: gay = true;\n}"
+    }
+  ],
+  "📜": [
+    "`${text}         namen[3]`"
+  ],
+  "raw": "const int: a = 13;\nlocal flo: b = 12;\nconst str{}: peter = #&📦1#;\n\nconst str: function a (str: text = #&🔣2#) #&ƒ1#;\n\nlocal obj: gert = #&📦2#;\n\nlocal str: frank = (gert.gay) ? #&🔣6# : #&🔣7#;\n\n\n"
+}
