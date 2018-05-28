@@ -1,19 +1,33 @@
 const int: a = 13;
 local flo: b = 12;
-const str{}: peter = {
-	name = "Peter";
+const obj{}: peter = {
+  name = {};
 };
 
 const str: function a (str: text = "Hallo") {
-	local arr: namen = ["Gert", "Harry", "Frank"];
-	return `${text}         namen[3]`;
+  local arr: namen = ["Gert", "Harry", "Frank"];
+  return `${text} ${namen[irandom(0, 2)]}`;
 }
 
 local obj: gert = {
-	bool: gay = true;
+  bool: gay = true;
 };
 
 local str: frank = (gert.gay) ? "Gerts vriendje // vetervreter" : "Eenzaam";
 
 //lol
 /* hey dude */
+
+const fun{}: functionOjbect = {
+  null: fun a () {console.log("sup nibba's")};
+  null: fnc a () {console.log("sup nibba's")};
+  null: ƒ a () {console.log("sup nibba's")};
+}
+
+global int: a = 13;
+define int: a = 13;
+
+define Vector2{}: positions = {
+  x = new Vector2();
+  y = new Vector2();
+};

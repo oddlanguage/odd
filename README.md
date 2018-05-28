@@ -48,7 +48,7 @@ const object: Person = {
   const string: name = "Sophie";
 };
 // > Person {
-//     age: 0,
+//     age: 21,
 //     name: "Sophie",
 //   }
 ```
@@ -88,7 +88,7 @@ Typing is optional (unless strict type checking is enabled in the parser).
 // These declarations are the same:
 const any: thing = "randomString" | {} | .45 | [];
 // > "randomString"
-const      thing = "randomString" | {} | .45 | [];
+const thing = "randomString" | {} | .45 | [];
 // > "randomString"
 ```
 The compiler will be able to infer type from context, meaning the expression
@@ -103,16 +103,26 @@ _Note_: When the parser checks types but finds no matching type, it wil continue
 
 ### Built-in types
 There are some built-in types in M:
-- `anything` / `any`
-- `number`   / `num`
-- `integer`  / `int`
-- `decimal`  / `dec`
-- `string`   / `str`
-- `function` / `fun` / `func`
-- `boolean`  / `boo` / `bool`
-- `null`     / `nil` / `nul`
-- `object`   / `obj`
-- `array`    / `arr`
+- `Anything`
+  - Can be declared as: `anything` / `any`
+- `Number`
+  - Can be declared as: `number`   / `num`
+- `Integer`.
+  - Can be declared as: `integer`  / `int`
+- `Decimal`.
+  - Can be declared as: `decimal`  / `dec`
+- `String`.
+  - Can be declared as: `string`   / `str`
+- `Function`.
+  - Can be declared as: `function` / `func` / `fun` / `fnc` / `ƒ`
+- `Boolean`.
+  - Can be declared as: `boolean` / `boo` / `bool`
+- `Null`.
+  - Can be declared as: `null` / `nil` / `nul`
+- `Object`.
+  - Can be declared as: `object` / `obj` / _contentType(s)_`{}`
+- `Array`.
+  - Can be declared as: `array` / `arr` / _contentType(s)_`[]`
 
 Element typing of an array _is optional_ and can be done as such:
 ```ts
@@ -138,7 +148,7 @@ const (string|number)[]: namesAndAges = ["Jimmy", 24, "Ella", 12, "Jaquelin", 42
 const array[string|number]: namesAndAges = ["Jimmy", 24, "Ella", 12, "Jaquelin", 42];
 // > ["Jimmy", 24, "Ella", 12, "Jaquelin", 42]
 ```
-_Note_: Do not confuse declaring a typed array with declaring an array of arrays (although it would not be a problem here):
+_Note_: Do not confuse declaring a typed array with declaring an array of arrays:
 ```ts
 const array[array]: arrayOfArrays = [
   ["hey", "hello"],
