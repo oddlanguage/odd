@@ -11,4 +11,4 @@ class Vector2 {
   }
 }
 ```
-Note that when you create a class, it does not create a type, and you are strongly discouraged to create one yourself (such as in the Vector2 example). If you want to check if a variable is an instance of a class, use the appropriately named `instanceof` operator. [Note that the parser will look if the given type is actually a class when it is not an existing type](#types).
+Note that when you create a class, it does not create a type, and you are strongly discouraged to create one yourself (such as in the Vector2 example). If you want to check if a variable is an instance of a class, use the appropriately named `instanceof` operator. [Note that the parser will look if the given type is actually a class when it is not an existing type](./Types.md#declaring-custom-types).

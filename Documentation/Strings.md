@@ -1,5 +1,5 @@
 # Strings
-M uses only the _double quotes_ to signify a `string`. The reason only double quotes allowed is because it's the only unambiguous string character. A single quote can also be interpreted and used as an apostrophe. In order to support things such as contractions (which are abundant in the English language) only double quotes are permitted.
+M exclusively uses _double quotes_ (`"`) to signify a `string`, because they're the only unambiguous string characters. A _single quote_ `'` can also be interpreted and used as an apostrophe. In order to support things such as contractions (which are abundant in the English language) only double quotes are permitted.
 
 Look at the following example:
 ```ts

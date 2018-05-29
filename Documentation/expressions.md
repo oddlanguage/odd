@@ -14,16 +14,18 @@ type AlwaysTrue {
   return (this == true);
 }
 
+// Class
 class Vector2 {
   // ...
 }
 ```
-
 Whitespace, such as newlines or tabs, is _mostly unimportant_, but spaces between tokens are _mostly required_.
 ```ts
 const string: name = "Abed";
 // is the same as
 const
   string:
-    name = "Abed";
+    name
+      =
+        "Abed";
 ```

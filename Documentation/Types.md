@@ -1,7 +1,7 @@
-# Typing
-In M, typing can be done by prefixing a variable name with [a typename](#built-in%20types).
+# Types
+In M, typing can be done by prefixing a variable name with [a typename](#built-in-types), followed by a colon.
 ```ts
-const boolean: mIsAwesome = true;
+const bool: mIsAwesome = true;
 ```
 Typing is optional (unless strict type checking is enabled in the parser).
 ```ts
@@ -32,33 +32,33 @@ const (arr|obj): arrayOrObject = choose([], {});
 
 # Built-in types
 There are some built-in types in M:
-|Name of type | How to declare                               |
-|-------------|----------------------------------------------|
-|Anything     |`anything:` / `any:`                          |
-|Number       |`number:` / `num:`                            |
-|Integer      |`integer:` / `int:`                           |
-|Decimal      |`decimal:` / `dec:`                           |
-|String       |`string:` / `str:`                            |
-|Function     |`function:` / `func:` / `fun:` / `fnc:` / `ƒ:`|
-|Boolean      |`boolean:` / `boo:` / `bool:`                 |
-|Null         |`null:` / `nil:` / `nul:`                     |
-|Object       |`object:` / `obj:` / _property type(s)_`{}:`  |
-|Array        |`array:` / `arr:` / _element type(s)_`[]:`    |
+| Name of type | How to declare                                                  |
+|--------------|-----------------------------------------------------------------|
+| Anything     | `any:`                                                          |
+| Number       | `num:`                                                          |
+| Integer      | `int:`                                                          |
+| Decimal      | `dec:`                                                          |
+| String       | `str:`                                                          |
+| Function     | `func:` / `fun:` / `fnc:`                                       |
+| Boolean      | `bool:` / `boo:`                                                |
+| Null         | `nil:` / `nul:`                                                 |
+| Object       | `obj:` / _property type(s)_`{}:` / `obj<`_property type(s)_`>:` |
+| Array        | `arr:` / _element type(s)_`[]:` / `arr<`_element type(s)_`>:`   |
 
 Element typing of an array _is optional_ and can be done as such:
 ```ts
 // Within the array type brackets
-const [string]: names = ["Jimmy", "Ella", "Jaquelin"];
+const [str]: names = ["Jimmy", "Ella", "Jaquelin"];
 // > ["Jimmy", "Ella", "Jaquelin"]
 
 //Or declaring it as a typed array directly
-const string[]: names = ["Jimmy", "Ella", "Jaquelin"];
+const str[]: names = ["Jimmy", "Ella", "Jaquelin"];
 // > ["Jimmy", "Ella", "Jaquelin"]
 ```
 Property typing of objects is also possible, _also optional_ and can be done as such:
 ```ts
 // Within the object type brackets
-const {string}: names = {
+const {str}: names = {
   string: name1 = "Jimmy";
   string: name2 = "Ella";
   string: name3 = "Jaquelin";
@@ -70,7 +70,7 @@ const {string}: names = {
 //   }
 
 // Or declaring it as a typed object directly
-const string{}: names = {
+const str{}: names = {
   string: name1 = "Jimmy";
   string: name2 = "Ella";
   string: name3 = "Jaquelin";
@@ -85,40 +85,40 @@ _Note_: Be careful when typing your arrays. The following declaration would thro
 declare `things` to be either an array of strings or an array of
 numbers, not an array of strings or numbers.
 ```ts
-const (string[]|number[]): namesAndAges = ["Jimmy", 24, "Ella", 12, "Jaquelin", 42];
+const (str[]|num[]): namesAndAges = ["Jimmy", 24, "Ella", 12, "Jaquelin", 42];
 // > typeError:  Not all elements of namesAndAges are of type
 //   `string[]` or `number[]`.
 
-const (string|number)[]: namesAndAges = ["Jimmy", 24, "Ella", 12, "Jaquelin", 42];
+const (str|num)[]: namesAndAges = ["Jimmy", 24, "Ella", 12, "Jaquelin", 42];
 // > ["Jimmy", 24, "Ella", 12, "Jaquelin", 42]
 
-const [string|number]: namesAndAges = ["Jimmy", 24, "Ella", 12, "Jaquelin", 42];
+const [str|num]: namesAndAges = ["Jimmy", 24, "Ella", 12, "Jaquelin", 42];
 // > ["Jimmy", 24, "Ella", 12, "Jaquelin", 42]
 ```
 _Note_: Do not confuse declaring a typed array with declaring an array of arrays:
 ```ts
-const array[array]: arrayOfArrays = [
+const arr[arr]: arrayOfArrays = [
   ["hey", "hello"],
   ["bye", "See ya"]
 ];
 // is the same as
-const array[]: arrayOfArrays = [
+const arr[]: arrayOfArrays = [
   ["hey", "hello"],
   ["bye", "See ya"]
 ];
 
-const array[]: arrayOfNumbers = [1, 2, 3, 4, 5];
+const arr[]: arrayOfNumbers = [1, 2, 3, 4, 5];
 // > typeError: Not all elements of arrayOfNumbers are of type `array`.
 ```
 _Note_: If you declare a typed object, typing of its properties is no longer necessary, and is redundant (and therefore discouraged). The parser will still trow an error if a property value is not of the type you declared to be in the given object.
 ```ts
-const string{}: names = {
+const str{}: names = {
   string: name1 = "Jimmy";
   string: name2 = "Ella";
   string: name3 = "Jaquelin";
 };
 // is the same as
-const string{}: names = {
+const str{}: names = {
   name1 = "Jimmy";
   name2 = "Ella";
   name3 = "Jaquelin";
