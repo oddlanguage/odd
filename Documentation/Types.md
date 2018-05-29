@@ -14,7 +14,9 @@ const thing = "randomString" | {} | .45 | [];
 The compiler will be able to infer type from context, meaning the expression
 ```ts
 local name = "John";
-// is the same as
+```
+is the same as
+```ts
 local string: name = "John";
 ```
 to the compiler.
@@ -98,7 +100,7 @@ const [str|num]: namesAndAges = ["Jimmy", 24, "Ella", 12, "Jaquelin", 42];
 ```
 _Note_: Do not confuse declaring a typed array with declaring an array of arrays:
 ```ts
-const arr[arr]: arrayOfArrays = [
+const [arr]: arrayOfArrays = [
   ["hey", "hello"],
   ["bye", "See ya"]
 ];
