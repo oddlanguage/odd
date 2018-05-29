@@ -32,8 +32,9 @@ const (arr|obj): arrayOrObject = choose([], {});
 
 # Built-in types
 There are some built-in types in M:
+
 | Name of type | How to declare                                                   |
-|--------------|------------------------------------------------------------------|
+| ------------ | ---------------------------------------------------------------- |
 | Anything     | `any:`                                                           |
 | Number       | `num:`                                                           |
 | Integer      | `int:`                                                           |
