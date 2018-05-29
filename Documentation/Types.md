@@ -32,18 +32,18 @@ const (arr|obj): arrayOrObject = choose([], {});
 
 # Built-in types
 There are some built-in types in M:
-| Name of type | How to declare                                                  |
-|--------------|-----------------------------------------------------------------|
-| Anything     | `any:`                                                          |
-| Number       | `num:`                                                          |
-| Integer      | `int:`                                                          |
-| Decimal      | `dec:`                                                          |
-| String       | `str:`                                                          |
-| Function     | `func:` / `fun:` / `fnc:`                                       |
-| Boolean      | `bool:` / `boo:`                                                |
-| Null         | `nil:` / `nul:`                                                 |
-| Object       | `obj:` / _property type(s)_`{}:` / `obj<`_property type(s)_`>:` |
-| Array        | `arr:` / _element type(s)_`[]:` / `arr<`_element type(s)_`>:`   |
+| Name of type | How to declare                                                   |
+|--------------|------------------------------------------------------------------|
+| Anything     | `any:`                                                           |
+| Number       | `num:`                                                           |
+| Integer      | `int:`                                                           |
+| Decimal      | `dec:`                                                           |
+| String       | `str:`                                                           |
+| Function     | `func:` / `fun:` / `fnc:`                                        |
+| Boolean      | `bool:` / `boo:`                                                 |
+| Null         | `null`  / `nil:` / `nul:`                                        |
+| Object       | `obj:`  / _property type(s)_`{}:` / `obj<`_property type(s)_`>:` |
+| Array        | `arr:`  / _element type(s)_`[]:`  / `arr<`_element type(s)_`>:`  |
 
 Element typing of an array _is optional_ and can be done as such:
 ```ts
