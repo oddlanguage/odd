@@ -21,7 +21,7 @@
 				},
 				{
 					"value": "13",
-					"type": "IDENTIFIER"
+					"type": "LITERAL_NUMBER"
 				}
 			]
 		},
@@ -46,12 +46,12 @@
 				},
 				{
 					"value": "12",
-					"type": "IDENTIFIER"
+					"type": "LITERAL_NUMBER"
 				}
 			]
 		},
 		{
-			"raw": "const obj{}: peter = {#&📦0#}",
+			"raw": "const obj{}: peter = {#&📦1#}",
 			"tokens": [
 				{
 					"value": "const",
@@ -70,7 +70,7 @@
 					"type": "OPERATOR_ASSIGNMENT_EQL"
 				},
 				{
-					"value": "{#&📦0#}",
+					"value": "{#&📦1#}",
 					"type": "PARSER_PLACEHOLDER"
 				}
 			]
@@ -85,7 +85,7 @@
 			]
 		},
 		{
-			"raw": "const str: function a (str: text = #&🔣1#) {#&ƒ0#",
+			"raw": "const str: function a #&📨1#",
 			"tokens": [
 				{
 					"value": "const",
@@ -104,29 +104,26 @@
 					"type": "IDENTIFIER"
 				},
 				{
-					"value": "(str:",
-					"type": "DECLARATION_TYPE_STRING"
-				},
-				{
-					"value": "text",
-					"type": "IDENTIFIER"
-				},
-				{
-					"value": "=",
-					"type": "OPERATOR_ASSIGNMENT_EQL"
-				},
-				{
-					"value": "#&🔣1#)",
-					"type": "PARSER_PLACEHOLDER"
-				},
-				{
-					"value": "{#&ƒ0#",
+					"value": "#&📨1#",
 					"type": "PARSER_PLACEHOLDER"
 				}
 			]
 		},
 		{
-			"raw": "}local obj: gert = {#&📦0#}",
+			"raw": " {#&ƒ1#",
+			"tokens": [
+				{
+					"value": "",
+					"type": "IDENTIFIER"
+				},
+				{
+					"value": "{#&ƒ1#",
+					"type": "PARSER_PLACEHOLDER"
+				}
+			]
+		},
+		{
+			"raw": "}local obj: gert = {#&📦2#}",
 			"tokens": [
 				{
 					"value": "}local",
@@ -145,7 +142,7 @@
 					"type": "OPERATOR_ASSIGNMENT_EQL"
 				},
 				{
-					"value": "{#&📦0#}",
+					"value": "{#&📦2#}",
 					"type": "PARSER_PLACEHOLDER"
 				}
 			]
@@ -192,7 +189,7 @@
 			]
 		},
 		{
-			"raw": "const fun{}: functionOjbect = {#&📦0#}",
+			"raw": "const fun{}: functionOjbect = {#&📦3#}",
 			"tokens": [
 				{
 					"value": "const",
@@ -211,13 +208,13 @@
 					"type": "OPERATOR_ASSIGNMENT_EQL"
 				},
 				{
-					"value": "{#&📦0#}",
+					"value": "{#&📦3#}",
 					"type": "PARSER_PLACEHOLDER"
 				}
 			]
 		},
 		{
-			"raw": "null: fnc a () {#&ƒ0#",
+			"raw": "null: fnc a () {#&ƒ2#",
 			"tokens": [
 				{
 					"value": "null:",
@@ -236,7 +233,7 @@
 					"type": "IDENTIFIER"
 				},
 				{
-					"value": "{#&ƒ0#",
+					"value": "{#&ƒ2#",
 					"type": "PARSER_PLACEHOLDER"
 				}
 			]
@@ -296,7 +293,7 @@
 				},
 				{
 					"value": "13",
-					"type": "IDENTIFIER"
+					"type": "LITERAL_NUMBER"
 				}
 			]
 		},
@@ -321,12 +318,12 @@
 				},
 				{
 					"value": "13",
-					"type": "IDENTIFIER"
+					"type": "LITERAL_NUMBER"
 				}
 			]
 		},
 		{
-			"raw": "define Vector2{}: positions = {#&📦0#}",
+			"raw": "define Vector2{}: positions = {#&📦4#}",
 			"tokens": [
 				{
 					"value": "define",
@@ -345,13 +342,83 @@
 					"type": "OPERATOR_ASSIGNMENT_EQL"
 				},
 				{
-					"value": "{#&📦0#}",
+					"value": "{#&📦4#}",
 					"type": "PARSER_PLACEHOLDER"
 				}
 			]
 		}
 	],
-	"ƒ": [],
+	"ƒ": [
+		{
+			"expressions": [
+				{
+					"raw": "local arr: namen = #&🗂️1#",
+					"tokens": [
+						{
+							"value": "local",
+							"type": "DECLARATION_SCOPE_LOCAL"
+						},
+						{
+							"value": "arr:",
+							"type": "DECLARATION_TYPE_ARRAY"
+						},
+						{
+							"value": "namen",
+							"type": "IDENTIFIER"
+						},
+						{
+							"value": "=",
+							"type": "OPERATOR_ASSIGNMENT_EQL"
+						},
+						{
+							"value": "#&🗂️1#",
+							"type": "PARSER_PLACEHOLDER"
+						}
+					]
+				},
+				{
+					"raw": "return #&🔣10#",
+					"tokens": [
+						{
+							"value": "return",
+							"type": "OPERATOR_UNARY_RETURN"
+						},
+						{
+							"value": "#&🔣10#",
+							"type": "PARSER_PLACEHOLDER"
+						}
+					]
+				}
+			],
+			"ƒ": [],
+			"🔣": [],
+			"💬": [],
+			"📦": [],
+			"🗂️": [],
+			"📨": [],
+			"raw": "\n  local arr: namen = #&🗂️1#;\n  return #&🔣10#;\n"
+		},
+		{
+			"expressions": [
+				{
+					"raw": "console.log(#&🔣8#)",
+					"tokens": [
+						{
+							"value": "console.log(#&🔣8#)",
+							"type": "PARSER_PLACEHOLDER"
+						}
+					]
+				}
+			],
+			"ƒ": [],
+			"🔣": [],
+			"💬": [],
+			"📦": [],
+			"🗂️": [],
+			"📨": [],
+			"raw": "console.log(#&🔣8#)"
+		}
+	],
 	"🔣": [
 		"\"Hallo\"",
 		"\"Gert\"",
@@ -365,9 +432,193 @@
 		"`${text} ${namen[irandom(0, 2)]}`"
 	],
 	"💬": [],
-	"📦": [],
+	"📦": [
+		{
+			"expressions": [
+				{
+					"raw": "name = {",
+					"tokens": [
+						{
+							"value": "name",
+							"type": "IDENTIFIER"
+						},
+						{
+							"value": "=",
+							"type": "OPERATOR_ASSIGNMENT_EQL"
+						},
+						{
+							"value": "{",
+							"type": "IDENTIFIER"
+						}
+					]
+				}
+			],
+			"ƒ": [],
+			"🔣": [],
+			"💬": [],
+			"📦": [],
+			"🗂️": [],
+			"📨": [],
+			"raw": "\n  name = {"
+		},
+		{
+			"expressions": [
+				{
+					"raw": "bool: gay = true",
+					"tokens": [
+						{
+							"value": "bool:",
+							"type": "DECLARATION_TYPE_BOOLEAN"
+						},
+						{
+							"value": "gay",
+							"type": "IDENTIFIER"
+						},
+						{
+							"value": "=",
+							"type": "OPERATOR_ASSIGNMENT_EQL"
+						},
+						{
+							"value": "true",
+							"type": "LITERAL_BOOLEAN_TRUE"
+						}
+					]
+				}
+			],
+			"ƒ": [],
+			"🔣": [],
+			"💬": [],
+			"📦": [],
+			"🗂️": [],
+			"📨": [],
+			"raw": "\n  bool: gay = true;\n"
+		},
+		{
+			"expressions": [
+				{
+					"raw": "null: fun a () {console.log(#&🔣7#)",
+					"tokens": [
+						{
+							"value": "null:",
+							"type": "DECLARATION_TYPE_NULL"
+						},
+						{
+							"value": "fun",
+							"type": "DECLARATION_FUNCTION"
+						},
+						{
+							"value": "a",
+							"type": "IDENTIFIER"
+						},
+						{
+							"value": "()",
+							"type": "IDENTIFIER"
+						},
+						{
+							"value": "{console.log(#&🔣7#)",
+							"type": "PARSER_PLACEHOLDER"
+						}
+					]
+				}
+			],
+			"ƒ": [],
+			"🔣": [],
+			"💬": [],
+			"📦": [],
+			"🗂️": [],
+			"📨": [],
+			"raw": "\n  null: fun a () {console.log(#&🔣7#)"
+		},
+		{
+			"expressions": [
+				{
+					"raw": "x = new Vector2()",
+					"tokens": [
+						{
+							"value": "x",
+							"type": "IDENTIFIER"
+						},
+						{
+							"value": "=",
+							"type": "OPERATOR_ASSIGNMENT_EQL"
+						},
+						{
+							"value": "new",
+							"type": "EXPRESSION_NEW"
+						},
+						{
+							"value": "Vector2()",
+							"type": "LITERAL_NUMBER"
+						}
+					]
+				},
+				{
+					"raw": "y = new Vector2()",
+					"tokens": [
+						{
+							"value": "y",
+							"type": "IDENTIFIER"
+						},
+						{
+							"value": "=",
+							"type": "OPERATOR_ASSIGNMENT_EQL"
+						},
+						{
+							"value": "new",
+							"type": "EXPRESSION_NEW"
+						},
+						{
+							"value": "Vector2()",
+							"type": "LITERAL_NUMBER"
+						}
+					]
+				}
+			],
+			"ƒ": [],
+			"🔣": [],
+			"💬": [],
+			"📦": [],
+			"🗂️": [],
+			"📨": [],
+			"raw": "\n  x = new Vector2();\n  y = new Vector2();\n"
+		}
+	],
 	"🗂️": [
 		"[#&🔣2#, #&🔣3#, #&🔣4#]"
 	],
-	"raw": "const int: a = 13;\nlocal flo: b = 12;\nconst obj{}: peter = {#&📦0#};\n};\n\nconst str: function a (str: text = #&🔣1#) {#&ƒ0#;}\n\nlocal obj: gert = {#&📦0#};\n\nlocal str: frank = (gert.gay) ? #&🔣5# : #&🔣6#;\n\n\n\n\nconst fun{}: functionOjbect = {#&📦0#};\n  null: fnc a () {#&ƒ0#;};\n  null: ƒ a () {console.log(#&🔣9#)};\n}\n\nglobal int: a = 13;\ndefine int: a = 13;\n\ndefine Vector2{}: positions = {#&📦0#};"
+	"📨": [
+		{
+			"expressions": [
+				{
+					"raw": "(str: text = #&🔣1#)",
+					"tokens": [
+						{
+							"value": "(str:",
+							"type": "DECLARATION_TYPE_STRING"
+						},
+						{
+							"value": "text",
+							"type": "IDENTIFIER"
+						},
+						{
+							"value": "=",
+							"type": "OPERATOR_ASSIGNMENT_EQL"
+						},
+						{
+							"value": "#&🔣1#)",
+							"type": "PARSER_PLACEHOLDER"
+						}
+					]
+				}
+			],
+			"ƒ": [],
+			"🔣": [],
+			"💬": [],
+			"📦": [],
+			"🗂️": [],
+			"📨": [],
+			"raw": "(str: text = #&🔣1#)"
+		}
+	],
+	"raw": "const int: a = 13;\nlocal flo: b = 12;\nconst obj{}: peter = {#&📦1#};\n};\n\nconst str: function a #&📨1#; {#&ƒ1#;}\n\nlocal obj: gert = {#&📦2#};\n\nlocal str: frank = (gert.gay) ? #&🔣5# : #&🔣6#;\n\n\n\n\nconst fun{}: functionOjbect = {#&📦3#};\n  null: fnc a () {#&ƒ2#;};\n  null: ƒ a () {console.log(#&🔣9#)};\n}\n\nglobal int: a = 13;\ndefine int: a = 13;\n\ndefine Vector2{}: positions = {#&📦4#};"
 }

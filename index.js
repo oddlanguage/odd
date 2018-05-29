@@ -4,10 +4,11 @@ const fs = require("fs");
 const M = {
 	tokens: {
 		PARSER_PLACEHOLDER              : /#&.+?\d+?#/g,
+		PARSER_ARGUMENTLIST             : /function.*(\(.*?\))/g,
+		PARSER_DEFINITION               : /\bdefine\b/g,
 		DECLARATION_CONSTANT            : /\bconst\b/g,
 		DECLARATION_SCOPE_LOCAL         : /\blocal\b/g,
 		DECLARATION_SCOPE_GLOBAL        : /\bglobal\b/g,
-		PARSER_DEFINITION               : /\bdefine\b/g,
 		DECLARATION_FUNCTION            : /\b(?:ƒ|fnc|fun|func|function)\b(?![{}[\]])/g,
 		DECLARATION_TYPE_NUMBER         : /(?:num|number):/g,
 		DECLARATION_TYPE_INTEGER        : /(?:int|integer):/g,
@@ -16,10 +17,10 @@ const M = {
 		DECLARATION_TYPE_FUNCTION       : /(?:ƒ|fnc|fun|func|function):/g,
 		DECLARATION_TYPE_BOOLEAN        : /(?:boo|bool|boolean):/g,
 		DECLARATION_TYPE_NULL           : /(?:nil|nul|null):/g,
-		DECLARATION_TYPE_OBJECT         : /(?:obj|object)[{]*?.*[}]*?:|[\S]+?[{][}]+?:/g,
-		DECLARATION_TYPE_ARRAY          : /(?:arr|array)[[]*?.*[\]]*?:|[\S]+?[[][\]]+?:/g,
+		DECLARATION_TYPE_OBJECT         : /(?:obj|object):|[\S]+?{}+?:|{.*?}:/g,
+		DECLARATION_TYPE_ARRAY          : /(?:arr|array):|[\S]+?\[\]+?:|\[.*?\]:/g,
 		DECLARATION_TYPE_ANYTHING       : /(?:any|anything):/g,
-		LITERAL_NUMBER                  : /\W(0?\.?\d+\b)/g,
+		LITERAL_NUMBER                  : /(?![a-zA-Z\s])\.?\d+[.\d]*/g,
 		LITERAL_STRING                  : /".+?"/g,
 		LITERAL_TEMPLATE                : /`.+?`/g,
 		LITERAL_TEMPLATE_PLACEHOLDER    : /`.*?(\${.*?}).*?`/g,
@@ -68,7 +69,7 @@ const M = {
 		OPERATOR_ARITHMETIC_BOOLSHIFT   : "~~", //transform true/false into 1/-1: ~~x = (2*x-1)
 		COMMENT_SINGLELINE              : /\/\/.*/g,
 		COMMENT_MULTILINE               : /\/\*.+?\*\//g,
-		COMMENT_ANY                     : /\/\/.*|\/*.+?\*\//g
+		COMMENT_ANY                     : /\/\/.*|\/*.+?\*\//g,
 	},
 	ignoreComments: true
 };
@@ -112,7 +113,8 @@ class LexicalScope {
 		this["🔣"] = []; // Strings
 		this["💬"] = []; // Comments
 		this["📦"] = []; // Objects
-		this["🗂️"] = []; // Arrays
+		this["🗃️"] = []; // Arrays
+		this["📨"] = []; // Argument lists
 		str = str.replace(M.tokens.LITERAL_STRING, string => {
 			this["🔣"].push(string);
 			return `#&🔣${this["🔣"].length}#`;
@@ -130,18 +132,23 @@ class LexicalScope {
 		});
 
 		str = str.replace(M.tokens.LITERAL_ARRAY, array => {
-			this["🗂️"].push(array);
-			return `#&🗂️${this["🗂️"].length}#`;
+			this["🗃️"].push(array);
+			return `#&🗃️${this["🗃️"].length}#`;
 		});
 
 		str = str.replace(M.tokens.LITERAL_OBJECT, (match, object) => {
-			//this["📦"].push(new LexicalScope(object));
+			this["📦"].push(new LexicalScope(object));
 			return match.replace(object, `#&📦${this["📦"].length}#`);
 		});
 
 		str = str.replace(M.tokens.LITERAL_FUNCTION, (match, func) => {
-			//this["ƒ"].push(new LexicalScope(func));
+			this["ƒ"].push(new LexicalScope(func));
 			return match.replace(func, `#&ƒ${this["ƒ"].length}#;`);
+		});
+
+		str = str.replace(M.tokens.PARSER_ARGUMENTLIST, (match, argList) => {
+			this["📨"].push(new LexicalScope(argList));
+			return match.replace(argList, `#&📨${this["📨"].length}#;`);
 		});
 
 		this.raw = str;
