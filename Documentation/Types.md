@@ -1,5 +1,5 @@
 # Types
-In M, typing can be done by prefixing a variable name with [a typename](#built-in-types), followed by a colon.
+In odd, typing can be done by prefixing a variable name with [a typename](#built-in-types), followed by a colon.
 ```ts
 const bool: mIsAwesome = true;
 ```
@@ -33,7 +33,7 @@ const (arr|obj): arrayOrObject = choose([], {});
 ```
 
 # Built-in types
-There are some built-in types in M:
+There are some built-in types in odd:
 
 | Name of type | How to declare                                                   |
 | ------------ | ---------------------------------------------------------------- |
@@ -129,7 +129,7 @@ const str{}: names = {
 ```
 
 # Declaring custom types
-Declaring your own types is possible. To let the M-parser know you're declaring a type, you must use the `type` keyword as such:
+Declaring your own types is possible. To let the odd parser know you're declaring a type, you must use the `type` keyword as such:
 ```ts
 type typeName {
   // typetest

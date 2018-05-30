@@ -4,12 +4,12 @@ Functions are defined with the respective keyword.
 ## Anonymous functions
 When declaring a function with the `function` keyword, you must give it a name. This might seem confusing (how would you create an anonimous function then?), but it is not. An anonymous function follows a slightly different syntax, borrowed from _es6_.
 ```ts
-// Named M syntax
+// Named odd syntax
 function num: add (num: num) {
   return num + 1;
 }
 
-// Anonymous M syntax
+// Anonymous odd syntax
 (num: num) => {
   num + 1;
 }

@@ -4,10 +4,10 @@ This repo contains a Javascript-based lexer and transcompiler for a language I m
 ![I maed dis](https://cdn.iwastesomuchtime.com/November-30-2011-11-10-09-ScreenShot20111130at8.jpg)
 
 ## Syntax
-M syntax should be familiar yet different for many programmers. It borrows a lot of its syntax from JavaScript, and is also inspired in part by Lua. Note that this is a personal project for learning purposes (and possibly personal use). Which sane person wants to transcompile into lua, anyway? :p
+Odd syntax should be familiar yet _odd_ :) for many programmers. It borrows a lot of its syntax from JavaScript, and is also inspired in part by Lua. Note that this is a personal project for learning purposes (and possibly personal use). Which sane person wants to transcompile into lua, anyway? :p
 
 ## Lexer
-The lexer goes through any M script and saves all scopes, expressions and tokens with their respective type in a JSON format. e.g.:
+The lexer goes through any odd script and saves all scopes, expressions and tokens with their respective type in a JSON format. e.g.:
 ```json
 {
   "expressions": [
