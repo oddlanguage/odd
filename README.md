@@ -1,5 +1,5 @@
-# M language
-This repo contains a Javascript-based lexer and transcompiler for a language I made myself.
+# Odd language
+This repo contains a Javascript-based lexer and transcompiler for a language I made myself, called "odd".
 
 ![I maed dis](https://cdn.iwastesomuchtime.com/November-30-2011-11-10-09-ScreenShot20111130at8.jpg)
 

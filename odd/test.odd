@@ -1,21 +1,22 @@
 const int: a = 13;
-local flo: b = 12;
+local dec: b = 12;
 const obj{}: peter = {
   name = {};
 };
 
+local num: 😀 = a+b;
+
 const str: function a (str: text = "Hallo") {
   local arr: namen = ["Gert", "Harry", "Frank"];
-  return `${text} ${namen[irandom(0, 2)]}`;
+  return `${text} \`${namen[irandom(0, 2)]}\``;
 }
 
 local obj: gert = {
   bool: gay = true;
 };
 
-local str: frank = (gert.gay) ? "Gerts vriendje // vetervreter" : "Eenzaam";
+local str: frank = (gert.gay) ? "Gerts vriendje vetervreter" : "Eenzaam";
 
-//lol
 /* hey dude */
 
 const fun{}: functionOjbect = {
@@ -31,3 +32,5 @@ define Vector2{}: positions = {
   x = new Vector2();
   y = new Vector2();
 };
+
+a *= b;

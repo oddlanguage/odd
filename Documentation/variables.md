@@ -19,7 +19,7 @@ const object: Person = {
   number: age = 21;
   const string: name = "Sophie";
 };
-// > Person {
+// < Person {
 //     age: 21,
 //     name: "Sophie",
 //   }

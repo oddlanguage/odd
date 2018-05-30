@@ -1,624 +1,1482 @@
 {
-	"expressions": [
-		{
-			"raw": "const int: a = 13",
-			"tokens": [
-				{
-					"value": "const",
-					"type": "DECLARATION_CONSTANT"
-				},
-				{
-					"value": "int:",
-					"type": "DECLARATION_TYPE_INTEGER"
-				},
-				{
-					"value": "a",
-					"type": "IDENTIFIER"
-				},
-				{
-					"value": "=",
-					"type": "OPERATOR_ASSIGNMENT_EQL"
-				},
-				{
-					"value": "13",
-					"type": "LITERAL_NUMBER"
-				}
-			]
-		},
-		{
-			"raw": "local flo: b = 12",
-			"tokens": [
-				{
-					"value": "local",
-					"type": "DECLARATION_SCOPE_LOCAL"
-				},
-				{
-					"value": "flo:",
-					"type": "DECLARATION_TYPE_DECIMAL"
-				},
-				{
-					"value": "b",
-					"type": "IDENTIFIER"
-				},
-				{
-					"value": "=",
-					"type": "OPERATOR_ASSIGNMENT_EQL"
-				},
-				{
-					"value": "12",
-					"type": "LITERAL_NUMBER"
-				}
-			]
-		},
-		{
-			"raw": "const obj{}: peter = {#&📦1#}",
-			"tokens": [
-				{
-					"value": "const",
-					"type": "DECLARATION_CONSTANT"
-				},
-				{
-					"value": "obj{}:",
-					"type": "DECLARATION_TYPE_OBJECT"
-				},
-				{
-					"value": "peter",
-					"type": "IDENTIFIER"
-				},
-				{
-					"value": "=",
-					"type": "OPERATOR_ASSIGNMENT_EQL"
-				},
-				{
-					"value": "{#&📦1#}",
-					"type": "PARSER_PLACEHOLDER"
-				}
-			]
-		},
-		{
-			"raw": "}",
-			"tokens": [
-				{
-					"value": "}",
-					"type": "IDENTIFIER"
-				}
-			]
-		},
-		{
-			"raw": "const str: function a #&📨1#",
-			"tokens": [
-				{
-					"value": "const",
-					"type": "DECLARATION_CONSTANT"
-				},
-				{
-					"value": "str:",
-					"type": "DECLARATION_TYPE_STRING"
-				},
-				{
-					"value": "function",
-					"type": "DECLARATION_FUNCTION"
-				},
-				{
-					"value": "a",
-					"type": "IDENTIFIER"
-				},
-				{
-					"value": "#&📨1#",
-					"type": "PARSER_PLACEHOLDER"
-				}
-			]
-		},
-		{
-			"raw": " {#&ƒ1#",
-			"tokens": [
-				{
-					"value": "",
-					"type": "IDENTIFIER"
-				},
-				{
-					"value": "{#&ƒ1#",
-					"type": "PARSER_PLACEHOLDER"
-				}
-			]
-		},
-		{
-			"raw": "}local obj: gert = {#&📦2#}",
-			"tokens": [
-				{
-					"value": "}local",
-					"type": "DECLARATION_SCOPE_LOCAL"
-				},
-				{
-					"value": "obj:",
-					"type": "DECLARATION_TYPE_OBJECT"
-				},
-				{
-					"value": "gert",
-					"type": "IDENTIFIER"
-				},
-				{
-					"value": "=",
-					"type": "OPERATOR_ASSIGNMENT_EQL"
-				},
-				{
-					"value": "{#&📦2#}",
-					"type": "PARSER_PLACEHOLDER"
-				}
-			]
-		},
-		{
-			"raw": "local str: frank = (gert.gay) ? #&🔣5# : #&🔣6#",
-			"tokens": [
-				{
-					"value": "local",
-					"type": "DECLARATION_SCOPE_LOCAL"
-				},
-				{
-					"value": "str:",
-					"type": "DECLARATION_TYPE_STRING"
-				},
-				{
-					"value": "frank",
-					"type": "IDENTIFIER"
-				},
-				{
-					"value": "=",
-					"type": "OPERATOR_ASSIGNMENT_EQL"
-				},
-				{
-					"value": "(gert.gay)",
-					"type": "IDENTIFIER"
-				},
-				{
-					"value": "?",
-					"type": "IDENTIFIER"
-				},
-				{
-					"value": "#&🔣5#",
-					"type": "PARSER_PLACEHOLDER"
-				},
-				{
-					"value": ":",
-					"type": "IDENTIFIER"
-				},
-				{
-					"value": "#&🔣6#",
-					"type": "PARSER_PLACEHOLDER"
-				}
-			]
-		},
-		{
-			"raw": "const fun{}: functionOjbect = {#&📦3#}",
-			"tokens": [
-				{
-					"value": "const",
-					"type": "DECLARATION_CONSTANT"
-				},
-				{
-					"value": "fun{}:",
-					"type": "DECLARATION_TYPE_OBJECT"
-				},
-				{
-					"value": "functionOjbect",
-					"type": "IDENTIFIER"
-				},
-				{
-					"value": "=",
-					"type": "OPERATOR_ASSIGNMENT_EQL"
-				},
-				{
-					"value": "{#&📦3#}",
-					"type": "PARSER_PLACEHOLDER"
-				}
-			]
-		},
-		{
-			"raw": "null: fnc a () {#&ƒ2#",
-			"tokens": [
-				{
-					"value": "null:",
-					"type": "DECLARATION_TYPE_NULL"
-				},
-				{
-					"value": "fnc",
-					"type": "DECLARATION_FUNCTION"
-				},
-				{
-					"value": "a",
-					"type": "IDENTIFIER"
-				},
-				{
-					"value": "()",
-					"type": "IDENTIFIER"
-				},
-				{
-					"value": "{#&ƒ2#",
-					"type": "PARSER_PLACEHOLDER"
-				}
-			]
-		},
-		{
-			"raw": "}",
-			"tokens": [
-				{
-					"value": "}",
-					"type": "IDENTIFIER"
-				}
-			]
-		},
-		{
-			"raw": "null: ƒ a () {console.log(#&🔣9#)}",
-			"tokens": [
-				{
-					"value": "null:",
-					"type": "DECLARATION_TYPE_NULL"
-				},
-				{
-					"value": "ƒ",
-					"type": "IDENTIFIER"
-				},
-				{
-					"value": "a",
-					"type": "IDENTIFIER"
-				},
-				{
-					"value": "()",
-					"type": "IDENTIFIER"
-				},
-				{
-					"value": "{console.log(#&🔣9#)}",
-					"type": "PARSER_PLACEHOLDER"
-				}
-			]
-		},
-		{
-			"raw": "}global int: a = 13",
-			"tokens": [
-				{
-					"value": "}global",
-					"type": "DECLARATION_SCOPE_GLOBAL"
-				},
-				{
-					"value": "int:",
-					"type": "DECLARATION_TYPE_INTEGER"
-				},
-				{
-					"value": "a",
-					"type": "IDENTIFIER"
-				},
-				{
-					"value": "=",
-					"type": "OPERATOR_ASSIGNMENT_EQL"
-				},
-				{
-					"value": "13",
-					"type": "LITERAL_NUMBER"
-				}
-			]
-		},
-		{
-			"raw": "define int: a = 13",
-			"tokens": [
-				{
-					"value": "define",
-					"type": "PARSER_DEFINITION"
-				},
-				{
-					"value": "int:",
-					"type": "DECLARATION_TYPE_INTEGER"
-				},
-				{
-					"value": "a",
-					"type": "IDENTIFIER"
-				},
-				{
-					"value": "=",
-					"type": "OPERATOR_ASSIGNMENT_EQL"
-				},
-				{
-					"value": "13",
-					"type": "LITERAL_NUMBER"
-				}
-			]
-		},
-		{
-			"raw": "define Vector2{}: positions = {#&📦4#}",
-			"tokens": [
-				{
-					"value": "define",
-					"type": "PARSER_DEFINITION"
-				},
-				{
-					"value": "Vector2{}:",
-					"type": "DECLARATION_TYPE_OBJECT"
-				},
-				{
-					"value": "positions",
-					"type": "IDENTIFIER"
-				},
-				{
-					"value": "=",
-					"type": "OPERATOR_ASSIGNMENT_EQL"
-				},
-				{
-					"value": "{#&📦4#}",
-					"type": "PARSER_PLACEHOLDER"
-				}
-			]
-		}
-	],
-	"ƒ": [
-		{
-			"expressions": [
-				{
-					"raw": "local arr: namen = #&🗂️1#",
-					"tokens": [
-						{
-							"value": "local",
-							"type": "DECLARATION_SCOPE_LOCAL"
-						},
-						{
-							"value": "arr:",
-							"type": "DECLARATION_TYPE_ARRAY"
-						},
-						{
-							"value": "namen",
-							"type": "IDENTIFIER"
-						},
-						{
-							"value": "=",
-							"type": "OPERATOR_ASSIGNMENT_EQL"
-						},
-						{
-							"value": "#&🗂️1#",
-							"type": "PARSER_PLACEHOLDER"
-						}
-					]
-				},
-				{
-					"raw": "return #&🔣10#",
-					"tokens": [
-						{
-							"value": "return",
-							"type": "OPERATOR_UNARY_RETURN"
-						},
-						{
-							"value": "#&🔣10#",
-							"type": "PARSER_PLACEHOLDER"
-						}
-					]
-				}
-			],
-			"ƒ": [],
-			"🔣": [],
-			"💬": [],
-			"📦": [],
-			"🗂️": [],
-			"📨": [],
-			"raw": "\n  local arr: namen = #&🗂️1#;\n  return #&🔣10#;\n"
-		},
-		{
-			"expressions": [
-				{
-					"raw": "console.log(#&🔣8#)",
-					"tokens": [
-						{
-							"value": "console.log(#&🔣8#)",
-							"type": "PARSER_PLACEHOLDER"
-						}
-					]
-				}
-			],
-			"ƒ": [],
-			"🔣": [],
-			"💬": [],
-			"📦": [],
-			"🗂️": [],
-			"📨": [],
-			"raw": "console.log(#&🔣8#)"
-		}
-	],
-	"🔣": [
-		"\"Hallo\"",
-		"\"Gert\"",
-		"\"Harry\"",
-		"\"Frank\"",
-		"\"Gerts vriendje // vetervreter\"",
-		"\"Eenzaam\"",
-		"\"sup nibba's\"",
-		"\"sup nibba's\"",
-		"\"sup nibba's\"",
-		"`${text} ${namen[irandom(0, 2)]}`"
-	],
-	"💬": [],
-	"📦": [
-		{
-			"expressions": [
-				{
-					"raw": "name = {",
-					"tokens": [
-						{
-							"value": "name",
-							"type": "IDENTIFIER"
-						},
-						{
-							"value": "=",
-							"type": "OPERATOR_ASSIGNMENT_EQL"
-						},
-						{
-							"value": "{",
-							"type": "IDENTIFIER"
-						}
-					]
-				}
-			],
-			"ƒ": [],
-			"🔣": [],
-			"💬": [],
-			"📦": [],
-			"🗂️": [],
-			"📨": [],
-			"raw": "\n  name = {"
-		},
-		{
-			"expressions": [
-				{
-					"raw": "bool: gay = true",
-					"tokens": [
-						{
-							"value": "bool:",
-							"type": "DECLARATION_TYPE_BOOLEAN"
-						},
-						{
-							"value": "gay",
-							"type": "IDENTIFIER"
-						},
-						{
-							"value": "=",
-							"type": "OPERATOR_ASSIGNMENT_EQL"
-						},
-						{
-							"value": "true",
-							"type": "LITERAL_BOOLEAN_TRUE"
-						}
-					]
-				}
-			],
-			"ƒ": [],
-			"🔣": [],
-			"💬": [],
-			"📦": [],
-			"🗂️": [],
-			"📨": [],
-			"raw": "\n  bool: gay = true;\n"
-		},
-		{
-			"expressions": [
-				{
-					"raw": "null: fun a () {console.log(#&🔣7#)",
-					"tokens": [
-						{
-							"value": "null:",
-							"type": "DECLARATION_TYPE_NULL"
-						},
-						{
-							"value": "fun",
-							"type": "DECLARATION_FUNCTION"
-						},
-						{
-							"value": "a",
-							"type": "IDENTIFIER"
-						},
-						{
-							"value": "()",
-							"type": "IDENTIFIER"
-						},
-						{
-							"value": "{console.log(#&🔣7#)",
-							"type": "PARSER_PLACEHOLDER"
-						}
-					]
-				}
-			],
-			"ƒ": [],
-			"🔣": [],
-			"💬": [],
-			"📦": [],
-			"🗂️": [],
-			"📨": [],
-			"raw": "\n  null: fun a () {console.log(#&🔣7#)"
-		},
-		{
-			"expressions": [
-				{
-					"raw": "x = new Vector2()",
-					"tokens": [
-						{
-							"value": "x",
-							"type": "IDENTIFIER"
-						},
-						{
-							"value": "=",
-							"type": "OPERATOR_ASSIGNMENT_EQL"
-						},
-						{
-							"value": "new",
-							"type": "EXPRESSION_NEW"
-						},
-						{
-							"value": "Vector2()",
-							"type": "LITERAL_NUMBER"
-						}
-					]
-				},
-				{
-					"raw": "y = new Vector2()",
-					"tokens": [
-						{
-							"value": "y",
-							"type": "IDENTIFIER"
-						},
-						{
-							"value": "=",
-							"type": "OPERATOR_ASSIGNMENT_EQL"
-						},
-						{
-							"value": "new",
-							"type": "EXPRESSION_NEW"
-						},
-						{
-							"value": "Vector2()",
-							"type": "LITERAL_NUMBER"
-						}
-					]
-				}
-			],
-			"ƒ": [],
-			"🔣": [],
-			"💬": [],
-			"📦": [],
-			"🗂️": [],
-			"📨": [],
-			"raw": "\n  x = new Vector2();\n  y = new Vector2();\n"
-		}
-	],
-	"🗂️": [
-		"[#&🔣2#, #&🔣3#, #&🔣4#]"
-	],
-	"📨": [
-		{
-			"expressions": [
-				{
-					"raw": "(str: text = #&🔣1#)",
-					"tokens": [
-						{
-							"value": "(str:",
-							"type": "DECLARATION_TYPE_STRING"
-						},
-						{
-							"value": "text",
-							"type": "IDENTIFIER"
-						},
-						{
-							"value": "=",
-							"type": "OPERATOR_ASSIGNMENT_EQL"
-						},
-						{
-							"value": "#&🔣1#)",
-							"type": "PARSER_PLACEHOLDER"
-						}
-					]
-				}
-			],
-			"ƒ": [],
-			"🔣": [],
-			"💬": [],
-			"📦": [],
-			"🗂️": [],
-			"📨": [],
-			"raw": "(str: text = #&🔣1#)"
-		}
-	],
-	"raw": "const int: a = 13;\nlocal flo: b = 12;\nconst obj{}: peter = {#&📦1#};\n};\n\nconst str: function a #&📨1#; {#&ƒ1#;}\n\nlocal obj: gert = {#&📦2#};\n\nlocal str: frank = (gert.gay) ? #&🔣5# : #&🔣6#;\n\n\n\n\nconst fun{}: functionOjbect = {#&📦3#};\n  null: fnc a () {#&ƒ2#;};\n  null: ƒ a () {console.log(#&🔣9#)};\n}\n\nglobal int: a = 13;\ndefine int: a = 13;\n\ndefine Vector2{}: positions = {#&📦4#};"
+	"source": {
+		"source": [
+			{
+				"lexeme": "const",
+				"type": "identifier",
+				"start": 0,
+				"end": 5
+			},
+			{
+				"lexeme": "int",
+				"type": "identifier",
+				"start": 6,
+				"end": 9
+			},
+			{
+				"lexeme": ":",
+				"type": "separator",
+				"start": 9,
+				"end": 10
+			},
+			{
+				"lexeme": "a",
+				"type": "identifier",
+				"start": 11,
+				"end": 12
+			},
+			{
+				"lexeme": "=",
+				"type": "operator",
+				"start": 13,
+				"end": 14
+			},
+			{
+				"lexeme": "13",
+				"type": "number",
+				"start": 15,
+				"end": 17
+			},
+			{
+				"lexeme": ";",
+				"type": "separator",
+				"start": 17,
+				"end": 18
+			},
+			{
+				"lexeme": "local",
+				"type": "identifier",
+				"start": 19,
+				"end": 24
+			},
+			{
+				"lexeme": "dec",
+				"type": "identifier",
+				"start": 25,
+				"end": 28
+			},
+			{
+				"lexeme": ":",
+				"type": "separator",
+				"start": 28,
+				"end": 29
+			},
+			{
+				"lexeme": "b",
+				"type": "identifier",
+				"start": 30,
+				"end": 31
+			},
+			{
+				"lexeme": "=",
+				"type": "operator",
+				"start": 32,
+				"end": 33
+			},
+			{
+				"lexeme": "12",
+				"type": "number",
+				"start": 34,
+				"end": 36
+			},
+			{
+				"lexeme": ";",
+				"type": "separator",
+				"start": 36,
+				"end": 37
+			},
+			{
+				"lexeme": "const",
+				"type": "identifier",
+				"start": 38,
+				"end": 43
+			},
+			{
+				"lexeme": "obj",
+				"type": "identifier",
+				"start": 44,
+				"end": 47
+			},
+			{
+				"lexeme": "{",
+				"type": "separator",
+				"start": 47,
+				"end": 48
+			},
+			{
+				"lexeme": "}",
+				"type": "separator",
+				"start": 48,
+				"end": 49
+			},
+			{
+				"lexeme": ":",
+				"type": "separator",
+				"start": 49,
+				"end": 50
+			},
+			{
+				"lexeme": "peter",
+				"type": "identifier",
+				"start": 51,
+				"end": 56
+			},
+			{
+				"lexeme": "=",
+				"type": "operator",
+				"start": 57,
+				"end": 58
+			},
+			{
+				"lexeme": "{",
+				"type": "separator",
+				"start": 59,
+				"end": 60
+			},
+			{
+				"lexeme": "name",
+				"type": "identifier",
+				"start": 63,
+				"end": 67
+			},
+			{
+				"lexeme": "=",
+				"type": "operator",
+				"start": 68,
+				"end": 69
+			},
+			{
+				"lexeme": "{",
+				"type": "separator",
+				"start": 70,
+				"end": 71
+			},
+			{
+				"lexeme": "}",
+				"type": "separator",
+				"start": 71,
+				"end": 72
+			},
+			{
+				"lexeme": ";",
+				"type": "separator",
+				"start": 72,
+				"end": 73
+			},
+			{
+				"lexeme": "}",
+				"type": "separator",
+				"start": 74,
+				"end": 75
+			},
+			{
+				"lexeme": ";",
+				"type": "separator",
+				"start": 75,
+				"end": 76
+			},
+			{
+				"lexeme": "const",
+				"type": "identifier",
+				"start": 78,
+				"end": 83
+			},
+			{
+				"lexeme": "str",
+				"type": "identifier",
+				"start": 84,
+				"end": 87
+			},
+			{
+				"lexeme": ":",
+				"type": "separator",
+				"start": 87,
+				"end": 88
+			},
+			{
+				"lexeme": "function",
+				"type": "identifier",
+				"start": 89,
+				"end": 97
+			},
+			{
+				"lexeme": "a",
+				"type": "identifier",
+				"start": 98,
+				"end": 99
+			},
+			{
+				"lexeme": "(",
+				"type": "separator",
+				"start": 100,
+				"end": 101
+			},
+			{
+				"lexeme": "str",
+				"type": "identifier",
+				"start": 101,
+				"end": 104
+			},
+			{
+				"lexeme": ":",
+				"type": "separator",
+				"start": 104,
+				"end": 105
+			},
+			{
+				"lexeme": "text",
+				"type": "identifier",
+				"start": 106,
+				"end": 110
+			},
+			{
+				"lexeme": "=",
+				"type": "operator",
+				"start": 111,
+				"end": 112
+			},
+			{
+				"lexeme": "\"",
+				"type": "string",
+				"start": 113,
+				"end": 114
+			},
+			{
+				"lexeme": "Hallo",
+				"type": "identifier",
+				"start": 114,
+				"end": 119
+			},
+			{
+				"lexeme": "\"",
+				"type": "string",
+				"start": 119,
+				"end": 120
+			},
+			{
+				"lexeme": ")",
+				"type": "separator",
+				"start": 120,
+				"end": 121
+			},
+			{
+				"lexeme": "{",
+				"type": "separator",
+				"start": 122,
+				"end": 123
+			},
+			{
+				"lexeme": "local",
+				"type": "identifier",
+				"start": 126,
+				"end": 131
+			},
+			{
+				"lexeme": "arr",
+				"type": "identifier",
+				"start": 132,
+				"end": 135
+			},
+			{
+				"lexeme": ":",
+				"type": "separator",
+				"start": 135,
+				"end": 136
+			},
+			{
+				"lexeme": "namen",
+				"type": "identifier",
+				"start": 137,
+				"end": 142
+			},
+			{
+				"lexeme": "=",
+				"type": "operator",
+				"start": 143,
+				"end": 144
+			},
+			{
+				"lexeme": "[",
+				"type": "separator",
+				"start": 145,
+				"end": 146
+			},
+			{
+				"lexeme": "\"",
+				"type": "string",
+				"start": 146,
+				"end": 147
+			},
+			{
+				"lexeme": "Gert",
+				"type": "identifier",
+				"start": 147,
+				"end": 151
+			},
+			{
+				"lexeme": "\"",
+				"type": "string",
+				"start": 151,
+				"end": 152
+			},
+			{
+				"lexeme": ",",
+				"type": "separator",
+				"start": 152,
+				"end": 153
+			},
+			{
+				"lexeme": "\"",
+				"type": "string",
+				"start": 154,
+				"end": 155
+			},
+			{
+				"lexeme": "Harry",
+				"type": "identifier",
+				"start": 155,
+				"end": 160
+			},
+			{
+				"lexeme": "\"",
+				"type": "string",
+				"start": 160,
+				"end": 161
+			},
+			{
+				"lexeme": ",",
+				"type": "separator",
+				"start": 161,
+				"end": 162
+			},
+			{
+				"lexeme": "\"",
+				"type": "string",
+				"start": 163,
+				"end": 164
+			},
+			{
+				"lexeme": "Frank",
+				"type": "identifier",
+				"start": 164,
+				"end": 169
+			},
+			{
+				"lexeme": "\"",
+				"type": "string",
+				"start": 169,
+				"end": 170
+			},
+			{
+				"lexeme": "]",
+				"type": "separator",
+				"start": 170,
+				"end": 171
+			},
+			{
+				"lexeme": ";",
+				"type": "separator",
+				"start": 171,
+				"end": 172
+			},
+			{
+				"lexeme": "return",
+				"type": "identifier",
+				"start": 175,
+				"end": 181
+			},
+			{
+				"lexeme": "`",
+				"type": "string",
+				"start": 182,
+				"end": 183
+			},
+			{
+				"lexeme": "$",
+				"type": "operator",
+				"start": 183,
+				"end": 184
+			},
+			{
+				"lexeme": "{",
+				"type": "separator",
+				"start": 184,
+				"end": 185
+			},
+			{
+				"lexeme": "text",
+				"type": "identifier",
+				"start": 185,
+				"end": 189
+			},
+			{
+				"lexeme": "}",
+				"type": "separator",
+				"start": 189,
+				"end": 190
+			},
+			{
+				"lexeme": "\\",
+				"type": "escaper",
+				"start": 191,
+				"end": 192
+			},
+			{
+				"lexeme": "`",
+				"type": "string",
+				"start": 192,
+				"end": 193
+			},
+			{
+				"lexeme": "$",
+				"type": "operator",
+				"start": 193,
+				"end": 194
+			},
+			{
+				"lexeme": "{",
+				"type": "separator",
+				"start": 194,
+				"end": 195
+			},
+			{
+				"lexeme": "namen",
+				"type": "identifier",
+				"start": 195,
+				"end": 200
+			},
+			{
+				"lexeme": "[",
+				"type": "separator",
+				"start": 200,
+				"end": 201
+			},
+			{
+				"lexeme": "irandom",
+				"type": "identifier",
+				"start": 201,
+				"end": 208
+			},
+			{
+				"lexeme": "(",
+				"type": "separator",
+				"start": 208,
+				"end": 209
+			},
+			{
+				"lexeme": "0",
+				"type": "number",
+				"start": 209,
+				"end": 210
+			},
+			{
+				"lexeme": ",",
+				"type": "separator",
+				"start": 210,
+				"end": 211
+			},
+			{
+				"lexeme": "2",
+				"type": "number",
+				"start": 212,
+				"end": 213
+			},
+			{
+				"lexeme": ")",
+				"type": "separator",
+				"start": 213,
+				"end": 214
+			},
+			{
+				"lexeme": "]",
+				"type": "separator",
+				"start": 214,
+				"end": 215
+			},
+			{
+				"lexeme": "}",
+				"type": "separator",
+				"start": 215,
+				"end": 216
+			},
+			{
+				"lexeme": "\\",
+				"type": "escaper",
+				"start": 216,
+				"end": 217
+			},
+			{
+				"lexeme": "`",
+				"type": "string",
+				"start": 217,
+				"end": 218
+			},
+			{
+				"lexeme": "`",
+				"type": "string",
+				"start": 218,
+				"end": 219
+			},
+			{
+				"lexeme": ";",
+				"type": "separator",
+				"start": 219,
+				"end": 220
+			},
+			{
+				"lexeme": "}",
+				"type": "separator",
+				"start": 221,
+				"end": 222
+			},
+			{
+				"lexeme": "local",
+				"type": "identifier",
+				"start": 224,
+				"end": 229
+			},
+			{
+				"lexeme": "obj",
+				"type": "identifier",
+				"start": 230,
+				"end": 233
+			},
+			{
+				"lexeme": ":",
+				"type": "separator",
+				"start": 233,
+				"end": 234
+			},
+			{
+				"lexeme": "gert",
+				"type": "identifier",
+				"start": 235,
+				"end": 239
+			},
+			{
+				"lexeme": "=",
+				"type": "operator",
+				"start": 240,
+				"end": 241
+			},
+			{
+				"lexeme": "{",
+				"type": "separator",
+				"start": 242,
+				"end": 243
+			},
+			{
+				"lexeme": "bool",
+				"type": "identifier",
+				"start": 246,
+				"end": 250
+			},
+			{
+				"lexeme": ":",
+				"type": "separator",
+				"start": 250,
+				"end": 251
+			},
+			{
+				"lexeme": "gay",
+				"type": "identifier",
+				"start": 252,
+				"end": 255
+			},
+			{
+				"lexeme": "=",
+				"type": "operator",
+				"start": 256,
+				"end": 257
+			},
+			{
+				"lexeme": "true",
+				"type": "identifier",
+				"start": 258,
+				"end": 262
+			},
+			{
+				"lexeme": ";",
+				"type": "separator",
+				"start": 262,
+				"end": 263
+			},
+			{
+				"lexeme": "}",
+				"type": "separator",
+				"start": 264,
+				"end": 265
+			},
+			{
+				"lexeme": ";",
+				"type": "separator",
+				"start": 265,
+				"end": 266
+			},
+			{
+				"lexeme": "local",
+				"type": "identifier",
+				"start": 268,
+				"end": 273
+			},
+			{
+				"lexeme": "str",
+				"type": "identifier",
+				"start": 274,
+				"end": 277
+			},
+			{
+				"lexeme": ":",
+				"type": "separator",
+				"start": 277,
+				"end": 278
+			},
+			{
+				"lexeme": "frank",
+				"type": "identifier",
+				"start": 279,
+				"end": 284
+			},
+			{
+				"lexeme": "=",
+				"type": "operator",
+				"start": 285,
+				"end": 286
+			},
+			{
+				"lexeme": "(",
+				"type": "separator",
+				"start": 287,
+				"end": 288
+			},
+			{
+				"lexeme": "gert",
+				"type": "identifier",
+				"start": 288,
+				"end": 292
+			},
+			{
+				"lexeme": ".",
+				"type": "separator",
+				"start": 292,
+				"end": 293
+			},
+			{
+				"lexeme": "gay",
+				"type": "identifier",
+				"start": 293,
+				"end": 296
+			},
+			{
+				"lexeme": ")",
+				"type": "separator",
+				"start": 296,
+				"end": 297
+			},
+			{
+				"lexeme": "?",
+				"type": "operator",
+				"start": 298,
+				"end": 299
+			},
+			{
+				"lexeme": "\"",
+				"type": "string",
+				"start": 300,
+				"end": 301
+			},
+			{
+				"lexeme": "Gerts",
+				"type": "identifier",
+				"start": 301,
+				"end": 306
+			},
+			{
+				"lexeme": "vriendje",
+				"type": "identifier",
+				"start": 307,
+				"end": 315
+			},
+			{
+				"lexeme": "/",
+				"type": "operator",
+				"start": 316,
+				"end": 317
+			},
+			{
+				"lexeme": "/",
+				"type": "operator",
+				"start": 317,
+				"end": 318
+			},
+			{
+				"lexeme": "vetervreter",
+				"type": "identifier",
+				"start": 319,
+				"end": 330
+			},
+			{
+				"lexeme": "\"",
+				"type": "string",
+				"start": 330,
+				"end": 331
+			},
+			{
+				"lexeme": ":",
+				"type": "separator",
+				"start": 332,
+				"end": 333
+			},
+			{
+				"lexeme": "\"",
+				"type": "string",
+				"start": 334,
+				"end": 335
+			},
+			{
+				"lexeme": "Eenzaam",
+				"type": "identifier",
+				"start": 335,
+				"end": 342
+			},
+			{
+				"lexeme": "\"",
+				"type": "string",
+				"start": 342,
+				"end": 343
+			},
+			{
+				"lexeme": ";",
+				"type": "separator",
+				"start": 343,
+				"end": 344
+			},
+			{
+				"lexeme": "/",
+				"type": "operator",
+				"start": 346,
+				"end": 347
+			},
+			{
+				"lexeme": "/",
+				"type": "operator",
+				"start": 347,
+				"end": 348
+			},
+			{
+				"lexeme": "lol",
+				"type": "identifier",
+				"start": 348,
+				"end": 351
+			},
+			{
+				"lexeme": "/",
+				"type": "operator",
+				"start": 352,
+				"end": 353
+			},
+			{
+				"lexeme": "*",
+				"type": "operator",
+				"start": 353,
+				"end": 354
+			},
+			{
+				"lexeme": "hey",
+				"type": "identifier",
+				"start": 355,
+				"end": 358
+			},
+			{
+				"lexeme": "dude",
+				"type": "identifier",
+				"start": 359,
+				"end": 363
+			},
+			{
+				"lexeme": "*",
+				"type": "operator",
+				"start": 364,
+				"end": 365
+			},
+			{
+				"lexeme": "/",
+				"type": "operator",
+				"start": 365,
+				"end": 366
+			},
+			{
+				"lexeme": "const",
+				"type": "identifier",
+				"start": 368,
+				"end": 373
+			},
+			{
+				"lexeme": "fun",
+				"type": "identifier",
+				"start": 374,
+				"end": 377
+			},
+			{
+				"lexeme": "{",
+				"type": "separator",
+				"start": 377,
+				"end": 378
+			},
+			{
+				"lexeme": "}",
+				"type": "separator",
+				"start": 378,
+				"end": 379
+			},
+			{
+				"lexeme": ":",
+				"type": "separator",
+				"start": 379,
+				"end": 380
+			},
+			{
+				"lexeme": "functionOjbect",
+				"type": "identifier",
+				"start": 381,
+				"end": 395
+			},
+			{
+				"lexeme": "=",
+				"type": "operator",
+				"start": 396,
+				"end": 397
+			},
+			{
+				"lexeme": "{",
+				"type": "separator",
+				"start": 398,
+				"end": 399
+			},
+			{
+				"lexeme": "null",
+				"type": "identifier",
+				"start": 402,
+				"end": 406
+			},
+			{
+				"lexeme": ":",
+				"type": "separator",
+				"start": 406,
+				"end": 407
+			},
+			{
+				"lexeme": "fun",
+				"type": "identifier",
+				"start": 408,
+				"end": 411
+			},
+			{
+				"lexeme": "a",
+				"type": "identifier",
+				"start": 412,
+				"end": 413
+			},
+			{
+				"lexeme": "(",
+				"type": "separator",
+				"start": 414,
+				"end": 415
+			},
+			{
+				"lexeme": ")",
+				"type": "separator",
+				"start": 415,
+				"end": 416
+			},
+			{
+				"lexeme": "{",
+				"type": "separator",
+				"start": 417,
+				"end": 418
+			},
+			{
+				"lexeme": "console",
+				"type": "identifier",
+				"start": 418,
+				"end": 425
+			},
+			{
+				"lexeme": ".",
+				"type": "separator",
+				"start": 425,
+				"end": 426
+			},
+			{
+				"lexeme": "log",
+				"type": "identifier",
+				"start": 426,
+				"end": 429
+			},
+			{
+				"lexeme": "(",
+				"type": "separator",
+				"start": 429,
+				"end": 430
+			},
+			{
+				"lexeme": "\"",
+				"type": "string",
+				"start": 430,
+				"end": 431
+			},
+			{
+				"lexeme": "sup",
+				"type": "identifier",
+				"start": 431,
+				"end": 434
+			},
+			{
+				"lexeme": "nibba",
+				"type": "identifier",
+				"start": 435,
+				"end": 440
+			},
+			{
+				"lexeme": "'",
+				"type": "none",
+				"start": 440,
+				"end": 441
+			},
+			{
+				"lexeme": "s",
+				"type": "identifier",
+				"start": 441,
+				"end": 442
+			},
+			{
+				"lexeme": "\"",
+				"type": "string",
+				"start": 442,
+				"end": 443
+			},
+			{
+				"lexeme": ")",
+				"type": "separator",
+				"start": 443,
+				"end": 444
+			},
+			{
+				"lexeme": "}",
+				"type": "separator",
+				"start": 444,
+				"end": 445
+			},
+			{
+				"lexeme": ";",
+				"type": "separator",
+				"start": 445,
+				"end": 446
+			},
+			{
+				"lexeme": "null",
+				"type": "identifier",
+				"start": 449,
+				"end": 453
+			},
+			{
+				"lexeme": ":",
+				"type": "separator",
+				"start": 453,
+				"end": 454
+			},
+			{
+				"lexeme": "fnc",
+				"type": "identifier",
+				"start": 455,
+				"end": 458
+			},
+			{
+				"lexeme": "a",
+				"type": "identifier",
+				"start": 459,
+				"end": 460
+			},
+			{
+				"lexeme": "(",
+				"type": "separator",
+				"start": 461,
+				"end": 462
+			},
+			{
+				"lexeme": ")",
+				"type": "separator",
+				"start": 462,
+				"end": 463
+			},
+			{
+				"lexeme": "{",
+				"type": "separator",
+				"start": 464,
+				"end": 465
+			},
+			{
+				"lexeme": "console",
+				"type": "identifier",
+				"start": 465,
+				"end": 472
+			},
+			{
+				"lexeme": ".",
+				"type": "separator",
+				"start": 472,
+				"end": 473
+			},
+			{
+				"lexeme": "log",
+				"type": "identifier",
+				"start": 473,
+				"end": 476
+			},
+			{
+				"lexeme": "(",
+				"type": "separator",
+				"start": 476,
+				"end": 477
+			},
+			{
+				"lexeme": "\"",
+				"type": "string",
+				"start": 477,
+				"end": 478
+			},
+			{
+				"lexeme": "sup",
+				"type": "identifier",
+				"start": 478,
+				"end": 481
+			},
+			{
+				"lexeme": "nibba",
+				"type": "identifier",
+				"start": 482,
+				"end": 487
+			},
+			{
+				"lexeme": "'",
+				"type": "none",
+				"start": 487,
+				"end": 488
+			},
+			{
+				"lexeme": "s",
+				"type": "identifier",
+				"start": 488,
+				"end": 489
+			},
+			{
+				"lexeme": "\"",
+				"type": "string",
+				"start": 489,
+				"end": 490
+			},
+			{
+				"lexeme": ")",
+				"type": "separator",
+				"start": 490,
+				"end": 491
+			},
+			{
+				"lexeme": "}",
+				"type": "separator",
+				"start": 491,
+				"end": 492
+			},
+			{
+				"lexeme": ";",
+				"type": "separator",
+				"start": 492,
+				"end": 493
+			},
+			{
+				"lexeme": "null",
+				"type": "identifier",
+				"start": 496,
+				"end": 500
+			},
+			{
+				"lexeme": ":",
+				"type": "separator",
+				"start": 500,
+				"end": 501
+			},
+			{
+				"lexeme": "ƒ",
+				"type": "none",
+				"start": 502,
+				"end": 503
+			},
+			{
+				"lexeme": "a",
+				"type": "identifier",
+				"start": 504,
+				"end": 505
+			},
+			{
+				"lexeme": "(",
+				"type": "separator",
+				"start": 506,
+				"end": 507
+			},
+			{
+				"lexeme": ")",
+				"type": "separator",
+				"start": 507,
+				"end": 508
+			},
+			{
+				"lexeme": "{",
+				"type": "separator",
+				"start": 509,
+				"end": 510
+			},
+			{
+				"lexeme": "console",
+				"type": "identifier",
+				"start": 510,
+				"end": 517
+			},
+			{
+				"lexeme": ".",
+				"type": "separator",
+				"start": 517,
+				"end": 518
+			},
+			{
+				"lexeme": "log",
+				"type": "identifier",
+				"start": 518,
+				"end": 521
+			},
+			{
+				"lexeme": "(",
+				"type": "separator",
+				"start": 521,
+				"end": 522
+			},
+			{
+				"lexeme": "\"",
+				"type": "string",
+				"start": 522,
+				"end": 523
+			},
+			{
+				"lexeme": "sup",
+				"type": "identifier",
+				"start": 523,
+				"end": 526
+			},
+			{
+				"lexeme": "nibba",
+				"type": "identifier",
+				"start": 527,
+				"end": 532
+			},
+			{
+				"lexeme": "'",
+				"type": "none",
+				"start": 532,
+				"end": 533
+			},
+			{
+				"lexeme": "s",
+				"type": "identifier",
+				"start": 533,
+				"end": 534
+			},
+			{
+				"lexeme": "\"",
+				"type": "string",
+				"start": 534,
+				"end": 535
+			},
+			{
+				"lexeme": ")",
+				"type": "separator",
+				"start": 535,
+				"end": 536
+			},
+			{
+				"lexeme": "}",
+				"type": "separator",
+				"start": 536,
+				"end": 537
+			},
+			{
+				"lexeme": ";",
+				"type": "separator",
+				"start": 537,
+				"end": 538
+			},
+			{
+				"lexeme": "}",
+				"type": "separator",
+				"start": 539,
+				"end": 540
+			},
+			{
+				"lexeme": "global",
+				"type": "identifier",
+				"start": 542,
+				"end": 548
+			},
+			{
+				"lexeme": "int",
+				"type": "identifier",
+				"start": 549,
+				"end": 552
+			},
+			{
+				"lexeme": ":",
+				"type": "separator",
+				"start": 552,
+				"end": 553
+			},
+			{
+				"lexeme": "a",
+				"type": "identifier",
+				"start": 554,
+				"end": 555
+			},
+			{
+				"lexeme": "=",
+				"type": "operator",
+				"start": 556,
+				"end": 557
+			},
+			{
+				"lexeme": "13",
+				"type": "number",
+				"start": 558,
+				"end": 560
+			},
+			{
+				"lexeme": ";",
+				"type": "separator",
+				"start": 560,
+				"end": 561
+			},
+			{
+				"lexeme": "define",
+				"type": "identifier",
+				"start": 562,
+				"end": 568
+			},
+			{
+				"lexeme": "int",
+				"type": "identifier",
+				"start": 569,
+				"end": 572
+			},
+			{
+				"lexeme": ":",
+				"type": "separator",
+				"start": 572,
+				"end": 573
+			},
+			{
+				"lexeme": "a",
+				"type": "identifier",
+				"start": 574,
+				"end": 575
+			},
+			{
+				"lexeme": "=",
+				"type": "operator",
+				"start": 576,
+				"end": 577
+			},
+			{
+				"lexeme": "13",
+				"type": "number",
+				"start": 578,
+				"end": 580
+			},
+			{
+				"lexeme": ";",
+				"type": "separator",
+				"start": 580,
+				"end": 581
+			},
+			{
+				"lexeme": "define",
+				"type": "identifier",
+				"start": 583,
+				"end": 589
+			},
+			{
+				"lexeme": "Vector2",
+				"type": "number",
+				"start": 590,
+				"end": 597
+			},
+			{
+				"lexeme": "{",
+				"type": "separator",
+				"start": 597,
+				"end": 598
+			},
+			{
+				"lexeme": "}",
+				"type": "separator",
+				"start": 598,
+				"end": 599
+			},
+			{
+				"lexeme": ":",
+				"type": "separator",
+				"start": 599,
+				"end": 600
+			},
+			{
+				"lexeme": "positions",
+				"type": "identifier",
+				"start": 601,
+				"end": 610
+			},
+			{
+				"lexeme": "=",
+				"type": "operator",
+				"start": 611,
+				"end": 612
+			},
+			{
+				"lexeme": "{",
+				"type": "separator",
+				"start": 613,
+				"end": 614
+			},
+			{
+				"lexeme": "x",
+				"type": "identifier",
+				"start": 617,
+				"end": 618
+			},
+			{
+				"lexeme": "=",
+				"type": "operator",
+				"start": 619,
+				"end": 620
+			},
+			{
+				"lexeme": "new",
+				"type": "identifier",
+				"start": 621,
+				"end": 624
+			},
+			{
+				"lexeme": "Vector2",
+				"type": "number",
+				"start": 625,
+				"end": 632
+			},
+			{
+				"lexeme": "(",
+				"type": "separator",
+				"start": 632,
+				"end": 633
+			},
+			{
+				"lexeme": ")",
+				"type": "separator",
+				"start": 633,
+				"end": 634
+			},
+			{
+				"lexeme": ";",
+				"type": "separator",
+				"start": 634,
+				"end": 635
+			},
+			{
+				"lexeme": "y",
+				"type": "identifier",
+				"start": 638,
+				"end": 639
+			},
+			{
+				"lexeme": "=",
+				"type": "operator",
+				"start": 640,
+				"end": 641
+			},
+			{
+				"lexeme": "new",
+				"type": "identifier",
+				"start": 642,
+				"end": 645
+			},
+			{
+				"lexeme": "Vector2",
+				"type": "number",
+				"start": 646,
+				"end": 653
+			},
+			{
+				"lexeme": "(",
+				"type": "separator",
+				"start": 653,
+				"end": 654
+			},
+			{
+				"lexeme": ")",
+				"type": "separator",
+				"start": 654,
+				"end": 655
+			},
+			{
+				"lexeme": ";",
+				"type": "separator",
+				"start": 655,
+				"end": 656
+			},
+			{
+				"lexeme": "}",
+				"type": "separator",
+				"start": 657,
+				"end": 658
+			},
+			{
+				"lexeme": ";",
+				"type": "separator",
+				"start": 658,
+				"end": 659
+			},
+			{
+				"lexeme": "a",
+				"type": "identifier",
+				"start": 661,
+				"end": 662
+			},
+			{
+				"lexeme": "*",
+				"type": "operator",
+				"start": 663,
+				"end": 664
+			},
+			{
+				"lexeme": "=",
+				"type": "operator",
+				"start": 664,
+				"end": 665
+			},
+			{
+				"lexeme": "b",
+				"type": "identifier",
+				"start": 666,
+				"end": 667
+			},
+			{
+				"lexeme": ";",
+				"type": "separator",
+				"start": 667,
+				"end": 668
+			}
+		]
+	}
 }

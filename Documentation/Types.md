@@ -7,9 +7,9 @@ Typing is optional (unless strict type checking is enabled in the parser).
 ```ts
 // These declarations are the same:
 const any: thing = "randomString" | {} | .45 | [];
-// > "randomString"
+// < "randomString"
 const thing = "randomString" | {} | .45 | [];
-// > "randomString"
+// < "randomString"
 ```
 The compiler will be able to infer type from context, meaning the expression
 ```ts
@@ -42,7 +42,7 @@ There are some built-in types in M:
 | Integer      | `int:`                                                           |
 | Decimal      | `dec:`                                                           |
 | String       | `str:`                                                           |
-| Function     | `func:` / `fun:` / `fnc:`                                        |
+| Function     | `fun:` / `fnc:`                                                  |
 | Boolean      | `bool:` / `boo:`                                                 |
 | Null         | `null`  / `nil:` / `nul:`                                        |
 | Object       | `obj:`  / _property type(s)_`{}:` / `obj<`_property type(s)_`>:` |
@@ -52,11 +52,11 @@ Element typing of an array _is optional_ and can be done as such:
 ```ts
 // Within the array type brackets
 const [str]: names = ["Jimmy", "Ella", "Jaquelin"];
-// > ["Jimmy", "Ella", "Jaquelin"]
+// < ["Jimmy", "Ella", "Jaquelin"]
 
 //Or declaring it as a typed array directly
 const str[]: names = ["Jimmy", "Ella", "Jaquelin"];
-// > ["Jimmy", "Ella", "Jaquelin"]
+// < ["Jimmy", "Ella", "Jaquelin"]
 ```
 Property typing of objects is also possible, _also optional_ and can be done as such:
 ```ts
@@ -66,7 +66,7 @@ const {str}: names = {
   string: name2 = "Ella";
   string: name3 = "Jaquelin";
 };
-// > names {
+// < names {
 //     name1: "Jimmy",
 //     name2: "Ella",
 //     name3: "Jaquelin"
@@ -78,7 +78,7 @@ const str{}: names = {
   string: name2 = "Ella";
   string: name3 = "Jaquelin";
 };
-// > names {
+// < names {
 //     name1: "Jimmy",
 //     name2: "Ella",
 //     name3: "Jaquelin"
@@ -89,14 +89,14 @@ declare `things` to be either an array of strings or an array of
 numbers, not an array of strings or numbers.
 ```ts
 const (str[]|num[]): namesAndAges = ["Jimmy", 24, "Ella", 12, "Jaquelin", 42];
-// > typeError:  Not all elements of namesAndAges are of type
+// < typeError:  Not all elements of namesAndAges are of type
 //   `string[]` or `number[]`.
 
 const (str|num)[]: namesAndAges = ["Jimmy", 24, "Ella", 12, "Jaquelin", 42];
-// > ["Jimmy", 24, "Ella", 12, "Jaquelin", 42]
+// < ["Jimmy", 24, "Ella", 12, "Jaquelin", 42]
 
 const [str|num]: namesAndAges = ["Jimmy", 24, "Ella", 12, "Jaquelin", 42];
-// > ["Jimmy", 24, "Ella", 12, "Jaquelin", 42]
+// < ["Jimmy", 24, "Ella", 12, "Jaquelin", 42]
 ```
 _Note_: Do not confuse declaring a typed array with declaring an array of arrays:
 ```ts
@@ -111,7 +111,7 @@ const arr[]: arrayOfArrays = [
 ];
 
 const arr[]: arrayOfNumbers = [1, 2, 3, 4, 5];
-// > typeError: Not all elements of arrayOfNumbers are of type `array`.
+// < typeError: Not all elements of arrayOfNumbers are of type `array`.
 ```
 _Note_: If you declare a typed object, typing of its properties is no longer necessary, and is redundant (and therefore discouraged). The parser will still trow an error if a property value is not of the type you declared to be in the given object.
 ```ts
