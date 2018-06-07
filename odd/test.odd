@@ -1,14 +1,14 @@
+const int: int = 3;
+
 const int: a = 13;
-local dec: b = 12;
+local dec: b = 1 * .33456;
 const obj{}: peter = {
   name = {};
 };
 
-local num: 😀 = a+b;
-
 const str: function a (str: text = "Hallo") {
   local arr: namen = ["Gert", "Harry", "Frank"];
-  return `${text} \`${namen[irandom(0, 2)]}\``;
+  return `${text} "${namen[irandom(0, 2)]}"`;
 }
 
 local obj: gert = {
@@ -17,12 +17,15 @@ local obj: gert = {
 
 local str: frank = (gert.gay) ? "Gerts vriendje vetervreter" : "Eenzaam";
 
-/* hey dude */
+/* hey 
+
+dude */
+
+//saaaaah
 
 const fun{}: functionOjbect = {
-  null: fun a () {console.log("sup nibba's")};
-  null: fnc a () {console.log("sup nibba's")};
-  null: ƒ a () {console.log("sup nibba's")};
+  null: function a () {console.log("sup nibba's")};
+  null: function a () {console.log("sup nibba's")};
 }
 
 global int: a = 13;
@@ -32,5 +35,7 @@ define Vector2{}: positions = {
   x = new Vector2();
   y = new Vector2();
 };
+
+const Car[]: aout = [new Car()];
 
 a *= b;

@@ -128,6 +128,9 @@ const str{}: names = {
 };
 ```
 
+## Numbers: integers and decimals
+Odd only has one _real_ number type, appropriately called `number`. The built-in `integer` and `decimal` are just types built on top of number. An integer in odd is just a whole number. This is only used to make sure your numbers are whole. This case is inverted for decimals: they're just to make sure your numbers are decimal only.
+
 # Declaring custom types
 Declaring your own types is possible. To let the odd parser know you're declaring a type, you must use the `type` keyword as such:
 ```ts

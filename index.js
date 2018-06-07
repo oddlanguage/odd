@@ -2,12 +2,11 @@ const { generateLexicalAnalysis } = require("./Classes/Lexer");
 const { AbstractSyntaxTree } = require("./Classes/AbstractSyntaxTree");
 const { AnnotatedSyntaxTree } = require("./Classes/AnnotatedSyntaxTree");
 const fs = require("fs");
+const { promisify } = require("util");
+const readFile = promisify(fs.readFile);
+const writeFile = promisify(fs.writeFile);
 
-const oddLang = new Map([
-	["declaration", /\bstatic\b|\blocal\b|\bglobal\b|\bconst\b|\bpublic\b|\bdefine\b|\bƒ\b|\bfunction\b/],
-	["operator",    /\breturn\b|\bnew\b|\bdelete\b|\btypeof\b|\binstanceof|\bin\b/],
-	["type",        /\bany\b|\bnum\b|\bint\b|\bdec\b|\bstr\b|\bfun\b|\bfnc\b|\bbool\b|\bboo\b|\bnull\b|\bnul\b|\bnil\b|\bobj\b|\barr\b/]
-]);
+console.log(fs.readFile);
 
 let timestamps = [new Date()];
 function timeSince () {
@@ -17,32 +16,75 @@ function timeSince () {
 	return newDate - lastDate;
 }
 
-function compile (from, to) {
+async function compile (from, to) {
 	console.log(`Reading ${from}...`);
-	fs.readFile(from, "utf8", (err, str) => {
-		if (err) throw err;
-		console.log(`Read in ${timeSince()}ms.\n`);
+	const text = await readFile(from, "utf8");
+	console.log(`  Succes! Read in ${timeSince()}ms.\n`);
 
-		const lexicalAnalysis = generateLexicalAnalysis(str);
-		console.log(`Lexed in ${timeSince()}ms.\n`);
+	console.log("Starting lexical analysis...");
+	const lexicalAnalysis = generateLexicalAnalysis(text);
+	console.log(`  Succes! Lexed in ${timeSince()}ms.\n`);
 
-		const abstractSyntaxTree = new AbstractSyntaxTree(lexicalAnalysis);
-		console.log(`Generated abstract syntax tree in ${timeSince()}ms.\n`);
-		
-		const annotatedSyntaxTree = new AnnotatedSyntaxTree(abstractSyntaxTree);
-		console.log(`Generated annotated syntax tree in ${timeSince()}ms.\n`);
-		
-		console.log(abstractSyntaxTree.nodes.map(el => el.value));
+	//console.log("Generating abstract syntax tree...");
+	//const abstractSyntaxTree = new AbstractSyntaxTree(lexicalAnalysis);
+	//console.log(`  Succes! Generated in ${timeSince()}ms.\n`);
 
-		if (!to) process.exit();
-		console.log(`Writing ${to}...`);
-		fs.writeFile(to, JSON.stringify(annotatedSyntaxTree, null, "\t"), "utf8", err => {
-			if (err) throw err;
-			console.log(`Succes!`);
-			console.log(`Wrote in ${timeSince()}ms.`);
-			process.exit();
-		});
-	});
+	//console.log("Annotating abstract syntax tree...");
+	//const annotatedSyntaxTree = new AnnotatedSyntaxTree(abstractSyntaxTree);
+	//console.log(`  Succes! Annotated in ${timeSince()}ms.\n`);
+
+	if (!to) return;
+	let html =
+`<style>
+	body {
+		line-height: 1.33rem;
+		font-family: monospace;
+		background: #222222;
+		color: white;
+		font-size: 1.25rem;
+	}
+	span {
+		display: inline-block;
+	}
+	.declaration {
+		color: #52E3F6;
+		font-style: italic;
+		margin-left: -.1rem;
+	}
+	.type {
+		color: #A6E22E;
+		text-decoration: underline;
+	}
+	.number {
+		color: #AE81FF;
+	}
+	.operator {
+		color: #F92672;
+	}
+	.string {
+		color: #E6DB74;
+	}
+	.separator {
+		color: #909090;
+		margin: 0 .1rem;
+	}
+	.comment {
+		color: #76cb58;
+	}
+</style>`;
+	for (const token of lexicalAnalysis) {
+		html += `\n<span class="${token.type}">${token.lexeme}</span>`;
+		if (token.lexeme === ";" || token.type === "comment") html += "<br/>";
+	}
+	console.log(`Writing ${to}...`);
+	await writeFile(to, html, "utf8");
+	console.log(`  Succes! Wrote in ${timeSince()}ms.`);
 }
 
-compile(`${__dirname}/odd/test.odd`);//, `${__dirname}/lexed/test.json`);
+const beforeCompile = new Date();
+compile(`${__dirname}/odd/test.odd`, `${__dirname}/lexed/test.html`).then(() => {
+	console.log(`\n> Compiling took ${new Date() - beforeCompile}ms in total.\n`);
+	process.exit();
+}).catch(err => {
+	console.log(`  Error!\n\n${err}\n`);
+});

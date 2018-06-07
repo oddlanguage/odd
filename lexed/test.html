@@ -1,0 +1,209 @@
+<style>
+	body {
+		line-height: 1.33rem;
+		font-family: monospace;
+		background: #222222;
+		color: white;
+		font-size: 1.25rem;
+	}
+	span {
+		display: inline-block;
+	}
+	.declaration {
+		color: #52E3F6;
+		font-style: italic;
+		margin-left: -.1rem;
+	}
+	.type {
+		color: #A6E22E;
+		text-decoration: underline;
+	}
+	.number {
+		color: #AE81FF;
+	}
+	.operator {
+		color: #F92672;
+	}
+	.string {
+		color: #E6DB74;
+	}
+	.separator {
+		color: #909090;
+		margin: 0 .1rem;
+	}
+	.comment {
+		color: #76cb58;
+	}
+</style>
+<span class="declaration">const</span>
+<span class="type">int:</span>
+<span class="identifier">int</span>
+<span class="operator">=</span>
+<span class="number">3</span>
+<span class="separator">;</span><br/>
+<span class="declaration">const</span>
+<span class="type">int:</span>
+<span class="identifier">a</span>
+<span class="operator">=</span>
+<span class="number">13</span>
+<span class="separator">;</span><br/>
+<span class="declaration">local</span>
+<span class="type">dec:</span>
+<span class="identifier">b</span>
+<span class="operator">=</span>
+<span class="number">1</span>
+<span class="operator">*</span>
+<span class="number">.33456</span>
+<span class="separator">;</span><br/>
+<span class="declaration">const</span>
+<span class="type">obj{}:</span>
+<span class="identifier">peter</span>
+<span class="operator">=</span>
+<span class="separator">{</span>
+<span class="identifier">name</span>
+<span class="operator">=</span>
+<span class="separator">{</span>
+<span class="separator">}</span>
+<span class="separator">;</span><br/>
+<span class="separator">}</span>
+<span class="separator">;</span><br/>
+<span class="declaration">const</span>
+<span class="type">str:</span>
+<span class="declaration">function</span>
+<span class="identifier">a</span>
+<span class="separator">(</span>
+<span class="type">str:</span>
+<span class="identifier">text</span>
+<span class="operator">=</span>
+<span class="string">"Hallo"</span>
+<span class="separator">)</span>
+<span class="separator">{</span>
+<span class="declaration">local</span>
+<span class="type">arr:</span>
+<span class="identifier">namen</span>
+<span class="operator">=</span>
+<span class="separator">[</span>
+<span class="string">"Gert"</span>
+<span class="separator">,</span>
+<span class="string">"Harry"</span>
+<span class="separator">,</span>
+<span class="string">"Frank"</span>
+<span class="separator">]</span>
+<span class="separator">;</span><br/>
+<span class="operator">return</span>
+<span class="template">`${text} "${namen[irandom(0, 2)]}"`</span>
+<span class="separator">;</span><br/>
+<span class="separator">}</span>
+<span class="declaration">local</span>
+<span class="type">obj:</span>
+<span class="identifier">gert</span>
+<span class="operator">=</span>
+<span class="separator">{</span>
+<span class="type">bool:</span>
+<span class="identifier">gay</span>
+<span class="operator">=</span>
+<span class="identifier">true</span>
+<span class="separator">;</span><br/>
+<span class="separator">}</span>
+<span class="separator">;</span><br/>
+<span class="declaration">local</span>
+<span class="type">str:</span>
+<span class="identifier">frank</span>
+<span class="operator">=</span>
+<span class="separator">(</span>
+<span class="identifier">gert</span>
+<span class="operator">.</span>
+<span class="identifier">gay</span>
+<span class="separator">)</span>
+<span class="operator">?</span>
+<span class="string">"Gerts vriendje vetervreter"</span>
+<span class="operator">:</span>
+<span class="string">"Eenzaam"</span>
+<span class="separator">;</span><br/>
+<span class="comment">/* hey 
+
+dude */</span><br/>
+<span class="comment">//saaaaah
+</span><br/>
+<span class="declaration">const</span>
+<span class="type">fun{}:</span>
+<span class="identifier">functionOjbect</span>
+<span class="operator">=</span>
+<span class="separator">{</span>
+<span class="type">null:</span>
+<span class="declaration">function</span>
+<span class="identifier">a</span>
+<span class="separator">(</span>
+<span class="separator">)</span>
+<span class="separator">{</span>
+<span class="identifier">console</span>
+<span class="operator">.</span>
+<span class="identifier">log</span>
+<span class="separator">(</span>
+<span class="string">"sup nibba's"</span>
+<span class="separator">)</span>
+<span class="separator">}</span>
+<span class="separator">;</span><br/>
+<span class="type">null:</span>
+<span class="declaration">function</span>
+<span class="identifier">a</span>
+<span class="separator">(</span>
+<span class="separator">)</span>
+<span class="separator">{</span>
+<span class="identifier">console</span>
+<span class="operator">.</span>
+<span class="identifier">log</span>
+<span class="separator">(</span>
+<span class="string">"sup nibba's"</span>
+<span class="separator">)</span>
+<span class="separator">}</span>
+<span class="separator">;</span><br/>
+<span class="separator">}</span>
+<span class="declaration">global</span>
+<span class="type">int:</span>
+<span class="identifier">a</span>
+<span class="operator">=</span>
+<span class="number">13</span>
+<span class="separator">;</span><br/>
+<span class="declaration">define</span>
+<span class="type">int:</span>
+<span class="identifier">a</span>
+<span class="operator">=</span>
+<span class="number">13</span>
+<span class="separator">;</span><br/>
+<span class="declaration">define</span>
+<span class="type">Vector2{}:</span>
+<span class="identifier">positions</span>
+<span class="operator">=</span>
+<span class="separator">{</span>
+<span class="identifier">x</span>
+<span class="operator">=</span>
+<span class="operator">new</span>
+<span class="identifier">Vector2</span>
+<span class="separator">(</span>
+<span class="separator">)</span>
+<span class="separator">;</span><br/>
+<span class="identifier">y</span>
+<span class="operator">=</span>
+<span class="operator">new</span>
+<span class="identifier">Vector2</span>
+<span class="separator">(</span>
+<span class="separator">)</span>
+<span class="separator">;</span><br/>
+<span class="separator">}</span>
+<span class="separator">;</span><br/>
+<span class="declaration">const</span>
+<span class="type">Car[]:</span>
+<span class="identifier">aout</span>
+<span class="operator">=</span>
+<span class="separator">[</span>
+<span class="operator">new</span>
+<span class="identifier">Car</span>
+<span class="separator">(</span>
+<span class="separator">)</span>
+<span class="separator">]</span>
+<span class="separator">;</span><br/>
+<span class="identifier">a</span>
+<span class="operator">*=</span>
+<span class="identifier">b</span>
+<span class="separator">;</span><br/>
