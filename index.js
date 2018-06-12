@@ -6,9 +6,7 @@ const { promisify } = require("util");
 const readFile = promisify(fs.readFile);
 const writeFile = promisify(fs.writeFile);
 
-console.log(fs.readFile);
-
-let timestamps = [new Date()];
+const timestamps = [new Date()];
 function timeSince () {
 	const newDate = new Date();
 	const lastDate = timestamps.shift();
@@ -16,7 +14,9 @@ function timeSince () {
 	return newDate - lastDate;
 }
 
-async function compile (from, to) {
+async function compile (options) {
+	const from = options.from;
+	const to = options.to;
 	console.log(`Reading ${from}...`);
 	const text = await readFile(from, "utf8");
 	console.log(`  Succes! Read in ${timeSince()}ms.\n`);
@@ -36,20 +36,27 @@ async function compile (from, to) {
 	if (!to) return;
 	let html =
 `<style>
+	* {
+		margin: 0;
+		padding: 0;
+	}
 	body {
 		line-height: 1.33rem;
 		font-family: monospace;
 		background: #222222;
 		color: white;
 		font-size: 1.25rem;
+		padding: 1rem;
 	}
-	span {
-		display: inline-block;
+	::selection {
+		background: rgba(255, 255, 255, .25);
 	}
-	.declaration {
+
+	.definition {
 		color: #52E3F6;
 		font-style: italic;
-		margin-left: -.1rem;
+		margin-left: -.15rem;
+		padding-right: .15rem;
 	}
 	.type {
 		color: #A6E22E;
@@ -58,33 +65,57 @@ async function compile (from, to) {
 	.number {
 		color: #AE81FF;
 	}
-	.operator {
-		color: #F92672;
+	.operator, .controller {
+		color: #F40070;
 	}
-	.string {
-		color: #E6DB74;
+	.string, .template {
+		color: #E0DA38;
 	}
 	.separator {
 		color: #909090;
-		margin: 0 .1rem;
 	}
 	.comment {
-		color: #76cb58;
+		color: #61617C;
+		font-style: italic;
+		margin-left: -.15rem;
+		padding-right: .15rem;
 	}
-</style>`;
+	.structure {
+		color: #52E3F6;
+		font-style: italic;
+		margin-left: -.15rem;
+		padding-right: .15rem;
+	}
+	.this {
+		color: orange;
+	}
+
+	.structure+.identifier {
+		text-decoration: underline;
+	}
+</style><pre>`;
+	let last;
 	for (const token of lexicalAnalysis) {
-		html += `\n<span class="${token.type}">${token.lexeme}</span>`;
-		if (token.lexeme === ";" || token.type === "comment") html += "<br/>";
+		const insertion = `<span class="${token.type}">${token.lexeme}</span>`;
+		if (last) {
+			html += text.substring(last.end, token.start);
+		}
+		html += insertion;
+		last = token;
 	}
+	html += "</pre>";
 	console.log(`Writing ${to}...`);
 	await writeFile(to, html, "utf8");
 	console.log(`  Succes! Wrote in ${timeSince()}ms.`);
 }
 
 const beforeCompile = new Date();
-compile(`${__dirname}/odd/test.odd`, `${__dirname}/lexed/test.html`).then(() => {
+compile({
+	from: `${__dirname}/odd/test.odd`,
+	to: `${__dirname}/lexed/test.html`
+}).then(() => {
 	console.log(`\n> Compiling took ${new Date() - beforeCompile}ms in total.\n`);
 	process.exit();
 }).catch(err => {
-	console.log(`  Error!\n\n${err}\n`);
+	console.log(`  Error!\n\n${err}`);
 });

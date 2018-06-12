@@ -1,41 +1,33 @@
-const int: int = 3;
-
-const int: a = 13;
-local dec: b = 1 * .33456;
-const obj{}: peter = {
-  name = {};
-};
-
-const str: function a (str: text = "Hallo") {
-  local arr: namen = ["Gert", "Harry", "Frank"];
-  return `${text} "${namen[irandom(0, 2)]}"`;
+type colour {
+  return this[0] === "#";
+  //A colour is just any sting starting with a hashtag.
 }
 
-local obj: gert = {
-  bool: gay = true;
-};
+class Person (obj: options) {
+  using options; //Import options namespace.
+  public str: name = name | "A person";
 
-local str: frank = (gert.gay) ? "Gerts vriendje vetervreter" : "Eenzaam";
+  //Only assign if exists in the current scope/namespace.
+  public int: age ?= age;
+  public colour: hairColour ?= hairColour;
 
-/* hey 
-
-dude */
-
-//saaaaah
-
-const fun{}: functionOjbect = {
-  null: function a () {console.log("sup nibba's")};
-  null: function a () {console.log("sup nibba's")};
+  greet (str: greeting) {
+    print(`${name} says ${greeting}!`);
+  }
 }
 
-global int: a = 13;
-define int: a = 13;
+const peter = new Person([
+  name = "Peter",
+  age = 21,
+  hairColour = "#F99999"
+]);
 
-define Vector2{}: positions = {
-  x = new Vector2();
-  y = new Vector2();
-};
+const [Person]: people = [
+  peter,
+  new Person(),
+  new Person()
+];
 
-const Car[]: aout = [new Car()];
-
-a *= b;
+for (person in people) {
+  person.greet("hi");
+}
