@@ -65,20 +65,17 @@ async function compile (options) {
 	.number {
 		color: #AE81FF;
 	}
-	.operator, .controller {
-		color: #F40070;
+	.operator {
+		color: #FF0080;
 	}
-	.string, .template {
-		color: #E0DA38;
+	.string, .template, .regex {
+		color: #E0CA48;
 	}
-	.separator {
+	.separator, .semicolon, .parenthesis, .list {
 		color: #909090;
 	}
 	.comment {
 		color: #61617C;
-		font-style: italic;
-		margin-left: -.15rem;
-		padding-right: .15rem;
 	}
 	.structure {
 		color: #52E3F6;
@@ -86,8 +83,24 @@ async function compile (options) {
 		margin-left: -.15rem;
 		padding-right: .15rem;
 	}
-	.this {
-		color: orange;
+	.namespace {
+		color: #FFA838;
+		font-style: italic;
+		margin-left: -.15rem;
+		padding-right: .15rem;
+	}
+	.controller {
+		color: #22FFA9;
+	}
+	.escaper {
+		color: red;
+		text-decoration: underline;
+	}
+
+	.comment, .string, .template {
+		font-family: "script12 bt";
+		font-size: 1rem;
+		line-height: 1rem;
 	}
 
 	.structure+.identifier {
@@ -103,7 +116,16 @@ async function compile (options) {
 		html += insertion;
 		last = token;
 	}
-	html += "</pre>";
+	html +=
+`</pre><script>
+//document.querySelectorAll(".definition, .comment, .structure").forEach(span => {
+//	span.innerHTML = span.textContent.replace(/f/g, "&fnof;");
+//});
+document.querySelectorAll(".number").forEach(span => {
+	if (span.textContent[0] !== "#") return;
+	span.style.color = span.textContent;
+});
+</script>`;
 	console.log(`Writing ${to}...`);
 	await writeFile(to, html, "utf8");
 	console.log(`  Succes! Wrote in ${timeSince()}ms.`);

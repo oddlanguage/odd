@@ -28,20 +28,17 @@
 	.number {
 		color: #AE81FF;
 	}
-	.operator, .controller {
-		color: #F40070;
+	.operator {
+		color: #FF0080;
 	}
-	.string, .template {
-		color: #E0DA38;
+	.string, .template, .regex {
+		color: #E0CA48;
 	}
-	.separator {
+	.separator, .semicolon, .parenthesis, .list {
 		color: #909090;
 	}
 	.comment {
 		color: #61617C;
-		font-style: italic;
-		margin-left: -.15rem;
-		padding-right: .15rem;
 	}
 	.structure {
 		color: #52E3F6;
@@ -49,43 +46,88 @@
 		margin-left: -.15rem;
 		padding-right: .15rem;
 	}
-	.this {
-		color: orange;
+	.namespace {
+		color: #FFA838;
+		font-style: italic;
+		margin-left: -.15rem;
+		padding-right: .15rem;
+	}
+	.controller {
+		color: #22FFA9;
+	}
+	.escaper {
+		color: red;
+		text-decoration: underline;
+	}
+
+	.comment, .string, .template {
+		font-family: "script12 bt";
+		font-size: 1rem;
+		line-height: 1rem;
 	}
 
 	.structure+.identifier {
 		text-decoration: underline;
 	}
-</style><pre><span class="structure">type</span> <span class="identifier">colour</span> <span class="separator">{</span>
-  <span class="operator">return</span> <span class="this">this</span><span class="separator">[</span><span class="number">0</span><span class="separator">]</span> <span class="operator">===</span> <span class="string">"#"</span><span class="separator">;</span>
-  <span class="comment">//A colour is just any sting starting with a hashtag.
-</span><span class="separator">}</span>
+</style><pre><span class="structure">type</span> <span class="identifier">col</span> <span class="separator">{</span>
+  <span class="operator">return</span> <span class="parenthesis">(</span><span class="namespace">this</span><span class="list">[</span><span class="number">0</span><span class="list">]</span> <span class="operator">===</span> <span class="string">"#"</span><span class="parenthesis">)</span> <span class="operator">&</span> <span class="parenthesis">(</span><span class="namespace">this</span><span class="operator">.</span><span class="identifier">length</span> <span class="operator">></span> <span class="number">1</span><span class="parenthesis">)</span><span class="semicolon">;</span>
+<span class="separator">}</span>
 
-<span class="structure">class</span> <span class="identifier">Person</span> <span class="separator">(</span><span class="type">obj:</span> <span class="identifier">options</span><span class="separator">)</span> <span class="separator">{</span>
-  <span class="operator">using</span> <span class="identifier">options</span><span class="separator">;</span> <span class="comment">//Import options namespace.
-</span>  <span class="definition">public</span> <span class="type">str:</span> <span class="identifier">name</span> <span class="operator">=</span> <span class="identifier">name</span> <span class="operator">|</span> <span class="string">"A person"</span><span class="separator">;</span>
+<span class="structure">class</span> <span class="identifier">Person</span> <span class="parenthesis">(</span><span class="type">obj:</span> <span class="identifier">options</span><span class="parenthesis">)</span> <span class="separator">{</span>
+  <span class="namespace">using</span> <span class="identifier">options</span><span class="semicolon">;</span> <span class="comment">//Import options namespace.
+</span>  <span class="definition">public</span> <span class="type">str:</span> <span class="identifier">name</span> <span class="operator">=</span> <span class="identifier">name</span> <span class="operator">|</span> <span class="string">"A person"</span><span class="semicolon">;</span>
 
   <span class="comment">//Only assign if exists in the current scope/namespace.
-</span>  <span class="definition">public</span> <span class="type">int:</span> <span class="identifier">age</span> <span class="operator">?=</span> <span class="identifier">age</span><span class="separator">;</span>
-  <span class="definition">public</span> <span class="type">colour:</span> <span class="identifier">hairColour</span> <span class="operator">?=</span> <span class="identifier">hairColour</span><span class="separator">;</span>
+</span>  <span class="definition">public</span> <span class="type">int:</span> <span class="identifier">age</span> <span class="operator">?=</span> <span class="identifier">age</span><span class="semicolon">;</span>
+  <span class="definition">public</span> <span class="type">col:</span> <span class="identifier">hairColour</span> <span class="operator">?=</span> <span class="identifier">hairColour</span><span class="semicolon">;</span>
+  <span class="identifier">private</span> <span class="type">vec2:</span> <span class="identifier">position</span> <span class="operator">=</span> <span class="operator">new</span> <span class="identifier">vec2</span><span class="parenthesis">(</span><span class="number">0</span><span class="separator">,</span> <span class="number">0</span><span class="parenthesis">)</span><span class="semicolon">;</span>
 
-  <span class="identifier">greet</span> <span class="separator">(</span><span class="type">str:</span> <span class="identifier">greeting</span><span class="separator">)</span> <span class="separator">{</span>
-    <span class="identifier">print</span><span class="separator">(</span><span class="template">`${name} says ${greeting}!`</span><span class="separator">)</span><span class="separator">;</span>
+  <span class="identifier">greet</span> <span class="parenthesis">(</span><span class="type">str:</span> <span class="identifier">greeting</span><span class="parenthesis">)</span> <span class="separator">{</span>
+    <span class="identifier">print</span><span class="parenthesis">(</span><span class="template">`${name} says ${greeting}!`</span><span class="parenthesis">)</span><span class="semicolon">;</span>
+  <span class="separator">}</span>
+
+  <span class="identifier">update</span> <span class="parenthesis">(</span><span class="type">boo:</span> <span class="identifier">spacePressed</span><span class="parenthesis">)</span> <span class="separator">{</span>
+    <span class="namespace">using</span> <span class="namespace">this</span><span class="operator">.</span><span class="identifier">position</span><span class="semicolon">;</span>
+    <span class="identifier">y</span> <span class="operator">+=</span> <span class="operator">~~</span><span class="identifier">spacePressed</span><span class="semicolon">;</span>
   <span class="separator">}</span>
 <span class="separator">}</span>
 
-<span class="definition">const</span> <span class="identifier">peter</span> <span class="operator">=</span> <span class="operator">new</span> <span class="identifier">Person</span><span class="separator">(</span><span class="separator">[</span>
+<span class="definition">const</span> <span class="identifier">peter</span> <span class="operator">=</span> <span class="operator">new</span> <span class="identifier">Person</span><span class="parenthesis">(</span><span class="list">[</span>
   <span class="identifier">name</span> <span class="operator">=</span> <span class="string">"Peter"</span><span class="separator">,</span>
   <span class="identifier">age</span> <span class="operator">=</span> <span class="number">21</span><span class="separator">,</span>
-  <span class="identifier">hairColour</span> <span class="operator">=</span> <span class="string">"#F99999"</span>
-<span class="separator">]</span><span class="separator">)</span><span class="separator">;</span>
+  <span class="identifier">hairColour</span> <span class="operator">=</span> <span class="number">#F99999</span>
+<span class="list">]</span><span class="parenthesis">)</span><span class="semicolon">;</span>
 
-<span class="definition">const</span> <span class="type">[Person]:</span> <span class="identifier">people</span> <span class="operator">=</span> <span class="separator">[</span>
+<span class="definition">const</span> <span class="type">[Person]:</span> <span class="identifier">people</span> <span class="operator">=</span> <span class="list">[</span>
   <span class="identifier">peter</span><span class="separator">,</span>
-  <span class="operator">new</span> <span class="identifier">Person</span><span class="separator">(</span><span class="separator">)</span><span class="separator">,</span>
-  <span class="operator">new</span> <span class="identifier">Person</span><span class="separator">(</span><span class="separator">)</span>
-<span class="separator">]</span><span class="separator">;</span>
+  <span class="operator">new</span> <span class="identifier">Person</span><span class="parenthesis">(</span><span class="parenthesis">)</span><span class="separator">,</span>
+  <span class="operator">new</span> <span class="identifier">Person</span><span class="parenthesis">(</span><span class="parenthesis">)</span>
+<span class="list">]</span><span class="semicolon">;</span>
 
-<span class="controller">for</span> <span class="separator">(</span><span class="identifier">person</span> <span class="operator">in</span> <span class="identifier">people</span><span class="separator">)</span> <span class="separator">{</span>
-  <span class="identifier">person</span><span class="operator">.</span><span class="identifier">greet</span><span class="separator">(</span><span class="string">"hi"</span><span class="separator">)</span><span class="separator">;</span>
-<span class="separator">}</span></pre>
+<span class="controller">for</span> <span class="parenthesis">(</span><span class="identifier">person</span> <span class="operator">in</span> <span class="identifier">people</span><span class="parenthesis">)</span> <span class="separator">{</span>
+  <span class="identifier">person</span><span class="operator">.</span><span class="identifier">greet</span><span class="parenthesis">(</span><span class="string">"hi"</span><span class="parenthesis">)</span><span class="semicolon">;</span>
+<span class="separator">}</span>
+
+<span class="definition">const</span> <span class="identifier">stream</span> <span class="operator">=</span> <span class="identifier">fs</span><span class="operator">.</span><span class="identifier">read</span><span class="parenthesis">(</span><span class="string">"file/name.ext"</span><span class="parenthesis">)</span><span class="semicolon">;</span>
+<span class="controller">when</span> <span class="identifier">stream</span> <span class="controller">emits</span> <span class="string">"error"</span><span class="separator">,</span> <span class="parenthesis">(</span><span class="identifier">error</span><span class="parenthesis">)</span> <span class="operator">=></span> <span class="separator">{</span>
+  <span class="operator">throw</span> <span class="identifier">error</span><span class="semicolon">;</span>
+<span class="separator">}</span>
+<span class="controller">when</span> <span class="identifier">stream</span> <span class="controller">emits</span> <span class="string">"data"</span><span class="separator">,</span> <span class="parenthesis">(</span><span class="identifier">data</span><span class="parenthesis">)</span> <span class="operator">=></span> <span class="separator">{</span>
+  <span class="identifier">print</span><span class="parenthesis">(</span><span class="identifier">data</span><span class="parenthesis">)</span><span class="semicolon">;</span>
+<span class="separator">}</span>
+<span class="controller">when</span> <span class="identifier">stream</span> <span class="controller">emits</span> <span class="string">"end"</span><span class="separator">,</span> <span class="parenthesis">(</span><span class="parenthesis">)</span> <span class="operator">=></span> <span class="separator">{</span>
+  <span class="identifier">stream</span><span class="operator">.</span><span class="identifier">destroy</span><span class="parenthesis">(</span><span class="parenthesis">)</span><span class="semicolon">;</span>
+<span class="separator">}</span>
+
+<span class="separator">{</span>
+  <span class="namespace">using</span> <span class="identifier">stream</span><span class="semicolon">;</span>
+  <span class="controller">emit</span> <span class="string">"end"</span><span class="semicolon">;</span>
+<span class="separator">}</span></pre><script>
+//document.querySelectorAll(".definition, .comment, .structure").forEach(span => {
+//	span.innerHTML = span.textContent.replace(/f/g, "&fnof;");
+//});
+document.querySelectorAll(".number").forEach(span => {
+	if (span.textContent[0] !== "#") return;
+	span.style.color = span.textContent;
+});
+</script>

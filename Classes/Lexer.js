@@ -1,17 +1,20 @@
 const tokenTypes = {
 	odd: new Map([
-		["escaper",    /\\./                                                                                                                                                                 ],
-		["comment",    /\/\*[\s\S]+\*\/|\/\/.+[\r\n]/                                                                                                                                        ],
-		["template",   /`/                                                                                                                                                                   ],
-		["string",     /"/                                                                                                                                                                   ],
-		["type",       /[\w\[\]\{\}]+:/u                                                                                                                                                               ],
-		["number",     /\b\d+\b|\.\d+\b/                                                                                                                                                     ],
-		["separator",  /[;{}\[\],\()]/                                                                                                                                                       ],
-		["operator",   /\+=|-=|\*=|\/=|%=|\*\*=|&=|\|=|\.\.=|\.{1,3}|==|!=|>=|<=|\+\+|--|~~|[-\.\/+><*=%~?!$|&^:]|\breturn\b|\bnew\b|\bdelete\b|\btypeof\b|\binstanceof|\bin\b|\bof\b|\busing\b/],
-		["controller", /\bfor\b|\bwhile\b|\bif\b|\belse\b/                                                                                                                                   ],
-		["definition", /\bstatic\b|\blocal\b|\bglobal\b|\bconst\b|\bpublic\b|\bdefine\b|\bfunction\b/                                                                                        ],
-		["structure",  /\btype\b|\bclass\b/                                                                                                                                                  ],
-		["this",       /\bthis\b/                                                                                                                                                            ]
+		["comment",     /\/\*[\s\S]+\*\/|\/\/.+[\r\n]/],
+		["regex",       /\b\/.+\/[gmiyus]*\b/],
+		["template",    /.+?`/],
+		["string",      /.+?"/],
+		["type",        /[\w\[\]\{\}]+:/u],
+		["number",      /\b\d+\b|\.\d+\b|#\w+/],
+		["separator",   /[\{\},]/],
+		["operator",    /\+=|-=|\*=|\/=|%=|\*\*=|&=|\|=|\.\.=|\.{1,3}|==|!=|>=|<=|\+\+|--|~~|[-\.\/+><*=%~?!$|&^:]|\bthrow\b|\breturn\b|\bnew\b|\bdelete\b|\btypeof\b|\binstanceof|\bin\b|\bof\b/],
+		["controller",  /\bfor\b|\bwhile\b|\bif\b|\belse\b|\bwhen\b|\bemits?\b/],
+		["definition",  /\bstatic\b|\blocal\b|\bglobal\b|\bconst\b|\bpublic\b|\bdefine\b|\bfunction\b/],
+		["structure",   /\btype\b|\bclass\b/],
+		["namespace",   /\bthis\b|\busing\b/],
+		["semicolon",   /;/],
+		["parenthesis", /[\(\)]/],
+		["list",        /[\[\]]/],
 	]),
 	identifier: /[_a-zA-Z\u{1F600}-\u{1F64F}][\w\u{1F600}-\u{1F64F}]*/u
 };
@@ -51,7 +54,7 @@ class LexicalToken {
 	}
 }
 
-const lexemeRegularExpression = /`.+?`|".+?"|\/\*[\s\S]+\*\/|\/\/.+\n|[-\/+><*=%~?!$|&^]+|\.?\d+|[\w\[\]\{\}]+:|\w+|\S/gu;
+const lexemeRegularExpression = /`[\s\S]+?`|".+?"|\/\*[\s\S]+\*\/|\/\/.+\n|\/.+\/[gmiyus]*|#\w+|[-\/+><*=%~?!$|&^]+|\.?\d+|[\w\[\]\{\}]+:|\w+|\S/gu;
 function generateLexicalAnalysis(str) {
 	const tokens = [];
 	let result;

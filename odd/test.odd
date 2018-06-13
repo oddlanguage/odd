@@ -1,6 +1,5 @@
-type colour {
-  return this[0] === "#";
-  //A colour is just any sting starting with a hashtag.
+type col {
+  return (this[0] === "#") & (this.length > 1);
 }
 
 class Person (obj: options) {
@@ -9,17 +8,23 @@ class Person (obj: options) {
 
   //Only assign if exists in the current scope/namespace.
   public int: age ?= age;
-  public colour: hairColour ?= hairColour;
+  public col: hairColour ?= hairColour;
+  private vec2: position = new vec2(0, 0);
 
   greet (str: greeting) {
     print(`${name} says ${greeting}!`);
+  }
+
+  update (boo: spacePressed) {
+    using this.position;
+    y += ~~spacePressed;
   }
 }
 
 const peter = new Person([
   name = "Peter",
   age = 21,
-  hairColour = "#F99999"
+  hairColour = #F99999
 ]);
 
 const [Person]: people = [
@@ -30,4 +35,20 @@ const [Person]: people = [
 
 for (person in people) {
   person.greet("hi");
+}
+
+const stream = fs.read("file/name.ext");
+when stream emits "error", (error) => {
+  throw error;
+}
+when stream emits "data", (data) => {
+  print(data);
+}
+when stream emits "end", () => {
+  stream.destroy();
+}
+
+{
+  using stream;
+  emit "end";
 }
