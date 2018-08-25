@@ -1,3 +1,94 @@
+<style>
+		* {
+			margin: 0;
+			padding: 0;
+		}
+		body {
+			line-height: 1.33rem;
+			font-family: monospace;
+			background: #222222;
+			color: white;
+			font-size: 1.25rem;
+			padding: 1rem;
+		}
+		::selection {
+			background: rgba(255, 255, 255, .25);
+		}
+
+		.definition {
+			color: #52E3F6;
+			font-style: italic;
+			margin-left: -.15rem;
+			padding-right: .15rem;
+		}
+		.type {
+			color: #A6E22E;
+			text-decoration: underline;
+		}
+		.number {
+			color: #AE81FF;
+		}
+		.operator {
+			color: #FF0080;
+		}
+		.string, .template, .regex {
+			color: #E0CA48;
+		}
+		.separator, .semicolon, .parenthesis, .list {
+			color: #909090;
+		}
+		.comment {
+			color: #61617C;
+		}
+		.structure {
+			color: #52E3F6;
+			font-style: italic;
+			margin-left: -.15rem;
+			padding-right: .15rem;
+		}
+		.namespace {
+			color: #FFA838;
+			font-style: italic;
+			margin-left: -.15rem;
+			padding-right: .15rem;
+		}
+		.controller {
+			color: #22FFA9;
+		}
+		.escaper {
+			color: red;
+			text-decoration: underline;
+		}
+
+		.comment, .string, .template {
+			font-family: "script12 bt";
+			font-size: 1rem;
+			line-height: 1rem;
+		}
+
+		.structure+.identifier {
+			text-decoration: underline;
+		}
+
+		textarea {
+			position: absolute;
+			top: 0;
+			left: 0;
+			width: 100vw;
+			height: 100vh;
+			padding: 1rem;
+			font: inherit;
+			background: none;
+			border: none;
+			resize: none;
+			color: transparent;
+			caret-color: white;
+		}
+	</style>
+	<textarea spellcheck="false"></textarea>
+	<pre></pre>
+
+<script>
 const tokenTypes = {
 	odd: new Map([
 		["comment",     /\/\*[\s\S]+\*\/|\/\/.+[\r\n]/],
@@ -70,4 +161,24 @@ function generateLexicalAnalysis(str) {
 	return tokens;
 }
 
-exports.generateLexicalAnalysis = generateLexicalAnalysis;
+function lexToHTML (text, lexicalAnalysis) {
+	let html = "";
+	let last;
+	for (const token of lexicalAnalysis) {
+		const insertion = `<span class="${token.type}">${token.lexeme}</span>`;
+		if (last) {
+			html += text.substring(last.end, token.start);
+		}
+		html += insertion;
+		last = token;
+	}
+	return html;
+}
+
+const textarea = document.querySelector("textarea");
+const pre = document.querySelector("pre");
+textarea.addEventListener("input", event => {
+	const txt = textarea.value;
+	pre.innerHTML = lexToHTML(txt, generateLexicalAnalysis(txt));
+});
+</script>

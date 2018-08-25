@@ -1,84 +1,84 @@
 <style>
-	* {
-		margin: 0;
-		padding: 0;
-	}
-	body {
-		line-height: 1.33rem;
-		font-family: monospace;
-		background: #222222;
-		color: white;
-		font-size: 1.25rem;
-		padding: 1rem;
-	}
-	::selection {
-		background: rgba(255, 255, 255, .25);
-	}
+		* {
+			margin: 0;
+			padding: 0;
+		}
+		body {
+			line-height: 1.33rem;
+			font-family: monospace;
+			background: #222222;
+			color: white;
+			font-size: 1.25rem;
+			padding: 1rem;
+		}
+		::selection {
+			background: rgba(255, 255, 255, .25);
+		}
 
-	.definition {
-		color: #52E3F6;
-		font-style: italic;
-		margin-left: -.15rem;
-		padding-right: .15rem;
-	}
-	.type {
-		color: #A6E22E;
-		text-decoration: underline;
-	}
-	.number {
-		color: #AE81FF;
-	}
-	.operator {
-		color: #FF0080;
-	}
-	.string, .template, .regex {
-		color: #E0CA48;
-	}
-	.separator, .semicolon, .parenthesis, .list {
-		color: #909090;
-	}
-	.comment {
-		color: #61617C;
-	}
-	.structure {
-		color: #52E3F6;
-		font-style: italic;
-		margin-left: -.15rem;
-		padding-right: .15rem;
-	}
-	.namespace {
-		color: #FFA838;
-		font-style: italic;
-		margin-left: -.15rem;
-		padding-right: .15rem;
-	}
-	.controller {
-		color: #22FFA9;
-	}
-	.escaper {
-		color: red;
-		text-decoration: underline;
-	}
+		.definition {
+			color: #52E3F6;
+			font-style: italic;
+			margin-left: -.15rem;
+			padding-right: .15rem;
+		}
+		.type {
+			color: #A6E22E;
+			text-decoration: underline;
+		}
+		.number {
+			color: #AE81FF;
+		}
+		.operator {
+			color: #FF0080;
+		}
+		.string, .template, .regex {
+			color: #E0CA48;
+		}
+		.separator, .semicolon, .parenthesis, .list {
+			color: #909090;
+		}
+		.comment {
+			color: #61617C;
+		}
+		.structure {
+			color: #52E3F6;
+			font-style: italic;
+			margin-left: -.15rem;
+			padding-right: .15rem;
+		}
+		.namespace {
+			color: #FFA838;
+			font-style: italic;
+			margin-left: -.15rem;
+			padding-right: .15rem;
+		}
+		.controller {
+			color: #22FFA9;
+		}
+		.escaper {
+			color: red;
+			text-decoration: underline;
+		}
 
-	.comment, .string, .template {
-		font-family: "script12 bt";
-		font-size: 1rem;
-		line-height: 1rem;
-	}
+		.comment, .string, .template {
+			font-family: "script12 bt";
+			font-size: 1rem;
+			line-height: 1rem;
+		}
 
-	.structure+.identifier {
-		text-decoration: underline;
-	}
-</style><pre><span class="structure">type</span> <span class="identifier">col</span> <span class="separator">{</span>
+		.structure+.identifier {
+			text-decoration: underline;
+		}
+	</style><pre><span class="structure">type</span> <span class="identifier">col</span> <span class="separator">{</span>
   <span class="operator">return</span> <span class="parenthesis">(</span><span class="namespace">this</span><span class="list">[</span><span class="number">0</span><span class="list">]</span> <span class="operator">===</span> <span class="string">"#"</span><span class="parenthesis">)</span> <span class="operator">&</span> <span class="parenthesis">(</span><span class="namespace">this</span><span class="operator">.</span><span class="identifier">length</span> <span class="operator">></span> <span class="number">1</span><span class="parenthesis">)</span><span class="semicolon">;</span>
 <span class="separator">}</span>
 
 <span class="structure">class</span> <span class="identifier">Person</span> <span class="parenthesis">(</span><span class="type">obj:</span> <span class="identifier">options</span><span class="parenthesis">)</span> <span class="separator">{</span>
-  <span class="namespace">using</span> <span class="identifier">options</span><span class="semicolon">;</span> <span class="comment">//Import options namespace.
-</span>  <span class="definition">public</span> <span class="type">str:</span> <span class="identifier">name</span> <span class="operator">=</span> <span class="identifier">name</span> <span class="operator">|</span> <span class="string">"A person"</span><span class="semicolon">;</span>
+  <span class="namespace">using</span> <span class="identifier">options</span><span class="semicolon">;</span> <span class="operator">//</span><span class="identifier">Import</span> <span class="identifier">options</span> <span class="identifier">namespace</span><span class="operator">.</span>
+  <span class="definition">public</span> <span class="type">str:</span> <span class="identifier">name</span> <span class="operator">=</span> <span class="identifier">name</span> <span class="operator">|</span> <span class="string">"A person"</span><span class="semicolon">;</span>
 
-  <span class="comment">//Only assign if exists in the current scope/namespace.
-</span>  <span class="definition">public</span> <span class="type">int:</span> <span class="identifier">age</span> <span class="operator">?=</span> <span class="identifier">age</span><span class="semicolon">;</span>
+  <span class="operator">//Only assign if exists in the current scope/</span><span class="identifier">namespace</span><span class="operator">.</span>
+  <span class="definition">public</span> <span class="type">int:</span> <span class="identifier">age</span> <span class="operator">?=</span> <span class="identifier">age</span><span class="semicolon">;</span>
   <span class="definition">public</span> <span class="type">col:</span> <span class="identifier">hairColour</span> <span class="operator">?=</span> <span class="identifier">hairColour</span><span class="semicolon">;</span>
   <span class="identifier">private</span> <span class="type">vec2:</span> <span class="identifier">position</span> <span class="operator">=</span> <span class="operator">new</span> <span class="identifier">vec2</span><span class="parenthesis">(</span><span class="number">0</span><span class="separator">,</span> <span class="number">0</span><span class="parenthesis">)</span><span class="semicolon">;</span>
 
@@ -123,11 +123,11 @@
   <span class="namespace">using</span> <span class="identifier">stream</span><span class="semicolon">;</span>
   <span class="controller">emit</span> <span class="string">"end"</span><span class="semicolon">;</span>
 <span class="separator">}</span></pre><script>
-//document.querySelectorAll(".definition, .comment, .structure").forEach(span => {
-//	span.innerHTML = span.textContent.replace(/f/g, "&fnof;");
-//});
-document.querySelectorAll(".number").forEach(span => {
-	if (span.textContent[0] !== "#") return;
-	span.style.color = span.textContent;
-});
-</script>
+	//document.querySelectorAll(".definition, .comment, .structure").forEach(span => {
+	//	span.innerHTML = span.textContent.replace(/f/g, "&fnof;");
+	//});
+	document.querySelectorAll(".number").forEach(span => {
+		if (span.textContent[0] !== "#") return;
+		span.style.color = span.textContent;
+	});
+	</script>
