@@ -1,4 +1,6 @@
-const any[]: test = 21.23e2346;
+//Test 123
+const any[]: test1 = .23e2346;
+const any[]: test2 = 0.23e2346;
 
 type col {
   return (this[0] === "#") & (this.length > 1);
@@ -26,7 +28,7 @@ class Person (obj: options) {
 const peter = new Person([
   name = "Peter",
   age = 21,
-  hairColour = #F99999
+  hairColour = 0xF99999
 ]);
 
 const [Person]: people = [
