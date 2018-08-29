@@ -1,8 +1,6 @@
 module.exports = class LexicalToken {
-	constructor (type, lexeme, start, end) {
+	constructor (type, lexeme) {
 		this.type = type;
 		this.lexeme = lexeme;
-		this.start = start;
-		this.end = end;
 	}
 }

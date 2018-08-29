@@ -1,9 +1,5 @@
 [
 	{
-		"type": "type",
-		"lexeme": "any[]:"
-	},
-	{
 		"type": "comment",
 		"lexeme": "//Test 123"
 	},
@@ -50,6 +46,42 @@
 	{
 		"type": "number",
 		"lexeme": "0.23e2346"
+	},
+	{
+		"type": "semicolon",
+		"lexeme": ";"
+	},
+	{
+		"type": "preprocessorDirective",
+		"lexeme": "#i = 0"
+	},
+	{
+		"type": "semicolon",
+		"lexeme": ";"
+	},
+	{
+		"type": "preprocessorDirective",
+		"lexeme": "#while (i++ < 10) {\n  //do nothing.\n}"
+	},
+	{
+		"type": "semicolon",
+		"lexeme": ";"
+	},
+	{
+		"type": "name",
+		"lexeme": "define"
+	},
+	{
+		"type": "name",
+		"lexeme": "a"
+	},
+	{
+		"type": "operator",
+		"lexeme": "="
+	},
+	{
+		"type": "number",
+		"lexeme": "12"
 	},
 	{
 		"type": "semicolon",

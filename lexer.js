@@ -13,8 +13,10 @@ function normalisePath (path) {
 		misschien manier voor een switch statement?
 		Add types
 		Add RegExp
-		Preprocessing (preprocessor statements, defer, define, template literals, etc.)
+		Preprocessing (preprocessor statements, define)
 		Log how much time lexing cost.
+		add eatWhile() function
+		overal waar "character.position < input.length" staat in while loops, error expecting ...
 */
 
 const patterns = new Map([
@@ -32,10 +34,10 @@ const patterns = new Map([
 	["STRING"         , '"'],
 	["TEMPLATELITERAL", "`"],
 	["COMMENTSTART"   , "/"],
-	["PREPROCESSOR"   , "#"]
+	["DIRECTIVE"      , "#"]
 ]);
 
-exports.tokenise = function tokenise (input, options) {
+module.exports = function tokenise (input, options) {
 	//Clean the input
 	input = input.replace(/[\f\v]/g, "").replace(/\r\n/g, "\n").replace(/\r/g, "\n"); //Fix this horrid line
 
@@ -118,7 +120,7 @@ exports.tokenise = function tokenise (input, options) {
 		//Template literals
 		if (character.is(patterns.get("TEMPLATELITERAL"))) {
 			let lexeme = eat(); //Eat the opening character
-			while (!character.is(patterns.get("TEMPLATELITERAL"))) {
+			while (character.position < input.length && !character.is(patterns.get("TEMPLATELITERAL"))) {
 				lexeme += eat();
 			}
 			lexeme += eat(); //Eat the closing character
@@ -181,13 +183,13 @@ exports.tokenise = function tokenise (input, options) {
 			continue;
 		}
 
-		//Preprocessor statements
-		if (character.is(patterns.get("PREPROCESSOR"))) {
+		//Preprocessor directives
+		if (character.is(patterns.get("DIRECTIVE"))) {
 			let lexeme = eat();
-			while (!character.is(patterns.get("LINEBREAK"))) {
+			while (character.position < input.length && !character.is(patterns.get("STATEMENTEND"))) {
 				lexeme += eat();
 			}
-			tokens.push(new LexicalToken("preprocessorStatement", lexeme));
+			tokens.push(new LexicalToken("preprocessorDirective", lexeme));
 			continue;
 		}
 

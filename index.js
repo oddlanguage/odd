@@ -2,8 +2,9 @@ const fs = require("fs");
 const { promisify } = require("util");
 const readFile = promisify(fs.readFile);
 const writeFile = promisify(fs.writeFile);
-const { tokenise } = require("./lexer");
-const { parse } = require("./parser");
+const tokenise = require("./lexer");
+const preprocess = require("./preprocessor");
+const parse = require("./parser");
 
 async function compile (options) {
 	const { from, to } = options;
@@ -14,11 +15,14 @@ async function compile (options) {
 		verbose: options.verbose,
 		sourcepath: from,
 		extensive: true,
-		//ignoreTypes: true,
+		ignoreTypes: false,
 		allowUnicode: false
 	});
-	//const abstractSyntaxTree = parse(lexicalTokens/*.filter(token => ["string", "number"].includes(token.type))*/);
-	//Actually compile
+
+	if (options.verbose) console.log("[TIMESTAMP] Starting Preprocessing.");
+	const preprocessedTokens = preprocess(lexicalTokens, {
+		verbose: options.verbose
+	});
 
 	if (to)	{
 		await writeFile(to, JSON.stringify(lexicalTokens, null, "\t"), "utf8");

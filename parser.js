@@ -12,7 +12,7 @@ class TreeNode {
 	}
 }
 
-exports.parse = function parse (lexicalTokens) {
+module.exports = function parse (lexicalTokens) {
 	const ast = new AbstractSyntaxTree();
 	let cursor = 0;
 
