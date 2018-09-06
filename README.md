@@ -1,7 +1,5 @@
-# Odd language
+<img src="./logo.png" style="display: block; width: 50vw; margin: 10rem 0 3rem 0;" />
 This repo contains a Javascript-based lexer and transcompiler for a language I made myself, called "odd".
-
-![I maed dis](https://cdn.iwastesomuchtime.com/November-30-2011-11-10-09-ScreenShot20111130at8.jpg)
 
 ## Syntax
 Odd syntax should be familiar yet _odd_ :) for many programmers. It borrows a lot of its syntax from JavaScript, and is also inspired in part by Lua. Note that this is a personal project for learning purposes (and possibly personal use). Which sane person wants to transcompile into lua, anyway? :p

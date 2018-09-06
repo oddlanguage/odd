@@ -1,6 +1,9 @@
-module.exports = function preprocess (tokens) {
-	const directives = tokens.filter(token => {
-		return (token.type === "preprocessorDirective" || token.lexeme === "define")
-	});
-	console.log(directives)
+//Check through all definitions for type mismatching (throw preprocessingError)
+//Replace all lexemes that are defined
+//Find all directives
+//Check though all directives for errors
+//Run all directives
+
+module.exports = function preprocess (tokens, definitions) {
+	//
 }

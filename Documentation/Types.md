@@ -116,9 +116,9 @@ const arr[]: arrayOfNumbers = [1, 2, 3, 4, 5];
 _Note_: If you declare a typed object, typing of its properties is no longer necessary, and is redundant (and therefore discouraged). The parser will still trow an error if a property value is not of the type you declared to be in the given object.
 ```ts
 const str{}: names = {
-  string: name1 = "Jimmy";
-  string: name2 = "Ella";
-  string: name3 = "Jaquelin";
+  str: name1 = "Jimmy";
+  str: name2 = "Ella";
+  str: name3 = "Jaquelin";
 };
 // is the same as
 const str{}: names = {
@@ -129,7 +129,7 @@ const str{}: names = {
 ```
 
 ## Numbers: integers and decimals
-Odd only has one _real_ number type, appropriately called `number`. The built-in `integer` and `decimal` are just types built on top of number. An integer in odd is just a whole number. This is only used to make sure your numbers are whole. This case is inverted for decimals: they're just to make sure your numbers are decimal only.
+Odd only has one "_real_" number type, appropriately called `number`. The built-in `integer` is just a type built on top of number. An integer in odd can only be a whole number, whereas `number` can be both integer and decimal.
 
 # Declaring custom types
 Declaring your own types is possible. To let the odd parser know you're declaring a type, you must use the `type` keyword as such:

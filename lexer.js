@@ -9,14 +9,13 @@ function normalisePath (path) {
 
 /*
 	ToDo:
-		Add types property to LexicalToken (obj of types, basetype & rest)
+		Add types property to LexicalToken (obj of types: basetype & rest)
 		misschien manier voor een switch statement?
-		Add types
 		Add RegExp
 		Preprocessing (preprocessor statements, define)
 		Log how much time lexing cost.
 		add eatWhile() function
-		overal waar "character.position < input.length" staat in while loops, error expecting ...
+		overal waar "character.position < input.length" staat in while loops, vervang naar if (i >= input.length) throw error expecting ...
 */
 
 const patterns = new Map([

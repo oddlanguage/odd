@@ -2,6 +2,8 @@ const fs = require("fs");
 const { promisify } = require("util");
 const readFile = promisify(fs.readFile);
 const writeFile = promisify(fs.writeFile);
+const timestamp = require("./timestamp");
+const define = require("./definer");
 const tokenise = require("./lexer");
 const preprocess = require("./preprocessor");
 const parse = require("./parser");
@@ -10,7 +12,10 @@ async function compile (options) {
 	const { from, to } = options;
 	const input = await readFile(from, "utf8");
 
-	if (options.verbose) console.log("[TIMESTAMP] Starting Lexical Analysis.");
+	if (options.verbose) console.log(`[${timestamp()}] Starting Definition Substitution.`);
+	const definitions = define(input);
+
+	if (options.verbose) console.log(`\n[${timestamp()}] Starting Lexical Analysis.`);
 	const lexicalTokens = tokenise(input, {
 		verbose: options.verbose,
 		sourcepath: from,
@@ -19,8 +24,8 @@ async function compile (options) {
 		allowUnicode: false
 	});
 
-	if (options.verbose) console.log("[TIMESTAMP] Starting Preprocessing.");
-	const preprocessedTokens = preprocess(lexicalTokens, {
+	if (options.verbose) console.log(`\n[${timestamp()}] Starting Preprocessing.`);
+	const preprocessedTokens = preprocess(lexicalTokens, definitions, {
 		verbose: options.verbose
 	});
 

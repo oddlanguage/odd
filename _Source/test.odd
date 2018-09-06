@@ -1,3 +1,6 @@
+define any[]: a = some.very.difficult.and.intriquite.lexeme;
+const b = a;
+
 //Test 123
 const any[]: test1 = .23e2346;
 const any[]: test2 = 0.23e2346;
@@ -6,8 +9,6 @@ const any[]: test2 = 0.23e2346;
 #while (i++ < 10) {
   //do nothing.
 };
-
-define a = 12;
 
 type col {
   return (this[0] === "#") & (this.length > 1);
@@ -38,11 +39,7 @@ const peter = new Person([
   hairColour = 0xF99999
 ]);
 
-const [Person]: people = [
-  peter,
-  new Person(),
-  new Person()
-];
+const [Person]: people = [peter, new Person(), new Person()];
 
 for (person in people) {
   person.greet("hi");

@@ -14,7 +14,7 @@ class Vector2 (int: x = 0, int: y = x) {
 Note that when you create a class, it does not create a type, and you are strongly discouraged to create one yourself. If you want to check if a variable is an instance of a class, use the appropriately named `instanceof` operator. [Note that the parser will look if the given type is actually a class when it is not an existing type](./Types.md#declaring-custom-types).
 
 ## Operator metamethods
-You can tell the odd parser what to do when you apply an operator to a class. To do this, you must declare a _metamethod_ for it. A metamethod is declared with the keyword `meta`, followed by the operator(s) that should invoke this metamethod. The arguments to this metamethod will be the operators operands.
+You can tell the odd parser what to do when you apply an operator to a class. To do this, you must declare a _metamethod_ for it. A metamethod is declared with the keyword [`meta`](./Metamethods.md), followed by the operator(s) that should invoke this metamethod. The arguments to this metamethod will be the operators operands.
 ```ts
 class Vector2 {
   public num: x = 0;

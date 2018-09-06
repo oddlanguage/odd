@@ -1,5 +1,89 @@
 [
 	{
+		"type": "name",
+		"lexeme": "define"
+	},
+	{
+		"type": "type",
+		"lexeme": "any[]:"
+	},
+	{
+		"type": "name",
+		"lexeme": "a"
+	},
+	{
+		"type": "operator",
+		"lexeme": "="
+	},
+	{
+		"type": "name",
+		"lexeme": "some"
+	},
+	{
+		"type": "operator",
+		"lexeme": "."
+	},
+	{
+		"type": "name",
+		"lexeme": "very"
+	},
+	{
+		"type": "operator",
+		"lexeme": "."
+	},
+	{
+		"type": "name",
+		"lexeme": "difficult"
+	},
+	{
+		"type": "operator",
+		"lexeme": "."
+	},
+	{
+		"type": "name",
+		"lexeme": "and"
+	},
+	{
+		"type": "operator",
+		"lexeme": "."
+	},
+	{
+		"type": "name",
+		"lexeme": "intriquite"
+	},
+	{
+		"type": "operator",
+		"lexeme": "."
+	},
+	{
+		"type": "name",
+		"lexeme": "lexeme"
+	},
+	{
+		"type": "semicolon",
+		"lexeme": ";"
+	},
+	{
+		"type": "name",
+		"lexeme": "const"
+	},
+	{
+		"type": "name",
+		"lexeme": "b"
+	},
+	{
+		"type": "operator",
+		"lexeme": "="
+	},
+	{
+		"type": "name",
+		"lexeme": "a"
+	},
+	{
+		"type": "semicolon",
+		"lexeme": ";"
+	},
+	{
 		"type": "comment",
 		"lexeme": "//Test 123"
 	},
@@ -62,26 +146,6 @@
 	{
 		"type": "preprocessorDirective",
 		"lexeme": "#while (i++ < 10) {\n  //do nothing.\n}"
-	},
-	{
-		"type": "semicolon",
-		"lexeme": ";"
-	},
-	{
-		"type": "name",
-		"lexeme": "define"
-	},
-	{
-		"type": "name",
-		"lexeme": "a"
-	},
-	{
-		"type": "operator",
-		"lexeme": "="
-	},
-	{
-		"type": "number",
-		"lexeme": "12"
 	},
 	{
 		"type": "semicolon",
