@@ -1,44 +1,20 @@
-<img src="./logo.png" style="display: block; width: 50vw; margin: 10rem 0 3rem 0;" />
-This repo contains a Javascript-based lexer and transcompiler for a language I made myself, called "odd".
+<img src="./logo.png" style="display: block; width: 250px; margin: 10rem 0 3rem 0;" />
+This repo contains a Javascript-based lexer (and will contain a parser) for a language I made myself, called "odd". It is currently in development, hence the version number being 0.
 
-## Syntax
-Odd syntax should be familiar yet _odd_ :) for many programmers. It borrows a lot of its syntax from JavaScript, and is also inspired in part by Lua. Note that this is a personal project for learning purposes (and possibly personal use). Which sane person wants to transcompile into lua, anyway? :p
+## Made with love
+Odd was created with love for language, and not just for programming languages. Odd smushes together all the things I find to be best practises, grammar and nice syntax, while maintaining a more verbally heavy design in comparison to other languages (if it's a language, should it not flow as if you were to speak it?). Alltogether I think this makes a more easy-to-understand, easy-to-use yet very powerful language.
 
-## Lexer
-The lexer goes through any odd script and saves all scopes, expressions and tokens with their respective type in a JSON format. e.g.:
-```json
-{
-  "expressions": [
-    {
-      "raw": "const int: myAge = 19",
-      "tokens": [
-        {
-          "value": "const",
-          "type": "DECLARATION_CONSTANT"
-        },
-        {
-          "value": "int:",
-          "type": "DECLARATION_TYPE_INTEGER"
-        },
-        {
-          "value": "myAge",
-          "type": "IDENTIFIER"
-        },
-        {
-          "value": "=",
-          "type": "OPERATOR_ASSIGNMENT_EQL"
-        },
-        {
-          "value": "19",
-          "type": "LITERAL_NUMBER"
-        }
-      ]
-    }
-  ]
-}
-```
+## Compiler
+Odd is a compiled language, and thus goes through a couple stages before ending up as bytecode to be distributed across platforms more easily.
 
-## Transcompiling
-Currently the transcompiler supports no code output (because it does not actually exist). Planned output languages are:
-- JavaScript (es6+)
-- Lua 5.3+
+The aforementioned stages are:
+1. Lexical Analysis
+2. Preprocessing
+3. Abstract Syntax Analysis
+4. Optimization
+5. Bytecode Generation
+
+The reason Odd does not compile straight to Assembly Language is because that is not multi-platform and would require a full-fledged endpoint for all supported architectures. I think I'll pass on that one.
+
+## Contribution
+Feel free to contribute, I would welcome the input.
