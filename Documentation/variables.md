@@ -1,10 +1,49 @@
 # Variables
-All variables must be prefixed with either `const` or `local`. The `overt` keyword is used only in classes to signify it being open to viewing and manipulating. The reason for picking the keyword `overt` over a more standard `public` is because it is more semantically correct, and miraculously is exactly as long as `const` and `local`, which is very important to me.
+Defining a variable in Odd goes as follows:
 ```ts
-const str: name = "Frank";
-local int: age  = 23;
+local variable = 1;
 ```
-Declaring multiple variables in one declaration is possible.
+Firstly a definition keyword, secondly an identifier, thirdly any assignment operator, and lastly the desired value to be stored.
+
+There are two types of ways to store values:
+- Variables
+- Constants
+
+Variables are always declared using the keyword `local`. Omitting this keyword will result in an error (except, ofcourse, in [Quirks Mode](./QuirksMode)). This isn't JavaScript, you maniac.
+
+A constant value will not be allowed to change, but in essence it's still a variable. To create a constant you must use the `const` keyword as you would use `local`.
+```ts
+const constant = 1;
+```
+Using `const` will ensure that the stored value will never change, and if tried will throw an error.
+
+There is another way to define a constant in Odd, but this method will be handled in the preprocessing stage, and will not ensure the value to actually stay constant. To do this, you must use the `define` keyword.
+```ts
+define a = 1;
+```
+This tells the preprocessor to swap all occurences of `a` to `1`.
+```ts
+define x = 10;
+define y = 30;
+
+Character.position.set(x, y);
+//Will be transformed BEFORE compiling into
+Character.position.set(10, 30);
+```
+Declaring variables within a class is the same, but has a few extras. Classes allow for local variables, but also for _overt_  or _public_ variables. Local variables will not be exposed, but _overt_ variables will.
+```ts
+class Vector2 () {
+  local x = 0;
+  overt y = 0;
+}
+// < Vector 2 {
+//     y: 0
+//   }
+```
+The reason for choosing the keyword `overt` instead of a more standard `public`, is because it is more semantically correct, and also perfectly aligns with `const`and `local` (which is very important to me).
+
+
+Declaring multiple variables in one declaration is possible by using a _comma_ (`,`).
 ```ts
 // These declarations are the same:
 const str: name1 = "Dave",
@@ -13,20 +52,45 @@ const str: name1 = "Dave",
 const str: name1 = "Dave";
 const str: name2 = "Jessica";
 ```
-When declaring class variables, the `local` keyword is assumed and thus optional. If you want the property to be constant, you would still have to declare it as such.
+
+Literal function declarations must be preceded with either `local` or `const` (or `overt` in classes).
+```ts
+local function nil: doSomething (any: parameter) {}
+//Is fine
+const function nil: doSomething (any: parameter) {}
+//Is fine
+class Something {
+  overt function nil: doSomething (any: parameter) {}
+  //Is fine
+}
+function nil: doSomething (any: parameter) {}
+//Will throw an error
+```
+When you store a function in a variable, you must still declare it as a `local` or `const`.
+```ts
+local doSomething = function nil: optionalName (any: parameter) {
+  // Do something
+}
+```
+But anyone who does this is a barbarian.
+
+## Quirks
+When declaring class variables in [Quirks Mode](./QuirksMode), the `local` keyword is assumed and thus optional. If you want the property to be constant, you would still have to declare it as such.
 ```ts
 class Something {
-  x = 1;
+  a = 1;
   //is the same as
-  local x = 1;
+  local b = 1;
+  //sort of the same as
+  const c = 1;
   //but not the same as
-  overt x = 1;
+  overt d = 1;
 }
 // < Something {
-//     x: 1
+//     d: 1
 //   }
 ```
-Literal function expressions are implied to be `local`, but can still be declared as such:
+When in [Quirks Mode](./QuirksMode), literal function expressions are implied to be `local`, but can still be declared as such:
 ```ts
 function nil: doSomething (any: parameter) {
   // Do something
@@ -35,13 +99,6 @@ local function nil: doSomething (any: parameter) {
   // Do something
 }
 ```
-However, when you declare a variable with a function value you must still declare it as a `local`.
-```ts
-local doSomething = function nil: optionalName (any: parameter) {
-  // Do something
-}
-```
-But anyone who does this is a barbarian.
 
 When in [Quirks Mode](./QuirksMode), there is an exception when working in classes. Functions are by default public in classes, because that is more often the desired behaviour.
 ```ts
@@ -53,4 +110,3 @@ class Something {
   local null: someMethod (any: parameter) {}
 }
 ```
-Functions are implied to return `null` unless otherwise instructed. Therefore a function that returns nothing doesn't have to be explicitly typed. Note that the parser will try to guess the type returned by the function based on its return value, so function typing is almost never necessary, unless the parser is set to strict type checking.
