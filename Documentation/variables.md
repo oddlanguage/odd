@@ -1,27 +1,29 @@
 # Variables
-All variables must be prefixed with either `const`, `local` or `public` when declared. `public` is only used in classes.
+All variables must be prefixed with either `const` or `local`. The `overt` keyword is used only in classes to signify it being open to viewing and manipulating. The reason for picking the keyword `overt` over a more standard `public` is because it is more semantically correct, and miraculously is exactly as long as `const` and `local`, which is very important to me.
 ```ts
-const string:  name = "Frank";
-local integer: age = 23;
+const str: name = "Frank";
+local int: age  = 23;
 ```
 Declaring multiple variables in one declaration is possible.
 ```ts
 // These declarations are the same:
-const string: name1 = "Dave",
-      string: name2 = "Jessica";
+const str: name1 = "Dave",
+      str: name2 = "Jessica";
 
-const string: name1 = "Dave";
-const string: name2 = "Jessica";
+const str: name1 = "Dave";
+const str: name2 = "Jessica";
 ```
-When declaring object properties or class variables, the `local` keyword is assumed and thus optional. If you want the property to be constant, you would still have to declare it as such.
+When declaring class variables, the `local` keyword is assumed and thus optional. If you want the property to be constant, you would still have to declare it as such.
 ```ts
-const object: Person = {
-  number: age = 21;
-  const string: name = "Sophie";
-};
-// < Person {
-//     age: 21,
-//     name: "Sophie",
+class Something {
+  x = 1;
+  //is the same as
+  local x = 1;
+  //but not the same as
+  overt x = 1;
+}
+// < Something {
+//     x: 1
 //   }
 ```
 Literal function expressions are implied to be `local`, but can still be declared as such:
@@ -39,7 +41,9 @@ local doSomething = function nil: optionalName (any: parameter) {
   // Do something
 }
 ```
-There is an exception when working in classes. Functions are by default public in classes, because that is more often the desired behaviour.
+But anyone who does this is a barbarian.
+
+When in [Quirks Mode](./QuirksMode), there is an exception when working in classes. Functions are by default public in classes, because that is more often the desired behaviour.
 ```ts
 class Something {
   public null: someMethod (any: parameter) {}
