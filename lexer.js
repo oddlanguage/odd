@@ -50,7 +50,7 @@ module.exports = function tokenise (input, options) {
 		if (options.verbose) {
 			log("Verbose logging is enabled.");
 		}
-		if (!options.sourcepath) {
+		if (!options.from) {
 			log("No sourcepath provided, error logging may be insufficient.");
 		}
 		if (!options.extensive) {
@@ -185,7 +185,7 @@ module.exports = function tokenise (input, options) {
 		//Preprocessor directives
 		if (character.is(patterns.get("DIRECTIVE"))) {
 			let lexeme = eat();
-			while (character.position < input.length && !character.is(patterns.get("STATEMENTEND"))) {
+			while (character.position < input.length && !character.is(patterns.get("WHITESPACE"))) {
 				lexeme += eat();
 			}
 			tokens.push(new LexicalToken("preprocessorDirective", lexeme));

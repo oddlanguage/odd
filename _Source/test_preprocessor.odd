@@ -1,0 +1,23 @@
+define a = some.very.difficult.and.intriquite.lexeme;
+define any[]: weirdArray = [[1], [1, 2], [1, 2, 3]];
+
+const b = a;
+const c = weirdArray;
+
+//Possible advanced feature
+const obj: objectje = [
+  a = 1;
+];
+define objectje.b = c;
+
+#if 1 != 2 {
+  //Do nothing
+}
+//semicolon should not be necessary, but it is for now.
+
+//Functions don't require the function keyword in quirks mode
+str: getName () {
+  return "Gertje";
+}
+
+const str: gert = #run getName();

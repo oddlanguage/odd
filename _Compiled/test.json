@@ -1,70 +1,6 @@
 [
 	{
 		"type": "name",
-		"lexeme": "define"
-	},
-	{
-		"type": "type",
-		"lexeme": "any[]:"
-	},
-	{
-		"type": "name",
-		"lexeme": "a"
-	},
-	{
-		"type": "operator",
-		"lexeme": "="
-	},
-	{
-		"type": "name",
-		"lexeme": "some"
-	},
-	{
-		"type": "operator",
-		"lexeme": "."
-	},
-	{
-		"type": "name",
-		"lexeme": "very"
-	},
-	{
-		"type": "operator",
-		"lexeme": "."
-	},
-	{
-		"type": "name",
-		"lexeme": "difficult"
-	},
-	{
-		"type": "operator",
-		"lexeme": "."
-	},
-	{
-		"type": "name",
-		"lexeme": "and"
-	},
-	{
-		"type": "operator",
-		"lexeme": "."
-	},
-	{
-		"type": "name",
-		"lexeme": "intriquite"
-	},
-	{
-		"type": "operator",
-		"lexeme": "."
-	},
-	{
-		"type": "name",
-		"lexeme": "lexeme"
-	},
-	{
-		"type": "semicolon",
-		"lexeme": ";"
-	},
-	{
-		"type": "name",
 		"lexeme": "const"
 	},
 	{
@@ -84,8 +20,28 @@
 		"lexeme": ";"
 	},
 	{
+		"type": "name",
+		"lexeme": "const"
+	},
+	{
+		"type": "name",
+		"lexeme": "c"
+	},
+	{
+		"type": "operator",
+		"lexeme": "="
+	},
+	{
+		"type": "name",
+		"lexeme": "weirdArray"
+	},
+	{
+		"type": "semicolon",
+		"lexeme": ";"
+	},
+	{
 		"type": "comment",
-		"lexeme": "//Test 123"
+		"lexeme": "//Possible advanced feature"
 	},
 	{
 		"type": "name",
@@ -93,11 +49,23 @@
 	},
 	{
 		"type": "type",
-		"lexeme": "any[]:"
+		"lexeme": "obj:"
 	},
 	{
 		"type": "name",
-		"lexeme": "test1"
+		"lexeme": "objectje"
+	},
+	{
+		"type": "operator",
+		"lexeme": "="
+	},
+	{
+		"type": "separator",
+		"lexeme": "["
+	},
+	{
+		"type": "name",
+		"lexeme": "a"
 	},
 	{
 		"type": "operator",
@@ -105,59 +73,71 @@
 	},
 	{
 		"type": "number",
-		"lexeme": ".23e2346"
+		"lexeme": "1"
 	},
 	{
 		"type": "semicolon",
 		"lexeme": ";"
 	},
 	{
-		"type": "name",
-		"lexeme": "const"
+		"type": "separator",
+		"lexeme": "]"
+	},
+	{
+		"type": "semicolon",
+		"lexeme": ";"
+	},
+	{
+		"type": "preprocessorDirective",
+		"lexeme": "#if"
+	},
+	{
+		"type": "number",
+		"lexeme": "1"
+	},
+	{
+		"type": "operator",
+		"lexeme": "!="
+	},
+	{
+		"type": "number",
+		"lexeme": "2"
+	},
+	{
+		"type": "separator",
+		"lexeme": "{"
+	},
+	{
+		"type": "comment",
+		"lexeme": "//Do nothing"
+	},
+	{
+		"type": "separator",
+		"lexeme": "}"
+	},
+	{
+		"type": "comment",
+		"lexeme": "//semicolon should not be necessary, but it is for now."
+	},
+	{
+		"type": "comment",
+		"lexeme": "//Functions don't require the function keyword in quirks mode"
 	},
 	{
 		"type": "type",
-		"lexeme": "any[]:"
+		"lexeme": "str:"
 	},
 	{
 		"type": "name",
-		"lexeme": "test2"
+		"lexeme": "getName"
 	},
 	{
-		"type": "operator",
-		"lexeme": "="
+		"type": "separator",
+		"lexeme": "("
 	},
 	{
-		"type": "number",
-		"lexeme": "0.23e2346"
-	},
-	{
-		"type": "semicolon",
-		"lexeme": ";"
-	},
-	{
-		"type": "preprocessorDirective",
-		"lexeme": "#i = 0"
-	},
-	{
-		"type": "semicolon",
-		"lexeme": ";"
-	},
-	{
-		"type": "preprocessorDirective",
-		"lexeme": "#while (i++ < 10) {\n  //do nothing.\n}"
-	},
-	{
-		"type": "semicolon",
-		"lexeme": ";"
-	},
-	{
-		"type": "name",
-		"lexeme": "type"
-	},
-	{
-		"type": "name",
-		"lexeme": "col"
+		"type": "separator",
+		"lexeme": ")"
 	},
 	{
 		"type": "separator",
@@ -168,68 +148,8 @@
 		"lexeme": "return"
 	},
 	{
-		"type": "separator",
-		"lexeme": "("
-	},
-	{
-		"type": "name",
-		"lexeme": "this"
-	},
-	{
-		"type": "separator",
-		"lexeme": "["
-	},
-	{
-		"type": "number",
-		"lexeme": "0"
-	},
-	{
-		"type": "separator",
-		"lexeme": "]"
-	},
-	{
-		"type": "operator",
-		"lexeme": "==="
-	},
-	{
 		"type": "string",
-		"lexeme": "\"#\""
-	},
-	{
-		"type": "separator",
-		"lexeme": ")"
-	},
-	{
-		"type": "operator",
-		"lexeme": "&"
-	},
-	{
-		"type": "separator",
-		"lexeme": "("
-	},
-	{
-		"type": "name",
-		"lexeme": "this"
-	},
-	{
-		"type": "operator",
-		"lexeme": "."
-	},
-	{
-		"type": "name",
-		"lexeme": "length"
-	},
-	{
-		"type": "operator",
-		"lexeme": ">"
-	},
-	{
-		"type": "number",
-		"lexeme": "1"
-	},
-	{
-		"type": "separator",
-		"lexeme": ")"
+		"lexeme": "\"Gertje\""
 	},
 	{
 		"type": "semicolon",
@@ -241,51 +161,7 @@
 	},
 	{
 		"type": "name",
-		"lexeme": "class"
-	},
-	{
-		"type": "name",
-		"lexeme": "Person"
-	},
-	{
-		"type": "separator",
-		"lexeme": "("
-	},
-	{
-		"type": "type",
-		"lexeme": "obj:"
-	},
-	{
-		"type": "name",
-		"lexeme": "options"
-	},
-	{
-		"type": "separator",
-		"lexeme": ")"
-	},
-	{
-		"type": "separator",
-		"lexeme": "{"
-	},
-	{
-		"type": "name",
-		"lexeme": "using"
-	},
-	{
-		"type": "name",
-		"lexeme": "options"
-	},
-	{
-		"type": "semicolon",
-		"lexeme": ";"
-	},
-	{
-		"type": "comment",
-		"lexeme": "//Import options namespace."
-	},
-	{
-		"type": "name",
-		"lexeme": "public"
+		"lexeme": "const"
 	},
 	{
 		"type": "type",
@@ -293,675 +169,19 @@
 	},
 	{
 		"type": "name",
-		"lexeme": "name"
+		"lexeme": "gert"
 	},
 	{
 		"type": "operator",
 		"lexeme": "="
 	},
 	{
-		"type": "name",
-		"lexeme": "name"
-	},
-	{
-		"type": "operator",
-		"lexeme": "|"
-	},
-	{
-		"type": "string",
-		"lexeme": "\"A person\""
-	},
-	{
-		"type": "semicolon",
-		"lexeme": ";"
-	},
-	{
-		"type": "comment",
-		"lexeme": "//Only assign if exists in the current scope/namespace."
+		"type": "preprocessorDirective",
+		"lexeme": "#run"
 	},
 	{
 		"type": "name",
-		"lexeme": "public"
-	},
-	{
-		"type": "type",
-		"lexeme": "int:"
-	},
-	{
-		"type": "name",
-		"lexeme": "age"
-	},
-	{
-		"type": "operator",
-		"lexeme": "?="
-	},
-	{
-		"type": "name",
-		"lexeme": "age"
-	},
-	{
-		"type": "semicolon",
-		"lexeme": ";"
-	},
-	{
-		"type": "name",
-		"lexeme": "public"
-	},
-	{
-		"type": "type",
-		"lexeme": "col:"
-	},
-	{
-		"type": "name",
-		"lexeme": "hairColour"
-	},
-	{
-		"type": "operator",
-		"lexeme": "?="
-	},
-	{
-		"type": "name",
-		"lexeme": "hairColour"
-	},
-	{
-		"type": "semicolon",
-		"lexeme": ";"
-	},
-	{
-		"type": "name",
-		"lexeme": "private"
-	},
-	{
-		"type": "type",
-		"lexeme": "vec2:"
-	},
-	{
-		"type": "name",
-		"lexeme": "position"
-	},
-	{
-		"type": "operator",
-		"lexeme": "="
-	},
-	{
-		"type": "name",
-		"lexeme": "new"
-	},
-	{
-		"type": "name",
-		"lexeme": "vec2"
-	},
-	{
-		"type": "separator",
-		"lexeme": "("
-	},
-	{
-		"type": "number",
-		"lexeme": "0"
-	},
-	{
-		"type": "separator",
-		"lexeme": ","
-	},
-	{
-		"type": "number",
-		"lexeme": "0"
-	},
-	{
-		"type": "separator",
-		"lexeme": ")"
-	},
-	{
-		"type": "semicolon",
-		"lexeme": ";"
-	},
-	{
-		"type": "name",
-		"lexeme": "greet"
-	},
-	{
-		"type": "separator",
-		"lexeme": "("
-	},
-	{
-		"type": "type",
-		"lexeme": "str:"
-	},
-	{
-		"type": "name",
-		"lexeme": "greeting"
-	},
-	{
-		"type": "separator",
-		"lexeme": ")"
-	},
-	{
-		"type": "separator",
-		"lexeme": "{"
-	},
-	{
-		"type": "name",
-		"lexeme": "print"
-	},
-	{
-		"type": "separator",
-		"lexeme": "("
-	},
-	{
-		"type": "templateLiteral",
-		"lexeme": "`${name} says ${greeting}!`"
-	},
-	{
-		"type": "separator",
-		"lexeme": ")"
-	},
-	{
-		"type": "semicolon",
-		"lexeme": ";"
-	},
-	{
-		"type": "separator",
-		"lexeme": "}"
-	},
-	{
-		"type": "name",
-		"lexeme": "update"
-	},
-	{
-		"type": "separator",
-		"lexeme": "("
-	},
-	{
-		"type": "type",
-		"lexeme": "boo:"
-	},
-	{
-		"type": "name",
-		"lexeme": "spacePressed"
-	},
-	{
-		"type": "separator",
-		"lexeme": ")"
-	},
-	{
-		"type": "separator",
-		"lexeme": "{"
-	},
-	{
-		"type": "name",
-		"lexeme": "using"
-	},
-	{
-		"type": "name",
-		"lexeme": "this"
-	},
-	{
-		"type": "operator",
-		"lexeme": "."
-	},
-	{
-		"type": "name",
-		"lexeme": "position"
-	},
-	{
-		"type": "semicolon",
-		"lexeme": ";"
-	},
-	{
-		"type": "name",
-		"lexeme": "y"
-	},
-	{
-		"type": "operator",
-		"lexeme": "+="
-	},
-	{
-		"type": "operator",
-		"lexeme": "~~"
-	},
-	{
-		"type": "name",
-		"lexeme": "spacePressed"
-	},
-	{
-		"type": "semicolon",
-		"lexeme": ";"
-	},
-	{
-		"type": "separator",
-		"lexeme": "}"
-	},
-	{
-		"type": "separator",
-		"lexeme": "}"
-	},
-	{
-		"type": "name",
-		"lexeme": "const"
-	},
-	{
-		"type": "name",
-		"lexeme": "peter"
-	},
-	{
-		"type": "operator",
-		"lexeme": "="
-	},
-	{
-		"type": "name",
-		"lexeme": "new"
-	},
-	{
-		"type": "name",
-		"lexeme": "Person"
-	},
-	{
-		"type": "separator",
-		"lexeme": "("
-	},
-	{
-		"type": "separator",
-		"lexeme": "["
-	},
-	{
-		"type": "name",
-		"lexeme": "name"
-	},
-	{
-		"type": "operator",
-		"lexeme": "="
-	},
-	{
-		"type": "string",
-		"lexeme": "\"Peter\""
-	},
-	{
-		"type": "separator",
-		"lexeme": ","
-	},
-	{
-		"type": "name",
-		"lexeme": "age"
-	},
-	{
-		"type": "operator",
-		"lexeme": "="
-	},
-	{
-		"type": "number",
-		"lexeme": "21"
-	},
-	{
-		"type": "separator",
-		"lexeme": ","
-	},
-	{
-		"type": "name",
-		"lexeme": "hairColour"
-	},
-	{
-		"type": "operator",
-		"lexeme": "="
-	},
-	{
-		"type": "number",
-		"lexeme": "0"
-	},
-	{
-		"type": "name",
-		"lexeme": "xF99999"
-	},
-	{
-		"type": "separator",
-		"lexeme": "]"
-	},
-	{
-		"type": "separator",
-		"lexeme": ")"
-	},
-	{
-		"type": "semicolon",
-		"lexeme": ";"
-	},
-	{
-		"type": "name",
-		"lexeme": "const"
-	},
-	{
-		"type": "type",
-		"lexeme": "[Person]:"
-	},
-	{
-		"type": "name",
-		"lexeme": "people"
-	},
-	{
-		"type": "operator",
-		"lexeme": "="
-	},
-	{
-		"type": "separator",
-		"lexeme": "["
-	},
-	{
-		"type": "name",
-		"lexeme": "peter"
-	},
-	{
-		"type": "separator",
-		"lexeme": ","
-	},
-	{
-		"type": "name",
-		"lexeme": "new"
-	},
-	{
-		"type": "name",
-		"lexeme": "Person"
-	},
-	{
-		"type": "separator",
-		"lexeme": "("
-	},
-	{
-		"type": "separator",
-		"lexeme": ")"
-	},
-	{
-		"type": "separator",
-		"lexeme": ","
-	},
-	{
-		"type": "name",
-		"lexeme": "new"
-	},
-	{
-		"type": "name",
-		"lexeme": "Person"
-	},
-	{
-		"type": "separator",
-		"lexeme": "("
-	},
-	{
-		"type": "separator",
-		"lexeme": ")"
-	},
-	{
-		"type": "separator",
-		"lexeme": "]"
-	},
-	{
-		"type": "semicolon",
-		"lexeme": ";"
-	},
-	{
-		"type": "name",
-		"lexeme": "for"
-	},
-	{
-		"type": "separator",
-		"lexeme": "("
-	},
-	{
-		"type": "name",
-		"lexeme": "person"
-	},
-	{
-		"type": "name",
-		"lexeme": "in"
-	},
-	{
-		"type": "name",
-		"lexeme": "people"
-	},
-	{
-		"type": "separator",
-		"lexeme": ")"
-	},
-	{
-		"type": "separator",
-		"lexeme": "{"
-	},
-	{
-		"type": "name",
-		"lexeme": "person"
-	},
-	{
-		"type": "operator",
-		"lexeme": "."
-	},
-	{
-		"type": "name",
-		"lexeme": "greet"
-	},
-	{
-		"type": "separator",
-		"lexeme": "("
-	},
-	{
-		"type": "string",
-		"lexeme": "\"hi\""
-	},
-	{
-		"type": "separator",
-		"lexeme": ")"
-	},
-	{
-		"type": "semicolon",
-		"lexeme": ";"
-	},
-	{
-		"type": "separator",
-		"lexeme": "}"
-	},
-	{
-		"type": "name",
-		"lexeme": "const"
-	},
-	{
-		"type": "name",
-		"lexeme": "stream"
-	},
-	{
-		"type": "operator",
-		"lexeme": "="
-	},
-	{
-		"type": "name",
-		"lexeme": "fs"
-	},
-	{
-		"type": "operator",
-		"lexeme": "."
-	},
-	{
-		"type": "name",
-		"lexeme": "read"
-	},
-	{
-		"type": "separator",
-		"lexeme": "("
-	},
-	{
-		"type": "string",
-		"lexeme": "\"file/name.ext\""
-	},
-	{
-		"type": "separator",
-		"lexeme": ")"
-	},
-	{
-		"type": "semicolon",
-		"lexeme": ";"
-	},
-	{
-		"type": "name",
-		"lexeme": "when"
-	},
-	{
-		"type": "name",
-		"lexeme": "stream"
-	},
-	{
-		"type": "name",
-		"lexeme": "emits"
-	},
-	{
-		"type": "string",
-		"lexeme": "\"error\""
-	},
-	{
-		"type": "separator",
-		"lexeme": ","
-	},
-	{
-		"type": "separator",
-		"lexeme": "("
-	},
-	{
-		"type": "name",
-		"lexeme": "error"
-	},
-	{
-		"type": "separator",
-		"lexeme": ")"
-	},
-	{
-		"type": "operator",
-		"lexeme": "=>"
-	},
-	{
-		"type": "separator",
-		"lexeme": "{"
-	},
-	{
-		"type": "name",
-		"lexeme": "throw"
-	},
-	{
-		"type": "name",
-		"lexeme": "error"
-	},
-	{
-		"type": "semicolon",
-		"lexeme": ";"
-	},
-	{
-		"type": "separator",
-		"lexeme": "}"
-	},
-	{
-		"type": "name",
-		"lexeme": "when"
-	},
-	{
-		"type": "name",
-		"lexeme": "stream"
-	},
-	{
-		"type": "name",
-		"lexeme": "emits"
-	},
-	{
-		"type": "string",
-		"lexeme": "\"data\""
-	},
-	{
-		"type": "separator",
-		"lexeme": ","
-	},
-	{
-		"type": "separator",
-		"lexeme": "("
-	},
-	{
-		"type": "name",
-		"lexeme": "data"
-	},
-	{
-		"type": "separator",
-		"lexeme": ")"
-	},
-	{
-		"type": "operator",
-		"lexeme": "=>"
-	},
-	{
-		"type": "separator",
-		"lexeme": "{"
-	},
-	{
-		"type": "name",
-		"lexeme": "print"
-	},
-	{
-		"type": "separator",
-		"lexeme": "("
-	},
-	{
-		"type": "name",
-		"lexeme": "data"
-	},
-	{
-		"type": "separator",
-		"lexeme": ")"
-	},
-	{
-		"type": "semicolon",
-		"lexeme": ";"
-	},
-	{
-		"type": "separator",
-		"lexeme": "}"
-	},
-	{
-		"type": "name",
-		"lexeme": "when"
-	},
-	{
-		"type": "name",
-		"lexeme": "stream"
-	},
-	{
-		"type": "name",
-		"lexeme": "emits"
-	},
-	{
-		"type": "string",
-		"lexeme": "\"end\""
-	},
-	{
-		"type": "separator",
-		"lexeme": ","
-	},
-	{
-		"type": "separator",
-		"lexeme": "("
-	},
-	{
-		"type": "separator",
-		"lexeme": ")"
-	},
-	{
-		"type": "operator",
-		"lexeme": "=>"
-	},
-	{
-		"type": "separator",
-		"lexeme": "{"
-	},
-	{
-		"type": "name",
-		"lexeme": "stream"
-	},
-	{
-		"type": "operator",
-		"lexeme": "."
-	},
-	{
-		"type": "name",
-		"lexeme": "destroy"
+		"lexeme": "getName"
 	},
 	{
 		"type": "separator",
@@ -974,41 +194,5 @@
 	{
 		"type": "semicolon",
 		"lexeme": ";"
-	},
-	{
-		"type": "separator",
-		"lexeme": "}"
-	},
-	{
-		"type": "separator",
-		"lexeme": "{"
-	},
-	{
-		"type": "name",
-		"lexeme": "using"
-	},
-	{
-		"type": "name",
-		"lexeme": "stream"
-	},
-	{
-		"type": "semicolon",
-		"lexeme": ";"
-	},
-	{
-		"type": "name",
-		"lexeme": "emit"
-	},
-	{
-		"type": "string",
-		"lexeme": "\"end\""
-	},
-	{
-		"type": "semicolon",
-		"lexeme": ";"
-	},
-	{
-		"type": "separator",
-		"lexeme": "}"
 	}
 ]

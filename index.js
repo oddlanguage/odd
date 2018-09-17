@@ -3,44 +3,40 @@ const { promisify } = require("util");
 const readFile = promisify(fs.readFile);
 const writeFile = promisify(fs.writeFile);
 const timestamp = require("./timestamp");
-const define = require("./definer");
 const tokenise = require("./lexer");
 const preprocess = require("./preprocessor");
 const parse = require("./parser");
+const CustomError = require("./Classes/Errors/CustomError");
+const args = process.argv.slice(2);
+
+if (args.length) console.log(`Arguments: ${args.join(", ")}`);
 
 async function compile (options) {
-	const { from, to } = options;
-	const input = await readFile(from, "utf8");
-
-	if (options.verbose) console.log(`[${timestamp()}] Starting Definition Substitution.`);
-	const definitions = define(input);
+	console.log(`[${timestamp()}] Beginning Compilation...`);
+	const input = await readFile(options.from, "utf8");
 
 	if (options.verbose) console.log(`\n[${timestamp()}] Starting Lexical Analysis.`);
-	const lexicalTokens = tokenise(input, {
-		verbose: options.verbose,
-		sourcepath: from,
-		extensive: true,
-		ignoreTypes: false,
-		allowUnicode: false
-	});
+	const lexicalTokens = tokenise(input, options);
 
 	if (options.verbose) console.log(`\n[${timestamp()}] Starting Preprocessing.`);
-	const preprocessedTokens = preprocess(lexicalTokens, definitions, {
-		verbose: options.verbose
-	});
+	const preprocessedTokens = preprocess(lexicalTokens, options);
 
-	if (to)	{
-		await writeFile(to, JSON.stringify(lexicalTokens, null, "\t"), "utf8");
+	if (options.verbose) console.log(`\n[${timestamp()}] Starting Syntax Analysis.`);
+	//const abstractSyntaxTree = parse(preprocessedTokens, options);
+
+	if (options.to)	{
+		await writeFile(options.to, JSON.stringify(lexicalTokens, null, "\t"), "utf8");
 	}
-	console.log("Done!");
+	console.log(`\n[${timestamp()}] Done!`);
 }
 
-const CustomError = require("./Classes/Errors/CustomError");
-
 compile({
-	from: `${__dirname}/_Source/test.odd`,
+	from: `${__dirname}/_Source/test_preprocessor.odd`,
 	to:   `${__dirname}/_Compiled/test.json`,
-	verbose: true
+	verbose: args.includes("-v"),
+	extensive: true,
+	ignoreTypes: false,
+	allowUnicode: false
 }).catch(error => {
 	console.log("\nAn error occured, aborting...");
 	if (error instanceof CustomError) {

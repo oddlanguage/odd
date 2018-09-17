@@ -14,6 +14,11 @@ type col {
   return (this[0] === "#") & (this.length > 1);
 }
 
+function eat () {
+		defer return character.value;
+		cursor.step();
+	}
+
 class Person (obj: options) {
   using options; //Import options namespace.
   public str: name = name | "A person";

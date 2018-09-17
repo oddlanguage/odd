@@ -1,4 +1,10 @@
-<style>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<meta http-equiv="X-UA-Compatible" content="ie=edge">
+	<style>
 		* {
 			margin: 0;
 			padding: 0;
@@ -25,7 +31,7 @@
 			color: #A6E22E;
 			text-decoration: underline;
 		}
-		.number {
+		.number, .literal {
 			color: #AE81FF;
 		}
 		.operator {
@@ -60,12 +66,6 @@
 			text-decoration: underline;
 		}
 
-		.comment, .string, .template {
-			font-family: "script12 bt";
-			font-size: 1rem;
-			line-height: 1rem;
-		}
-
 		.structure+.identifier {
 			text-decoration: underline;
 		}
@@ -74,17 +74,21 @@
 			position: absolute;
 			top: 0;
 			left: 0;
-			width: 100vw;
-			height: 100vh;
+			min-width: 100vw;
+			min-height: 100%;
 			padding: 1rem;
 			font: inherit;
 			background: none;
 			border: none;
 			resize: none;
 			color: transparent;
+			outline: none;
 			caret-color: white;
 		}
 	</style>
+	<title>Document</title>
+</head>
+<body>
 	<textarea spellcheck="false"></textarea>
 	<pre></pre>
 
@@ -98,14 +102,15 @@ const tokenTypes = {
 		["type",        /[\w\[\]\{\}]+:/u],
 		["number",      /\b\d+\b|\.\d+\b|#\w+/],
 		["separator",   /[\{\},]/],
-		["operator",    /\+=|-=|\*=|\/=|%=|\*\*=|&=|\|=|\.\.=|\.{1,3}|==|!=|>=|<=|\+\+|--|~~|[-\.\/+><*=%~?!$|&^:]|\bthrow\b|\breturn\b|\bnew\b|\bdelete\b|\btypeof\b|\binstanceof|\bin\b|\bof\b/],
-		["controller",  /\bfor\b|\bwhile\b|\bif\b|\belse\b|\bwhen\b|\bemits?\b/],
-		["definition",  /\bstatic\b|\blocal\b|\bglobal\b|\bconst\b|\bpublic\b|\bdefine\b|\bfunction\b/],
+		["operator",    /\+=|-=|\*=|\/=|%=|\*\*=|&=|\|=|\.\.=|\.{1,3}|==|!=|>=|<=|\+\+|--|~~|[-\.\/+><*=%~?!$|&^:]|\bexists\b|\bthrow\b|\breturn\b|\bnew\b|\bdelete\b|\btypeof\b|\binstanceof|\bin\b|\bof\b/],
+		["controller",  /\bfor\b|\bwhile\b|\bif\b|\belse\b|\bwhen\b|\bemits?\b|\bdefer\b/],
+		["definition",  /\blocal\b|\bconst\b|\bovert\b|\bdefine\b|\bfunction\b/],
 		["structure",   /\btype\b|\bclass\b/],
 		["namespace",   /\bthis\b|\busing\b/],
 		["semicolon",   /;/],
 		["parenthesis", /[\(\)]/],
 		["list",        /[\[\]]/],
+		["literal",     /\bnull\b|\bnil\b|\bundefined\b|\btrue\b|\bfalse\b/]
 	]),
 	identifier: /[_a-zA-Z\u{1F600}-\u{1F64F}][\w\u{1F600}-\u{1F64F}]*/u
 };
@@ -182,3 +187,5 @@ textarea.addEventListener("input", event => {
 	pre.innerHTML = lexToHTML(txt, generateLexicalAnalysis(txt));
 });
 </script>
+</body>
+</html>
