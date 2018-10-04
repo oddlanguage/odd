@@ -10,6 +10,7 @@ module.exports = class Cursor {
 
 	save () {
 		this._SAVEDPOS = this.position;
+		return this.position;
 	}
 
 	restore () {

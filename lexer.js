@@ -7,15 +7,34 @@ function normalisePath (path) {
 	return path.replace(/\\+/g, "/");
 }
 
+function getErrorInfo (input, position) {
+	let lineNumber = 1;
+	let column = 0;
+
+	for (let i = 0; i < position; i++) {
+		if (input.charAt(i) === "\n") {
+			lineNumber++;
+			column = 0;
+		} else {
+			column++;
+		}
+	}
+
+	const lines = input.split("\n");
+	const line = lines[lineNumber - 1];
+
+	return {line: line, lineNumber: lineNumber, column: column};
+}
+
 /*
-	ToDo:
-		Add types property to LexicalToken (obj of types: basetype & rest)
-		misschien manier voor een switch statement?
-		Add RegExp
-		Preprocessing (preprocessor statements, define)
-		Log how much time lexing cost.
-		add eatWhile() function
-		overal waar "character.position < input.length" staat in while loops, vervang naar if (i >= input.length) throw error expecting ...
+ToDo:
+Add types property to LexicalToken (obj of types: basetype & rest)
+Misschien manier voor een switch statement?
+Add RegExp or other pattern matching support
+Preprocessing (preprocessor statements, define)
+Add eatWhile() function?
+Overal waar "character.position < input.length" staat in while loops, vervang naar if (i >= input.length) throw error expecting ...
+Extract getErrorInfo()
 */
 
 const patterns = new Map([
@@ -32,29 +51,23 @@ const patterns = new Map([
 	["SEPARATOR"      , /[\[\]{}\(\),]/],
 	["STRING"         , '"'],
 	["TEMPLATELITERAL", "`"],
-	["COMMENTSTART"   , "/"],
+	["SLASH"          , "/"],
 	["DIRECTIVE"      , "#"]
 ]);
-
+	
 module.exports = function tokenise (input, options) {
 	//Clean the input
 	input = input.replace(/[\f\v]/g, "").replace(/\r\n/g, "\n").replace(/\r/g, "\n"); //Fix this horrid line
-
+	
 	function log (message) {
 		if (!options.verbose) return;
-		console.log(message);
+		console.log("  " + message);
 	}
-
+	
 	//Warn the user if options object is not correctly defined/filled.
 	if (options) {
-		if (options.verbose) {
-			log("Verbose logging is enabled.");
-		}
-		if (!options.from) {
-			log("No sourcepath provided, error logging may be insufficient.");
-		}
 		if (!options.extensive) {
-			log("Extensive error logging is disabled, no positional information will be provided.");
+			log("Extensive error logging is disabled, no positional info will be saved.");
 		}
 		if (!options.allowUnicode) {
 			log("Unicode characters will not be allowed.");
@@ -69,137 +82,150 @@ module.exports = function tokenise (input, options) {
 	} else {
 		console.log("No options object provided, error logging may be insufficient.");
 	}
-
+	
 	const cursor = new Cursor();
 	const character = new Character(input, cursor);
 	const tokens = [];
-
+	
 	function eat () {
 		const temp = character.value;
 		cursor.step();
 		return temp;
 	}
 
+	function getPosition (start) {
+		if (options.extensive) return {
+			start: start,
+			end: cursor.position
+		};
+	}
+	
 	while (character.position < input.length) {
 		//Skip whitespace
 		if (character.is(patterns.get("WHITESPACE"))) {
 			cursor.step();
 			continue;
 		}
-
+		
 		//Comments
-		if (character.is(patterns.get("COMMENTSTART"))) {
-			if (character.next().is(patterns.get("COMMENTSTART"))) {
+		if (character.is(patterns.get("SLASH"))) {
+			if (character.next().is(patterns.get("SLASH"))) {
+				const start = cursor.position;
 				let lexeme = eat();
 				while (!character.is(patterns.get("LINEBREAK"))) {
 					lexeme += eat();
 				}
-				tokens.push(new LexicalToken("comment", lexeme));
+				tokens.push(new LexicalToken("comment", lexeme, getPosition(start)));
 				continue;
 			}
 		}
-
+		
 		//Semicolons
 		if (character.is(patterns.get("STATEMENTEND"))) {
-			tokens.push(new LexicalToken("semicolon", eat()));
+			tokens.push(new LexicalToken("semicolon", eat(), getPosition(cursor.position - 1)));
 			continue;
 		}
-
+		
 		//Strings
 		if (character.is(patterns.get("STRING"))) {
+			const start = cursor.position;
 			let lexeme = eat(); //Eat the opening character
 			while (!character.is(patterns.get("STRING"))) {
 				lexeme += eat();
 			}
 			lexeme += eat(); //Eat the closing character
-			tokens.push(new LexicalToken("string", lexeme));
+			tokens.push(new LexicalToken("string", lexeme, getPosition(start)));
 			continue;
 		}
-
+		
 		//Template literals
 		if (character.is(patterns.get("TEMPLATELITERAL"))) {
+			const start = cursor.position;
 			let lexeme = eat(); //Eat the opening character
 			while (character.position < input.length && !character.is(patterns.get("TEMPLATELITERAL"))) {
 				lexeme += eat();
 			}
 			lexeme += eat(); //Eat the closing character
-			tokens.push(new LexicalToken("templateLiteral", lexeme));
+			tokens.push(new LexicalToken("templateLiteral", lexeme, getPosition(start)));
 			continue;
 		}
-
+		
 		//Numbers
 		if (character.is(patterns.get("NUMBERSTART"))) {
-			cursor.save();
+			const start = cursor.save();
 			let lexeme = eat();
 			while (character.is(patterns.get("NUMBER"))) {
 				lexeme += eat();
 			}
 			//Make sure only actual numbers get tagged as such, not just a period.
 			if (!character.previous().is(".")) {
-				tokens.push(new LexicalToken("number", lexeme));
+				tokens.push(new LexicalToken("number", lexeme, getPosition(start)));
 				continue;
 			}
 			cursor.restore();
 		}
-
+		
 		//Operators
 		if (character.is(patterns.get("OPERATOR"))) {
+			const start = cursor.position;
 			let lexeme = eat();
 			while (character.is(patterns.get("OPERATOR"))) {
 				lexeme += eat();
 			}
-			tokens.push(new LexicalToken("operator", lexeme));
+			tokens.push(new LexicalToken("operator", lexeme, getPosition(start)));
 			continue;
 		}
-
+		
 		//Types
 		if (character.is(patterns.get("TYPE"), patterns.get("NAMESTART"))) {
-			cursor.save();
+			const start = cursor.save();
 			let lexeme = eat();
 			while (character.position < input.length && !character.is(patterns.get("WHITESPACE"))) {
 				lexeme += eat();
 			}
 			if (character.previous().is(patterns.get("TYPEEND"))) {
-				if (!options.ignoreTypes) tokens.push(new LexicalToken("type", lexeme));
+				if (!options.ignoreTypes) tokens.push(new LexicalToken("type", lexeme, getPosition(start)));
 				continue;
 			}
 			cursor.restore();
 		}
-
+		
 		//Names
 		if (character.is(patterns.get("NAMESTART"))) {
+			const start = cursor.position;
 			let lexeme = eat();
 			while (character.is(patterns.get("NAME"))) {
 				lexeme += eat();
 			}
-			tokens.push(new LexicalToken("name", lexeme));
+			tokens.push(new LexicalToken("name", lexeme, getPosition(start)));
 			continue;
 		}
-
+		
 		//Separators
 		if (character.is(patterns.get("SEPARATOR"))) {
-			tokens.push(new LexicalToken("separator", eat()));
+			tokens.push(new LexicalToken("separator", eat(), getPosition(cursor.position - 1)));
 			continue;
 		}
-
+		
 		//Preprocessor directives
 		if (character.is(patterns.get("DIRECTIVE"))) {
+			const start = cursor.position;
 			let lexeme = eat();
 			while (character.position < input.length && !character.is(patterns.get("WHITESPACE"))) {
 				lexeme += eat();
 			}
-			tokens.push(new LexicalToken("preprocessorDirective", lexeme));
+			tokens.push(new LexicalToken("preprocessorDirective", lexeme, getPosition(start)));
 			continue;
 		}
-
+		
 		//No lexeme recognised
-		const { line, lineNumber, column } = character.getErrorInfo();
+		const { line, lineNumber, column } = getErrorInfo(input, cursor.position);
 		let lexeme = eat();
 		while (character.position < input.length && !character.is(patterns.get("WHITESPACE")) && character.is(patterns)) {
 			lexeme += eat();
 		}
-		throw new LexicalError(`Unrecognised lexeme "${lexeme}"\n  in ${normalisePath(options.sourcepath)}\n  at line ${lineNumber}, column ${column}.\n\n${line}\n${" ".repeat(column)}${"^".repeat(lexeme.length)}`);
+		throw new LexicalError(`Unrecognised lexeme "${lexeme}"\n  in TODO: PATH OF CURRENT FILE\n  at line ${lineNumber}, column ${column}.\n\n${line}\n${" ".repeat(column)}${"^".repeat(lexeme.length)}`);
 	}
-
+	
 	return tokens;
 }

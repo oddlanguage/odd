@@ -4,6 +4,6 @@ const CustomError = require("./CustomError");
 
 module.exports = class LexicalError extends CustomError {
 	constructor (message) {
-		super("LexicalError", message);
+		super("PreprocessingError", message);
 	}
 }

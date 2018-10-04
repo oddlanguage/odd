@@ -1,198 +1,932 @@
 [
 	{
 		"type": "name",
-		"lexeme": "const"
+		"lexeme": "define",
+		"position": {
+			"start": 0,
+			"end": 6,
+			"line": 1,
+			"column": 6
+		}
 	},
 	{
 		"type": "name",
-		"lexeme": "b"
+		"lexeme": "a",
+		"position": {
+			"start": 7,
+			"end": 8,
+			"line": 1,
+			"column": 8
+		}
+	},
+	{
+		"type": "name",
+		"lexeme": "some",
+		"position": {
+			"start": 9,
+			"end": 13,
+			"line": 1,
+			"column": 13
+		}
 	},
 	{
 		"type": "operator",
-		"lexeme": "="
+		"lexeme": ".",
+		"position": {
+			"start": 13,
+			"end": 14,
+			"line": 1,
+			"column": 14
+		}
 	},
 	{
 		"type": "name",
-		"lexeme": "a"
-	},
-	{
-		"type": "semicolon",
-		"lexeme": ";"
-	},
-	{
-		"type": "name",
-		"lexeme": "const"
-	},
-	{
-		"type": "name",
-		"lexeme": "c"
+		"lexeme": "very",
+		"position": {
+			"start": 14,
+			"end": 18,
+			"line": 1,
+			"column": 18
+		}
 	},
 	{
 		"type": "operator",
-		"lexeme": "="
+		"lexeme": ".",
+		"position": {
+			"start": 18,
+			"end": 19,
+			"line": 1,
+			"column": 19
+		}
 	},
 	{
 		"type": "name",
-		"lexeme": "weirdArray"
+		"lexeme": "difficult",
+		"position": {
+			"start": 19,
+			"end": 28,
+			"line": 1,
+			"column": 28
+		}
+	},
+	{
+		"type": "operator",
+		"lexeme": ".",
+		"position": {
+			"start": 28,
+			"end": 29,
+			"line": 1,
+			"column": 29
+		}
+	},
+	{
+		"type": "name",
+		"lexeme": "and",
+		"position": {
+			"start": 29,
+			"end": 32,
+			"line": 1,
+			"column": 32
+		}
+	},
+	{
+		"type": "operator",
+		"lexeme": ".",
+		"position": {
+			"start": 32,
+			"end": 33,
+			"line": 1,
+			"column": 33
+		}
+	},
+	{
+		"type": "name",
+		"lexeme": "intriquite",
+		"position": {
+			"start": 33,
+			"end": 43,
+			"line": 1,
+			"column": 43
+		}
+	},
+	{
+		"type": "operator",
+		"lexeme": ".",
+		"position": {
+			"start": 43,
+			"end": 44,
+			"line": 1,
+			"column": 44
+		}
+	},
+	{
+		"type": "name",
+		"lexeme": "lexeme",
+		"position": {
+			"start": 44,
+			"end": 50,
+			"line": 1,
+			"column": 50
+		}
 	},
 	{
 		"type": "semicolon",
-		"lexeme": ";"
-	},
-	{
-		"type": "comment",
-		"lexeme": "//Possible advanced feature"
+		"lexeme": ";",
+		"position": {
+			"start": 50,
+			"end": 51,
+			"line": 1,
+			"column": 51
+		}
 	},
 	{
 		"type": "name",
-		"lexeme": "const"
+		"lexeme": "define",
+		"position": {
+			"start": 52,
+			"end": 58,
+			"line": 2,
+			"column": 6
+		}
 	},
 	{
 		"type": "type",
-		"lexeme": "obj:"
+		"lexeme": "any[]:",
+		"position": {
+			"start": 59,
+			"end": 65,
+			"line": 2,
+			"column": 13
+		}
 	},
 	{
 		"type": "name",
-		"lexeme": "objectje"
+		"lexeme": "weirdArray",
+		"position": {
+			"start": 66,
+			"end": 76,
+			"line": 2,
+			"column": 24
+		}
 	},
 	{
 		"type": "operator",
-		"lexeme": "="
+		"lexeme": "=",
+		"position": {
+			"start": 77,
+			"end": 78,
+			"line": 2,
+			"column": 26
+		}
 	},
 	{
 		"type": "separator",
-		"lexeme": "["
+		"lexeme": "[",
+		"position": {
+			"start": 79,
+			"end": 80,
+			"line": 2,
+			"column": 28
+		}
 	},
 	{
-		"type": "name",
-		"lexeme": "a"
-	},
-	{
-		"type": "operator",
-		"lexeme": "="
+		"type": "separator",
+		"lexeme": "[",
+		"position": {
+			"start": 80,
+			"end": 81,
+			"line": 2,
+			"column": 29
+		}
 	},
 	{
 		"type": "number",
-		"lexeme": "1"
-	},
-	{
-		"type": "semicolon",
-		"lexeme": ";"
+		"lexeme": "1",
+		"position": {
+			"start": 81,
+			"end": 82,
+			"line": 2,
+			"column": 30
+		}
 	},
 	{
 		"type": "separator",
-		"lexeme": "]"
+		"lexeme": "]",
+		"position": {
+			"start": 82,
+			"end": 83,
+			"line": 2,
+			"column": 31
+		}
+	},
+	{
+		"type": "separator",
+		"lexeme": ",",
+		"position": {
+			"start": 83,
+			"end": 84,
+			"line": 2,
+			"column": 32
+		}
+	},
+	{
+		"type": "separator",
+		"lexeme": "[",
+		"position": {
+			"start": 85,
+			"end": 86,
+			"line": 2,
+			"column": 34
+		}
+	},
+	{
+		"type": "number",
+		"lexeme": "1",
+		"position": {
+			"start": 86,
+			"end": 87,
+			"line": 2,
+			"column": 35
+		}
+	},
+	{
+		"type": "separator",
+		"lexeme": ",",
+		"position": {
+			"start": 87,
+			"end": 88,
+			"line": 2,
+			"column": 36
+		}
+	},
+	{
+		"type": "number",
+		"lexeme": "2",
+		"position": {
+			"start": 89,
+			"end": 90,
+			"line": 2,
+			"column": 38
+		}
+	},
+	{
+		"type": "separator",
+		"lexeme": "]",
+		"position": {
+			"start": 90,
+			"end": 91,
+			"line": 2,
+			"column": 39
+		}
+	},
+	{
+		"type": "separator",
+		"lexeme": ",",
+		"position": {
+			"start": 91,
+			"end": 92,
+			"line": 2,
+			"column": 40
+		}
+	},
+	{
+		"type": "separator",
+		"lexeme": "[",
+		"position": {
+			"start": 93,
+			"end": 94,
+			"line": 2,
+			"column": 42
+		}
+	},
+	{
+		"type": "number",
+		"lexeme": "1",
+		"position": {
+			"start": 94,
+			"end": 95,
+			"line": 2,
+			"column": 43
+		}
+	},
+	{
+		"type": "separator",
+		"lexeme": ",",
+		"position": {
+			"start": 95,
+			"end": 96,
+			"line": 2,
+			"column": 44
+		}
+	},
+	{
+		"type": "number",
+		"lexeme": "2",
+		"position": {
+			"start": 97,
+			"end": 98,
+			"line": 2,
+			"column": 46
+		}
+	},
+	{
+		"type": "separator",
+		"lexeme": ",",
+		"position": {
+			"start": 98,
+			"end": 99,
+			"line": 2,
+			"column": 47
+		}
+	},
+	{
+		"type": "number",
+		"lexeme": "3",
+		"position": {
+			"start": 100,
+			"end": 101,
+			"line": 2,
+			"column": 49
+		}
+	},
+	{
+		"type": "separator",
+		"lexeme": "]",
+		"position": {
+			"start": 101,
+			"end": 102,
+			"line": 2,
+			"column": 50
+		}
+	},
+	{
+		"type": "separator",
+		"lexeme": "]",
+		"position": {
+			"start": 102,
+			"end": 103,
+			"line": 2,
+			"column": 51
+		}
+	},
+	{
+		"type": "name",
+		"lexeme": "const",
+		"position": {
+			"start": 105,
+			"end": 110,
+			"line": 4,
+			"column": 5
+		}
+	},
+	{
+		"type": "name",
+		"lexeme": "b",
+		"position": {
+			"start": 111,
+			"end": 112,
+			"line": 4,
+			"column": 7
+		}
+	},
+	{
+		"type": "operator",
+		"lexeme": "=",
+		"position": {
+			"start": 113,
+			"end": 114,
+			"line": 4,
+			"column": 9
+		}
+	},
+	{
+		"type": "name",
+		"lexeme": "a",
+		"position": {
+			"start": 115,
+			"end": 116,
+			"line": 4,
+			"column": 11
+		}
 	},
 	{
 		"type": "semicolon",
-		"lexeme": ";"
+		"lexeme": ";",
+		"position": {
+			"start": 116,
+			"end": 117,
+			"line": 4,
+			"column": 12
+		}
+	},
+	{
+		"type": "name",
+		"lexeme": "const",
+		"position": {
+			"start": 118,
+			"end": 123,
+			"line": 5,
+			"column": 5
+		}
+	},
+	{
+		"type": "name",
+		"lexeme": "c",
+		"position": {
+			"start": 124,
+			"end": 125,
+			"line": 5,
+			"column": 7
+		}
+	},
+	{
+		"type": "operator",
+		"lexeme": "=",
+		"position": {
+			"start": 126,
+			"end": 127,
+			"line": 5,
+			"column": 9
+		}
+	},
+	{
+		"type": "name",
+		"lexeme": "weirdArray",
+		"position": {
+			"start": 128,
+			"end": 138,
+			"line": 5,
+			"column": 20
+		}
+	},
+	{
+		"type": "semicolon",
+		"lexeme": ";",
+		"position": {
+			"start": 138,
+			"end": 139,
+			"line": 5,
+			"column": 21
+		}
+	},
+	{
+		"type": "comment",
+		"lexeme": "//Possible advanced feature",
+		"position": {
+			"start": 141,
+			"end": 168,
+			"line": 7,
+			"column": 27
+		}
+	},
+	{
+		"type": "name",
+		"lexeme": "const",
+		"position": {
+			"start": 169,
+			"end": 174,
+			"line": 8,
+			"column": 5
+		}
+	},
+	{
+		"type": "type",
+		"lexeme": "obj:",
+		"position": {
+			"start": 175,
+			"end": 179,
+			"line": 8,
+			"column": 10
+		}
+	},
+	{
+		"type": "name",
+		"lexeme": "objectje",
+		"position": {
+			"start": 180,
+			"end": 188,
+			"line": 8,
+			"column": 19
+		}
+	},
+	{
+		"type": "operator",
+		"lexeme": "=",
+		"position": {
+			"start": 189,
+			"end": 190,
+			"line": 8,
+			"column": 21
+		}
+	},
+	{
+		"type": "separator",
+		"lexeme": "[",
+		"position": {
+			"start": 191,
+			"end": 192,
+			"line": 8,
+			"column": 23
+		}
+	},
+	{
+		"type": "name",
+		"lexeme": "a",
+		"position": {
+			"start": 195,
+			"end": 196,
+			"line": 9,
+			"column": 3
+		}
+	},
+	{
+		"type": "operator",
+		"lexeme": "=",
+		"position": {
+			"start": 197,
+			"end": 198,
+			"line": 9,
+			"column": 5
+		}
+	},
+	{
+		"type": "number",
+		"lexeme": "1",
+		"position": {
+			"start": 199,
+			"end": 200,
+			"line": 9,
+			"column": 7
+		}
+	},
+	{
+		"type": "semicolon",
+		"lexeme": ";",
+		"position": {
+			"start": 200,
+			"end": 201,
+			"line": 9,
+			"column": 8
+		}
+	},
+	{
+		"type": "separator",
+		"lexeme": "]",
+		"position": {
+			"start": 202,
+			"end": 203,
+			"line": 10,
+			"column": 1
+		}
+	},
+	{
+		"type": "semicolon",
+		"lexeme": ";",
+		"position": {
+			"start": 203,
+			"end": 204,
+			"line": 10,
+			"column": 2
+		}
+	},
+	{
+		"type": "name",
+		"lexeme": "define",
+		"position": {
+			"start": 205,
+			"end": 211,
+			"line": 11,
+			"column": 6
+		}
+	},
+	{
+		"type": "name",
+		"lexeme": "objectje",
+		"position": {
+			"start": 212,
+			"end": 220,
+			"line": 11,
+			"column": 15
+		}
+	},
+	{
+		"type": "operator",
+		"lexeme": ".",
+		"position": {
+			"start": 220,
+			"end": 221,
+			"line": 11,
+			"column": 16
+		}
+	},
+	{
+		"type": "name",
+		"lexeme": "b",
+		"position": {
+			"start": 221,
+			"end": 222,
+			"line": 11,
+			"column": 17
+		}
+	},
+	{
+		"type": "operator",
+		"lexeme": "=",
+		"position": {
+			"start": 223,
+			"end": 224,
+			"line": 11,
+			"column": 19
+		}
+	},
+	{
+		"type": "name",
+		"lexeme": "c",
+		"position": {
+			"start": 225,
+			"end": 226,
+			"line": 11,
+			"column": 21
+		}
+	},
+	{
+		"type": "semicolon",
+		"lexeme": ";",
+		"position": {
+			"start": 226,
+			"end": 227,
+			"line": 11,
+			"column": 22
+		}
 	},
 	{
 		"type": "preprocessorDirective",
-		"lexeme": "#if"
+		"lexeme": "#if",
+		"position": {
+			"start": 229,
+			"end": 232,
+			"line": 13,
+			"column": 3
+		}
 	},
 	{
 		"type": "number",
-		"lexeme": "1"
+		"lexeme": "1",
+		"position": {
+			"start": 233,
+			"end": 234,
+			"line": 13,
+			"column": 5
+		}
 	},
 	{
 		"type": "operator",
-		"lexeme": "!="
+		"lexeme": "!=",
+		"position": {
+			"start": 235,
+			"end": 237,
+			"line": 13,
+			"column": 8
+		}
 	},
 	{
 		"type": "number",
-		"lexeme": "2"
+		"lexeme": "2",
+		"position": {
+			"start": 238,
+			"end": 239,
+			"line": 13,
+			"column": 10
+		}
 	},
 	{
 		"type": "separator",
-		"lexeme": "{"
+		"lexeme": "{",
+		"position": {
+			"start": 240,
+			"end": 241,
+			"line": 13,
+			"column": 12
+		}
 	},
 	{
 		"type": "comment",
-		"lexeme": "//Do nothing"
+		"lexeme": "//Do nothing",
+		"position": {
+			"start": 244,
+			"end": 256,
+			"line": 14,
+			"column": 14
+		}
 	},
 	{
 		"type": "separator",
-		"lexeme": "}"
+		"lexeme": "}",
+		"position": {
+			"start": 257,
+			"end": 258,
+			"line": 15,
+			"column": 1
+		}
 	},
 	{
 		"type": "comment",
-		"lexeme": "//semicolon should not be necessary, but it is for now."
+		"lexeme": "//semicolon should not be necessary, but it is for now.",
+		"position": {
+			"start": 259,
+			"end": 314,
+			"line": 16,
+			"column": 55
+		}
 	},
 	{
 		"type": "comment",
-		"lexeme": "//Functions don't require the function keyword in quirks mode"
+		"lexeme": "//Functions don't require the function keyword in quirks mode",
+		"position": {
+			"start": 316,
+			"end": 377,
+			"line": 18,
+			"column": 61
+		}
 	},
 	{
 		"type": "type",
-		"lexeme": "str:"
+		"lexeme": "str:",
+		"position": {
+			"start": 378,
+			"end": 382,
+			"line": 19,
+			"column": 4
+		}
 	},
 	{
 		"type": "name",
-		"lexeme": "getName"
+		"lexeme": "getName",
+		"position": {
+			"start": 383,
+			"end": 390,
+			"line": 19,
+			"column": 12
+		}
 	},
 	{
 		"type": "separator",
-		"lexeme": "("
+		"lexeme": "(",
+		"position": {
+			"start": 391,
+			"end": 392,
+			"line": 19,
+			"column": 14
+		}
 	},
 	{
 		"type": "separator",
-		"lexeme": ")"
+		"lexeme": ")",
+		"position": {
+			"start": 392,
+			"end": 393,
+			"line": 19,
+			"column": 15
+		}
 	},
 	{
 		"type": "separator",
-		"lexeme": "{"
+		"lexeme": "{",
+		"position": {
+			"start": 394,
+			"end": 395,
+			"line": 19,
+			"column": 17
+		}
 	},
 	{
 		"type": "name",
-		"lexeme": "return"
+		"lexeme": "return",
+		"position": {
+			"start": 398,
+			"end": 404,
+			"line": 20,
+			"column": 8
+		}
 	},
 	{
 		"type": "string",
-		"lexeme": "\"Gertje\""
+		"lexeme": "\"Gertje\"",
+		"position": {
+			"start": 405,
+			"end": 413,
+			"line": 20,
+			"column": 17
+		}
 	},
 	{
 		"type": "semicolon",
-		"lexeme": ";"
+		"lexeme": ";",
+		"position": {
+			"start": 413,
+			"end": 414,
+			"line": 20,
+			"column": 18
+		}
 	},
 	{
 		"type": "separator",
-		"lexeme": "}"
+		"lexeme": "}",
+		"position": {
+			"start": 415,
+			"end": 416,
+			"line": 21,
+			"column": 1
+		}
 	},
 	{
 		"type": "name",
-		"lexeme": "const"
+		"lexeme": "const",
+		"position": {
+			"start": 418,
+			"end": 423,
+			"line": 23,
+			"column": 5
+		}
 	},
 	{
 		"type": "type",
-		"lexeme": "str:"
+		"lexeme": "str:",
+		"position": {
+			"start": 424,
+			"end": 428,
+			"line": 23,
+			"column": 10
+		}
 	},
 	{
 		"type": "name",
-		"lexeme": "gert"
+		"lexeme": "gert",
+		"position": {
+			"start": 429,
+			"end": 433,
+			"line": 23,
+			"column": 15
+		}
 	},
 	{
 		"type": "operator",
-		"lexeme": "="
+		"lexeme": "=",
+		"position": {
+			"start": 434,
+			"end": 435,
+			"line": 23,
+			"column": 17
+		}
 	},
 	{
 		"type": "preprocessorDirective",
-		"lexeme": "#run"
+		"lexeme": "#run",
+		"position": {
+			"start": 436,
+			"end": 440,
+			"line": 23,
+			"column": 22
+		}
 	},
 	{
 		"type": "name",
-		"lexeme": "getName"
+		"lexeme": "getName",
+		"position": {
+			"start": 441,
+			"end": 448,
+			"line": 23,
+			"column": 30
+		}
 	},
 	{
 		"type": "separator",
-		"lexeme": "("
+		"lexeme": "(",
+		"position": {
+			"start": 448,
+			"end": 449,
+			"line": 23,
+			"column": 31
+		}
 	},
 	{
 		"type": "separator",
-		"lexeme": ")"
+		"lexeme": ")",
+		"position": {
+			"start": 449,
+			"end": 450,
+			"line": 23,
+			"column": 32
+		}
 	},
 	{
 		"type": "semicolon",
-		"lexeme": ";"
+		"lexeme": ";",
+		"position": {
+			"start": 450,
+			"end": 451,
+			"line": 23,
+			"column": 33
+		}
 	}
 ]

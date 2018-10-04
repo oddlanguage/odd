@@ -14,34 +14,15 @@ module.exports = class Character {
 		return this.input[this.position];
 	}
 
-	getErrorInfo () {
-		let lineNumber = 1;
-		let column = 0;
-
-		for (let i = 0; i < this.position; i++) {
-			if (this.input.charAt(i) === "\n") {
-				lineNumber++;
-				column = 0;
-			} else {
-				column++;
-			}
-		}
-
-		const lines = this.input.split("\n");
-		const line = lines[lineNumber - 1];
-
-		return {line: line, lineNumber: lineNumber, column: column};
-	}
-
 	is (...args) {
 		const output = [];
 		for (const input of args) {
-			if (typeof input === "string") {
-				output.push(this.value === input);
-				continue;
-			}
 			if (input instanceof RegExp) {
 				output.push(input.test(this.value));
+				continue;
+			}
+			if (typeof input === "string") {
+				output.push(this.value === input);
 				continue;
 			}
 			if (input instanceof Map) {
