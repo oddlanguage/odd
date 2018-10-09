@@ -21,12 +21,12 @@ function eat () {
 
 class Person (obj: options) {
   using options; //Import options namespace.
-  public str: name = name | "A person";
+  overt str: name = name | "A person";
 
   //Only assign if exists in the current scope/namespace.
-  public int: age ?= age;
-  public col: hairColour ?= hairColour;
-  private vec2: position = new vec2(0, 0);
+  overt int: age ?= age;
+  overt col: hairColour ?= hairColour;
+  local vec2: position = new vec2(0, 0);
 
   greet (str: greeting) {
     print(`${name} says ${greeting}!`);
