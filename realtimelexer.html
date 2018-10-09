@@ -16,6 +16,7 @@
 			color: white;
 			font-size: 1.25rem;
 			padding: 1rem;
+			caret-color: white;
 		}
 		::selection {
 			background: rgba(255, 255, 255, .25);
@@ -70,28 +71,26 @@
 			text-decoration: underline;
 		}
 
-		textarea {
+		pre {
 			position: absolute;
-			top: 0;
 			left: 0;
-			min-width: 100vw;
-			min-height: 100%;
-			padding: 1rem;
-			font: inherit;
-			background: none;
-			border: none;
-			resize: none;
+			top: 0;
+			right: 0;
+			padding: 2rem;
+		} #colour {
+			pointer-events: none;
+			tab-size: 2;
+		} #raw {
 			color: transparent;
+		} *:focus {
 			outline: none;
-			caret-color: white;
 		}
 	</style>
 	<title>Document</title>
 </head>
 <body>
-	<textarea spellcheck="false"></textarea>
-	<pre></pre>
-
+	<pre id="raw" spellcheck="false" contenteditable></pre>
+	<pre id="colour"></pre>
 <script>
 const tokenTypes = {
 	odd: new Map([
@@ -180,11 +179,10 @@ function lexToHTML (text, lexicalAnalysis) {
 	return html;
 }
 
-const textarea = document.querySelector("textarea");
-const pre = document.querySelector("pre");
-textarea.addEventListener("input", event => {
-	const txt = textarea.value;
-	pre.innerHTML = lexToHTML(txt, generateLexicalAnalysis(txt));
+const raw = document.querySelector("#raw");
+const colour = document.querySelector("#colour");
+raw.addEventListener("keyup", () => {
+	colour.innerHTML = lexToHTML(raw.innerText, generateLexicalAnalysis(raw.innerText));
 });
 </script>
 </body>
