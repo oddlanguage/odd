@@ -8,13 +8,16 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/maanlamp/m2lua.git"
+    "url": "git+https://github.com/maanlamp/odd.git"
   },
   "author": "Wouter Lem",
   "license": "MIT",
   "bugs": {
-    "url": "https://github.com/maanlamp/m2lua/issues"
+    "url": "https://github.com/maanlamp/odd/issues"
   },
-  "homepage": "https://github.com/maanlamp/m2lua#readme",
-  "dependencies": {}
+  "homepage": "https://github.com/maanlamp/odd#readme",
+  "dependencies": {
+    "chalk": "^2.4.1",
+    "prototype-extensions": "git+https://git@github.com/maanlamp/prototype-extensions.git"
+  }
 }

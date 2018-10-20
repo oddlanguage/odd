@@ -10,10 +10,6 @@
 
 const PreprocessingError = require("./Classes/Errors/PreprocessingError");
 
-function inflect (word, count) {
-	return count !== 1 ? `${word}s` : word;
-}
-
 module.exports = function preprocess (tokens, options) {
 	let i = tokens.length;
 	const reverseIterator = {next () {i -= 1; return {done: i < 0, value: tokens[i]}}};
@@ -25,7 +21,7 @@ module.exports = function preprocess (tokens, options) {
 		//splice tokens
 	}
 
-	if (options.verbose) console.log(`  Handled ${definitions.length} ${inflect("definition", definitions.length)}.`);
+	if (options.verbose) console.log(`  Handled ${definitions.length} ${"definition".inflect(definitions.length)}.`);
 	
 	return tokens;
 }

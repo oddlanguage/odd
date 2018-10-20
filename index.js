@@ -17,30 +17,31 @@ const parse = require("./parser");
 const CustomError = require("./Classes/Errors/CustomError");
 const args = process.argv.slice(2);
 const { basename } = require("path");
+require("prototype-extensions/String");
+const chalk = require("chalk");
+
+console.clear();
 
 if (args.length) console.log(`Arguments: ${args.join(", ")}`);
-
-function inflect (word, count) {
-	return count !== 1 ? `${word}s` : word;
-}
 
 async function compile (options) {
 	if (!options.from instanceof Array) options.from = [options.from];
 
-	console.log(`[${timestamp()}] Beginning Compilation of ${options.from.length} ${inflect("file", options.from.length)}...`);
+	console.log(`[${timestamp()}] Beginning Compilation of ${options.from.length} ${"file".inflect(options.from.length)}...\n`);
 	for (const file of options.from) {
 		const path = basename(file);
 
-		if (options.verbose) console.log(`\n[${timestamp()}] ${path}: Reading.`);
+		if (options.verbose) console.log(`[${timestamp()}] ${chalk.hex("#E6DB74").underline(path)}: Reading.`);
 		const input = await readFile(file, "utf8");
+		if (options.verbose && input) console.log("  Read succesfully.")
 
-		if (options.verbose) console.log(`[${timestamp()}] ${path}: Starting Lexical Analysis.`);
+		if (options.verbose) console.log(`[${timestamp()}] ${chalk.hex("#E6DB74").underline(path)}: Starting Lexical Analysis.`);
 		const lexicalTokens = tokenise(input, options);
 
-		if (options.verbose) console.log(`[${timestamp()}] ${path}: Starting Preprocessing.`);
+		if (options.verbose) console.log(`[${timestamp()}] ${chalk.hex("#E6DB74").underline(path)}: Starting Preprocessing.`);
 		const preprocessedTokens = preprocess(lexicalTokens, options);
 
-		if (options.verbose) console.log(`[${timestamp()}] ${path}: Starting Syntax Analysis.`);
+		if (options.verbose) console.log(`[${timestamp()}] ${chalk.hex("#E6DB74").underline(path)}: Starting Syntax Analysis.`);
 		//const abstractSyntaxTree = parse(preprocessedTokens, options);
 	}
 	console.log(`\n[${timestamp()}] Done!`);
@@ -54,7 +55,7 @@ compile({
 	ignoreTypes: false,
 	allowUnicode: false
 }).catch(error => {
-	console.log("\nAn error occured, aborting...");
+	console.log(chalk.red("\nAn error occured, aborting..."));
 	if (error instanceof CustomError) {
 		console.log(error.toString());
 	} else {

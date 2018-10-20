@@ -1,6 +1,8 @@
+const chalk = require("chalk");
+
 module.exports = class CustomError {
 	constructor (type, message) {
-		this.message = `${type}: ${message}`;
+		this.message = `${chalk.underline(type)}: ${message}`;
 	}
 
 	toString () {

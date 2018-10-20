@@ -1,9 +1,10 @@
 const Cursor = require("./Cursor");
 
 module.exports = class Character {
-	constructor (input, cursor) {
+	constructor (input, cursor, patterns) {
 		this.input = input;
 		this.cursor = cursor;
+		this.patterns = patterns;
 	}
 
 	get position () {
@@ -22,7 +23,12 @@ module.exports = class Character {
 				continue;
 			}
 			if (typeof input === "string") {
-				output.push(this.value === input);
+				const pattern = this.patterns.get(input);
+				if (pattern !== undefined) {
+					output.push(this.is(pattern));
+				} else {
+					output.push(this.value === input);
+				}
 				continue;
 			}
 			if (input instanceof Map) {
@@ -33,14 +39,14 @@ module.exports = class Character {
 			}
 			throw new TypeError(`"${input.constructor.name}" is an illegal type (${input}).`);
 		}
-		return output.some(x => x === true);
+		return output.some(value => value === true);
 	}
 
 	next (count = 1) {
-		return new Character(this.input, new Cursor(this.position + count));
+		return new Character(this.input, new Cursor(this.position + count), this.patterns);
 	}
 
 	previous (count = 1) {
-		return new Character(this.input, new Cursor(this.position - count));
+		return new Character(this.input, new Cursor(this.position - count), this.patterns);
 	}
 }

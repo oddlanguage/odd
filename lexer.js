@@ -2,6 +2,7 @@ const Cursor = require("./Classes/Cursor");
 const LexicalToken = require("./Classes/LexicalToken");
 const Character = require("./Classes/Character");
 const LexicalError = require("./Classes/Errors/LexicalError");
+const chalk = require("chalk");
 
 function normalisePath (path) {
 	return path.replace(/\\+/g, "/");
@@ -84,7 +85,7 @@ module.exports = function tokenise (input, options) {
 	}
 	
 	const cursor = new Cursor();
-	const character = new Character(input, cursor);
+	const character = new Character(input, cursor, patterns);
 	const tokens = [];
 	
 	function eat () {
@@ -102,17 +103,17 @@ module.exports = function tokenise (input, options) {
 	
 	while (character.position < input.length) {
 		//Skip whitespace
-		if (character.is(patterns.get("WHITESPACE"))) {
+		if (character.is("WHITESPACE")) {
 			cursor.step();
 			continue;
 		}
 		
 		//Comments
-		if (character.is(patterns.get("SLASH"))) {
-			if (character.next().is(patterns.get("SLASH"))) {
+		if (character.is("SLASH")) {
+			if (character.next().is("SLASH")) {
 				const start = cursor.position;
 				let lexeme = eat();
-				while (!character.is(patterns.get("LINEBREAK"))) {
+				while (!character.is("LINEBREAK")) {
 					lexeme += eat();
 				}
 				tokens.push(new LexicalToken("comment", lexeme, getPosition(start)));
@@ -121,16 +122,16 @@ module.exports = function tokenise (input, options) {
 		}
 		
 		//Semicolons
-		if (character.is(patterns.get("STATEMENTEND"))) {
+		if (character.is("STATEMENTEND")) {
 			tokens.push(new LexicalToken("semicolon", eat(), getPosition(cursor.position - 1)));
 			continue;
 		}
 		
 		//Strings
-		if (character.is(patterns.get("STRING"))) {
+		if (character.is("STRING")) {
 			const start = cursor.position;
 			let lexeme = eat(); //Eat the opening character
-			while (!character.is(patterns.get("STRING"))) {
+			while (!character.is("STRING")) {
 				lexeme += eat();
 			}
 			lexeme += eat(); //Eat the closing character
@@ -139,10 +140,10 @@ module.exports = function tokenise (input, options) {
 		}
 		
 		//Template literals
-		if (character.is(patterns.get("TEMPLATELITERAL"))) {
+		if (character.is("TEMPLATELITERAL")) {
 			const start = cursor.position;
 			let lexeme = eat(); //Eat the opening character
-			while (character.position < input.length && !character.is(patterns.get("TEMPLATELITERAL"))) {
+			while (character.position < input.length && !character.is("TEMPLATELITERAL")) {
 				lexeme += eat();
 			}
 			lexeme += eat(); //Eat the closing character
@@ -151,10 +152,10 @@ module.exports = function tokenise (input, options) {
 		}
 		
 		//Numbers
-		if (character.is(patterns.get("NUMBERSTART"))) {
+		if (character.is("NUMBERSTART")) {
 			const start = cursor.save();
 			let lexeme = eat();
-			while (character.is(patterns.get("NUMBER"))) {
+			while (character.is("NUMBER")) {
 				lexeme += eat();
 			}
 			//Make sure only actual numbers get tagged as such, not just a period.
@@ -166,10 +167,10 @@ module.exports = function tokenise (input, options) {
 		}
 		
 		//Operators
-		if (character.is(patterns.get("OPERATOR"))) {
+		if (character.is("OPERATOR")) {
 			const start = cursor.position;
 			let lexeme = eat();
-			while (character.is(patterns.get("OPERATOR"))) {
+			while (character.is("OPERATOR")) {
 				lexeme += eat();
 			}
 			tokens.push(new LexicalToken("operator", lexeme, getPosition(start)));
@@ -177,13 +178,13 @@ module.exports = function tokenise (input, options) {
 		}
 		
 		//Types
-		if (character.is(patterns.get("TYPE"), patterns.get("NAMESTART"))) {
+		if (character.is("TYPE", "NAMESTART")) {
 			const start = cursor.save();
 			let lexeme = eat();
-			while (character.position < input.length && !character.is(patterns.get("WHITESPACE"))) {
+			while (character.position < input.length && !character.is("WHITESPACE")) {
 				lexeme += eat();
 			}
-			if (character.previous().is(patterns.get("TYPEEND"))) {
+			if (character.previous().is("TYPEEND")) {
 				if (!options.ignoreTypes) tokens.push(new LexicalToken("type", lexeme, getPosition(start)));
 				continue;
 			}
@@ -191,10 +192,10 @@ module.exports = function tokenise (input, options) {
 		}
 		
 		//Names
-		if (character.is(patterns.get("NAMESTART"))) {
+		if (character.is("NAMESTART")) {
 			const start = cursor.position;
 			let lexeme = eat();
-			while (character.is(patterns.get("NAME"))) {
+			while (character.is("NAME")) {
 				lexeme += eat();
 			}
 			tokens.push(new LexicalToken("name", lexeme, getPosition(start)));
@@ -202,16 +203,16 @@ module.exports = function tokenise (input, options) {
 		}
 		
 		//Separators
-		if (character.is(patterns.get("SEPARATOR"))) {
+		if (character.is("SEPARATOR")) {
 			tokens.push(new LexicalToken("separator", eat(), getPosition(cursor.position - 1)));
 			continue;
 		}
 		
 		//Preprocessor directives
-		if (character.is(patterns.get("DIRECTIVE"))) {
+		if (character.is("DIRECTIVE")) {
 			const start = cursor.position;
 			let lexeme = eat();
-			while (character.position < input.length && !character.is(patterns.get("WHITESPACE"))) {
+			while (character.position < input.length && !character.is("WHITESPACE")) {
 				lexeme += eat();
 			}
 			tokens.push(new LexicalToken("preprocessorDirective", lexeme, getPosition(start)));
@@ -221,10 +222,10 @@ module.exports = function tokenise (input, options) {
 		//No lexeme recognised
 		const { line, lineNumber, column } = getErrorInfo(input, cursor.position);
 		let lexeme = eat();
-		while (character.position < input.length && !character.is(patterns.get("WHITESPACE")) && character.is(patterns)) {
+		while (character.position < input.length && !character.is("WHITESPACE") && character.is(patterns)) {
 			lexeme += eat();
 		}
-		throw new LexicalError(`Unrecognised lexeme "${lexeme}"\n  in TODO: PATH OF CURRENT FILE\n  at line ${lineNumber}, column ${column}.\n\n${line}\n${" ".repeat(column)}${"^".repeat(lexeme.length)}`);
+		throw new LexicalError(`Unrecognised lexeme "${lexeme}"\n  in TODO: PATH OF CURRENT FILE\n  at line ${lineNumber}, column ${column}.\n\n${line}\n${" ".repeat(column)}${chalk.red("^".repeat(lexeme.length))}`);
 	}
 	
 	return tokens;
