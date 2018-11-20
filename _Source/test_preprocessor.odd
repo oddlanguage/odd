@@ -4,10 +4,10 @@ define any[]: weirdArray = [[1], [1, 2], [1, 2, 3]]
 const b = a;
 const c = weirdArray;
 
-//Possible advanced feature
 const obj: objectje = [
   a = 1;
 ];
+//Possible advanced feature
 define objectje.b = c;
 
 #if 1 != 2 {

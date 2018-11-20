@@ -32,7 +32,7 @@ module.exports = class Character {
 				continue;
 			}
 			if (input instanceof Map) {
-				for (const [ _, pattern ] of input) {
+				for (const [ , pattern ] of input) {
 					output.push(this.is(pattern));
 				}
 				continue;
