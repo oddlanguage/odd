@@ -3,9 +3,7 @@
   "version": "1.0.0",
   "description": "",
   "main": "index.js",
-  "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
-  },
+  "scripts": {},
   "repository": {
     "type": "git",
     "url": "git+https://github.com/maanlamp/odd.git"
@@ -18,6 +16,7 @@
   "homepage": "https://github.com/maanlamp/odd#readme",
   "dependencies": {
     "chalk": "^2.4.1",
-    "prototype-extensions": "git+https://git@github.com/maanlamp/prototype-extensions.git"
-  }
+    "prototype-extensions": "github:maanlamp/prototype-extensions"
+  },
+  "devDependencies": {}
 }
