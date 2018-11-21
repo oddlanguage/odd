@@ -1,38 +1,15 @@
-class AbstractSyntaxTree {
+module.exports = class Parser {
 	constructor () {
-		this.type = "program";
-		this.body = [];
-	}
-}
-
-class TreeNode {
-	constructor (type, value) {
-		this.type = type;
-		this.value = value;
-	}
-}
-
-module.exports = function parse (lexicalTokens) {
-	const ast = new AbstractSyntaxTree();
-	let cursor = 0;
-
-	function walk () {
-		let token = lexicalTokens[cursor];
-
-		if (token.type === "number") {
-			cursor++;
-			return new TreeNode("number literal", token.lexeme);
-		}
-		if (token.type === "string") {
-			cursor++;
-			return new TreeNode("string literal", token.lexeme);
-		}
-		console.log(ast);
-		throw `ParseError: Parser does not recognise token type "${token.type}" with value "${token.lexeme}"`;
+		this.plugins = [];
 	}
 
-	while (cursor < lexicalTokens.length) {
-		ast.body.push(walk());
+	use (plugin) {
+		this.plugins.push(plugin);
+		return this;
 	}
-	return ast;
+
+	parse (tokens) {
+		//Return AST
+		return Promise.resolve({});
+	}
 }
