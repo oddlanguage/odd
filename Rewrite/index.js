@@ -14,8 +14,3 @@ new Processor()
 	.process("local num: test = 123")
 	.then(console.log)
 	.catch(console.error)
-
-/* TODO:
-	Processor.assert("property") > Make sure Processor.property exists, else throw an error.
-	Everything else lol.
-*/
