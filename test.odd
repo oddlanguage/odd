@@ -1,0 +1,107 @@
+define a some.very.difficult.and.intriquite.lexeme;
+define any[]: weirdArray = [[1], [1, 2], [1, 2, 3]]
+
+const b = a;
+const c = weirdArray;
+
+const obj: objectje = [
+  a = 1;
+];
+//Possible advanced feature
+define objectje.b = c;
+
+#if 1 != 2 {
+  //Do nothing
+}
+
+//Functions don't require the function keyword in quirks mode
+str: getName () {
+  return "Gertje";
+}
+
+const str: gert = #run getName();
+
+define any[]: a = some.very.difficult.and.intriquite.lexeme;
+const b = a;
+
+const 😂 = 13;
+
+//Test 123
+const any[]: test1 = .23e2346;
+const any[]: test2 = -0.23e2346;
+
+#i = 0;
+#while (i++ < 10) {
+	do nothing.
+}
+
+interface name {
+	//asd
+}
+
+true;
+false;
+nil;
+null;
+undefined;
+
+type col {
+	return (this[0] === "#") & (this.length > 1);
+}
+
+function eat () {
+	defer return character.value;
+	cursor.step();
+}
+
+class Person (obj: options) {
+	using options; //Import options namespace.
+	overt local str: name = name | "A person";
+
+	//Only assign if exists in the current scope/namespace.
+	overt local int: age ?= age;
+	overt local col: hairColour ?= hairColour;
+	local vec2: position = new vec2(0, 0);
+
+	overt greet (str: greeting) {
+		print(`${name} says ${greeting}!`);
+	}
+
+	update (boo: spacePressed) {
+		using this.position;
+		y += ~~spacePressed;
+	}
+}
+
+const peter = new Person([
+	name = "Peter",
+	age = 21,
+	hairColour = 0xF99999
+]);
+
+const [Person]: people = [peter, new Person(), new Person()];
+
+for (person in people) {
+	person.greet("hi");
+}
+
+const stream = fs.read("file/name.ext");
+when stream emits "error", (error: error) => {
+	throw error;
+}
+when stream emits "data", (blob: data) => {
+	print(data);
+}
+when stream emits "end", () => {
+	stream.destroy();
+}
+
+{
+	using stream;
+	emit "end";
+}
+
+/* test
+block
+comment
+*/
