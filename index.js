@@ -19,9 +19,9 @@ const input = "local num: test = 123";
 
 new Processor()
 	.set("lexer", lexer)
-	.set("preprocessor", new Preprocessor())
-	.set("parser", new Parser())
-	.set("compiler", new Compiler())
+	.set("preprocessor", preprocessor)
+	.set("parser", parser)
+	.set("compiler", compiler)
 	.use(new ProcessorPlugin())
 	.process(input)
 	.then(console.log)
