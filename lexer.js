@@ -1,15 +1,13 @@
-const LexerGrammar = require("./LexerGrammar");
-
 module.exports = class Lexer {
 	constructor () {
 		this.grammars = new Map();
 		this.input = null;
 	}
 
-	rule (type, grammar, action) {
-
+	rule (type, grammar) {
 		//Register grammar and action
-		this.grammars.set(type, new LexerGrammar(grammar, action));
+		//Make sure arguments are of correct type
+		this.grammars.set(type, grammar);
 		return this;
 	}
 
@@ -22,8 +20,25 @@ module.exports = class Lexer {
 		//Go through input and create LexicalTokens
 		this.assert("input");
 
+		function getPosition () {
+			let lineNumber = 1;
+			let column = 1;
+
+			let i = 0;
+			while (i++ < position) {
+				if (input.charAt(i) === "\n") {
+					lineNumber++;
+					column = 1;
+				} else {
+					column++;
+				}
+			}
+
+			return {line: lineNumber, column: column};
+		}
+
 		let line = 1;
-		let row = 1;
+		let column = 1;
 
 		let index = 0;
 		while (index < this.input.length) {

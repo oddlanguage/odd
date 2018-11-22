@@ -48,6 +48,7 @@ module.exports = class Processor {
 		//Create AST from tokenised input
 		//Return Promise<AST>
 		return this.lexer
+			.set("input", input)
 			.lex(input)
 			.then(tokens => this.preprocessor ? this.preprocessor.preprocess : tokens)
 			.then(this.parser.parse);
