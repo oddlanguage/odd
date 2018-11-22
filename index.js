@@ -9,12 +9,20 @@ const lexer = new Lexer()
 	.rule("whitespace", /\w/)
 	.rule("any", /\W+/);
 
+const preprocessor = new Preprocessor();
+
+const parser = new Parser();
+
+const compiler = new Compiler();
+
+const input = "local num: test = 123";
+
 new Processor()
 	.set("lexer", lexer)
 	.set("preprocessor", new Preprocessor())
 	.set("parser", new Parser())
 	.set("compiler", new Compiler())
 	.use(new ProcessorPlugin())
-	.process("local num: test = 123")
+	.process(input)
 	.then(console.log)
 	.catch(console.error);
