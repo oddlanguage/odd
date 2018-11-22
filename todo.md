@@ -36,6 +36,6 @@ The old architecture does not allow scaling in any way. All features must be hac
 
 ### <a name="feat2" href="#feat2">🔗</a> Rewrite lexer to use modular grammar
 _`By:`_ @maanlamp
-> **STATUS:** Planned
+> **STATUS:** Started
 
 The old architecture does not allow scaling in any way. All features must be hacked into the code. Even the cleanest code is a chore to traverse if all you want to do is add a feature, or just update a certain part of the compiler. By transitioning to a more plugin-based architecture, we explicitly design all parts of the language as plugins, allowing for easy additions and removals, as well as a inherently easy-to-maintain structure.
