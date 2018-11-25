@@ -16,39 +16,69 @@ module.exports = class Lexer {
 		return this;
 	}
 
+	static verifyGrammar (grammar, input, sliceIndex) {
+		const toCheck = input.slice(sliceIndex);
+		const check = (toCheck.match(grammar)||{});
+		const {index} = check;
+		console.log(toCheck, grammar, index);
+		if (index !== 0) return false;
+		const [match] = check;
+		return match;
+	}
+
 	lex () {
-		//Go through input and create LexicalTokens
 		this.assert("input");
+		//Go through input and create LexicalTokens
 
-		function getPosition () {
-			let lineNumber = 1;
-			let column = 1;
+		const tokens = [];
+		let line = 1;
+		let column = 1;
+		let shouldContinue = false;
+		let index = 0;
 
+		function getPosition (input, index) {
 			let i = 0;
-			while (i++ < position) {
+			while (i++ < index) {
 				if (input.charAt(i) === "\n") {
-					lineNumber++;
+					line++;
 					column = 1;
 				} else {
 					column++;
 				}
 			}
-
-			return {line: lineNumber, column: column};
+			return {line, column};
 		}
 
-		let line = 1;
-		let column = 1;
-
-		let index = 0;
 		while (index < this.input.length) {
 			for (const [type, grammar] of this.grammars) {
-				//
+				//Check if any grammar is found
+				const lexeme = Lexer.verifyGrammar(grammar, this.input, index);
+				if (lexeme !== false) {
+					tokens.push({
+						type: type,
+						lexeme: lexeme,
+						position: {
+							start: index,
+							end: index + lexeme.length
+						}
+					});
+					index += lexeme.length;
+					shouldContinue = true;
+				}
 			}
-			index += 1;
+
+			if (shouldContinue) {
+				shouldContinue = false;
+				continue;
+			} else {
+				//Match all existing grammars to the remaining characters and give back only that part instead of the rest of the input.
+				const {line, column} = getPosition(this.input, index);
+				throw `Unknown lexeme \`${this.input.slice(index)}\`\n  at line ${line}, column ${column - 1}.\n`;
+			}
 		}
 
-		return Promise.resolve([]);
+		console.log(tokens);
+		return Promise.resolve(tokens);
 	}
 
 	assert (property, severity = "error") {

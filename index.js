@@ -6,8 +6,11 @@ const Compiler = require("./Compiler");
 const ProcessorPlugin = require("./ProcessorPlugin");
 
 const lexer = new Lexer()
-	.rule("whitespace", /\w/)
-	.rule("any", /\W+/);
+	.rule("whitespace", /\s+/)
+	.rule("type annotation", /[\[\]}{]?[a-zA-Z_$][\w$]*[\[\]}{]?:/)
+	.rule("operator", /[.=+\-/*%^~<>?&|!:]/)
+	.rule("number", /[\d.][\deE.]*/)
+	.rule("identifier", /[a-zA-Z_$][\w$]*/);
 
 const preprocessor = new Preprocessor();
 
