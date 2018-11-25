@@ -18,7 +18,9 @@ const lexer = new Lexer()
 	.rule("preprocessor directive", /#/)
 	.rule("identifier", /[a-zA-Z_$][\w$]*/);
 
-const preprocessor = new Preprocessor();
+const preprocessor = new Preprocessor()
+	.set("directive start", "#")
+	.set("directive end", /[;}]/);
 
 const parser = new Parser();
 

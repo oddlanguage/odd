@@ -50,7 +50,7 @@ module.exports = class Processor {
 		return this.lexer
 			.set("input", input)
 			.lex(input)
-			.then(tokens => this.preprocessor ? this.preprocessor.preprocess : tokens)
+			.then(tokens => this.preprocessor ? this.preprocessor.preprocess(tokens) : tokens)
 			.then(this.parser.parse);
 	}
 
