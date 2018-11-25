@@ -15,7 +15,7 @@ const lexer = new Lexer()
 	.rule("number", /[\d.][\deE.]*/)
 	.rule("string", /(?<!\\)".*"/)
 	.rule("template literal", /(?<!\\)`.*`/)
-	.rule("preprocessor directive", /#[a-zA-Z_$][\w$]*/)
+	.rule("preprocessor directive", /#/)
 	.rule("identifier", /[a-zA-Z_$][\w$]*/);
 
 const preprocessor = new Preprocessor();

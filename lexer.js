@@ -91,7 +91,6 @@ module.exports = class Lexer {
 				}
 
 				//Find correct line and trim it
-				//TODO: Colourise tokens that are found in lineString
 				const lineString = this.input
 					.slice(this.input.slice(0, index).lastIndexOf("\n") + 1)
 					.replace(/\n[\s\S]*/, "").trim();
