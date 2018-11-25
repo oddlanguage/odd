@@ -1,4 +1,18 @@
 const LexicalToken = require("./LexicalToken");
+const chalk = require("chalk");
+
+function dedent (string) {
+	//Split the string up into lines.
+	const lines = string.split("\n");
+	//Get the amount of indentation characters from the first line.
+	const baseIndentation = lines.filter(line => line.length)[0].match(/^[\r\t\f\v ]+/)[0].length;
+	//Replace the indentation and join the lines again.
+	//Also replace ALL indentation followed by "|<-"
+	return lines
+		.join("\n")
+		.replace(new RegExp(`^[\\r\\t\\f\\v ]{1,${baseIndentation}}`, "gm"), "")
+		.replace(/^[\r\t\f\v ]*\|<-/gm, "");
+}
 
 module.exports = class Lexer {
 	constructor () {
@@ -33,11 +47,10 @@ module.exports = class Lexer {
 	lex () {
 		this.assert("input");
 		//Go through input and create LexicalTokens
-		console.log(this.grammars);
 
 		const tokens = [];
 		let line = 1;
-		let column = 1;
+		let column = 0;
 		let shouldContinue = false;
 		let index = 0;
 
@@ -46,7 +59,7 @@ module.exports = class Lexer {
 			while (i++ < index) {
 				if (input.charAt(i) === "\n") {
 					line++;
-					column = 1;
+					column = 0;
 				} else {
 					column++;
 				}
@@ -69,13 +82,30 @@ module.exports = class Lexer {
 				shouldContinue = false;
 				continue;
 			} else {
-				//Match all existing grammars to the remaining characters and give back only that part instead of the rest of the input.
 				const {line, column} = getPosition(this.input, index);
-				throw `Unknown lexeme \`${this.input.slice(index)}\`\n  at line ${line}, column ${column - 1}.\n`;
+
+				let lexeme = this.input.slice(index);
+
+				for (const [, grammar] of this.grammars) {
+					lexeme = lexeme.replace(new RegExp(grammar, "g"), "");
+				}
+
+				//Find correct line and trim it
+				//TODO: Colourise tokens that are found in lineString
+				const lineString = this.input
+					.slice(this.input.slice(0, index).lastIndexOf("\n") + 1)
+					.replace(/\n[\s\S]*/, "").trim();
+
+				throw dedent(`
+					Unknown lexeme \`${lexeme}\` in FILENAME.EXTENSION
+						at line ${line}, column ${column}${(lexeme.length > 1) ? " to " + (column + lexeme.length - 1) : ""}.
+						
+						|<-${lineString}
+						|<-${" ".repeat(column - 1)}${chalk.redBright("˜".repeat(lexeme.length))}
+				`).trim();
 			}
 		}
 
-		console.log(tokens);
 		return Promise.resolve(tokens);
 	}
 

@@ -34,14 +34,14 @@ The old architecture does not allow scaling in any way. All features must be hac
 
 ### ~~Rewrite lexer to use modular grammar~~
 _`By:`_ @maanlamp
-> **STATUS:** Done
+##### STATUS: `Done`
 
 The old architecture does not allow scaling in any way. All features must be hacked into the code. Even the cleanest code is a chore to traverse if all you want to do is add a feature, or just update a certain part of the compiler. By transitioning to a more plugin-based architecture, we explicitly design all parts of the language as plugins, allowing for easy additions and removals, as well as a inherently easy-to-maintain structure.
 
 ---
 
-### Log the correct unidentifiable lexeme when throwing an error
+### ~~Log the correct unidentifiable lexeme when throwing an error~~
 _`By:`_ @maanlamp
-> **STATUS:** Planned
+##### STATUS: `Done`
 
-When the lexer has gone through all defined grammars but finds none, it throws an error. Currently it just says that the unidentifiable lexeme and the _enitre_ string after it are all unidentifiable. The lexeme should be cut off at a point where actually no grammar can be found.
+When the lexer has gone through all defined grammars but finds none, it throws an error. Currently it just says that the unidentifiable lexeme and the _entire_ string after it are all unidentifiable. The lexeme should be cut off at a point where actually no grammar can be found.

@@ -24,7 +24,7 @@ const str: gert = #run getName();
 define any[]: a = some.very.difficult.and.intriquite.lexeme;
 const b = a;
 
-//const 😂 = 13;
+//const 😂 = 13; //This will throw an error if not commented. Might add emoji support later. !!For testing!!
 
 //Test 123
 const any[]: test1 = .23e2346;
