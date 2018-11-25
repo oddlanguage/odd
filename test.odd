@@ -1,5 +1,5 @@
 define a some.very.difficult.and.intriquite.lexeme;
-define any[]: weirdArray = [[1], [1, 2], [1, 2, 3]]
+define any[]: weirdArray = [[1], [1, 2], [1, 2, 3]];
 
 const b = a;
 const c = weirdArray;
@@ -24,7 +24,7 @@ const str: gert = #run getName();
 define any[]: a = some.very.difficult.and.intriquite.lexeme;
 const b = a;
 
-const 😂 = 13;
+//const 😂 = 13;
 
 //Test 123
 const any[]: test1 = .23e2346;

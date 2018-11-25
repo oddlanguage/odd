@@ -1,3 +1,5 @@
+const LexicalToken = require("./LexicalToken");
+
 module.exports = class Lexer {
 	constructor () {
 		this.grammars = new Map();
@@ -7,6 +9,9 @@ module.exports = class Lexer {
 	rule (type, grammar) {
 		//Register grammar and action
 		//Make sure arguments are of correct type
+		if (!(grammar instanceof RegExp)) {
+			grammar = new RegExp(grammar.replace(/(?<!\\)[\[\]\(\)]/, "\\$&"));
+		}
 		this.grammars.set(type, grammar);
 		return this;
 	}
@@ -20,15 +25,15 @@ module.exports = class Lexer {
 		const toCheck = input.slice(sliceIndex);
 		const check = (toCheck.match(grammar)||{});
 		const {index} = check;
-		console.log(toCheck, grammar, index);
 		if (index !== 0) return false;
-		const [match] = check;
+		const match = check[check.length - 1]; //Get the last match to support pairs in grammar rules.
 		return match;
 	}
 
 	lex () {
 		this.assert("input");
 		//Go through input and create LexicalTokens
+		console.log(this.grammars);
 
 		const tokens = [];
 		let line = 1;
@@ -54,14 +59,7 @@ module.exports = class Lexer {
 				//Check if any grammar is found
 				const lexeme = Lexer.verifyGrammar(grammar, this.input, index);
 				if (lexeme !== false) {
-					tokens.push({
-						type: type,
-						lexeme: lexeme,
-						position: {
-							start: index,
-							end: index + lexeme.length
-						}
-					});
+					tokens.push(new LexicalToken(type, lexeme, index, index + lexeme.length));
 					index += lexeme.length;
 					shouldContinue = true;
 				}
