@@ -1,6 +1,9 @@
-<img src="./logo.png" style="display: block; width: 250px; margin: 10rem 0 3rem 0;" />
+<img src="./icon.png" style="display: block; width: 8rem;" />
+<br/>
+<br/>
 
 Conceptualised and authored by [@maanlamp](https://github.com/maanlamp).
+
 #### Hmm, that's odd...
 
 # What is odd?
