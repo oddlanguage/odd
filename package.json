@@ -18,5 +18,7 @@
     "chalk": "^2.4.1",
     "prototype-extensions": "github:maanlamp/prototype-extensions"
   },
-  "devDependencies": {}
+  "devDependencies": {
+    "clarify": "^2.1.0"
+  }
 }

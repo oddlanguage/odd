@@ -1,4 +1,4 @@
-define a some.very.difficult.and.intriquite.lexeme;
+define str: a = some.very.difficult.and.intriquite.lexeme;
 define any[]: weirdArray = [[1], [1, 2], [1, 2, 3]];
 
 const b = a;
@@ -8,32 +8,29 @@ const obj: objectje = [
   a = 1;
 ];
 //Possible advanced feature
-define objectje.b = c;
+// define objectje.b = c;
 
-#if 1 != 2 {
-  //Do nothing
-}
+// #if 1 != 2 {
+//   //Do nothing
+// }
 
 //Functions don't require the function keyword in quirks mode
 str: getName () {
   return "Gertje";
 }
 
-const str: gert = #run getName();
+const str: gert = /*#run*/ getName();
 
-define any[]: a = some.very.difficult.and.intriquite.lexeme;
-const b = a;
-
-//const 😂 = 13; //This will throw an error if not commented. Might add emoji support later. !!For testing!!
+//	const 😂 = 13; //This will throw an error if not commented. Might add emoji support later. !!For testing!!
 
 //Test 123
 const any[]: test1 = .23e2346;
 const any[]: test2 = -0.23e2346;
 
-#i = 0;
-#while (i++ < 10) {
-	do nothing.
-}
+// #i = 0;
+// #while (i++ < 10) {
+// 	do nothing.
+// }
 
 interface name {
 	//asd
@@ -102,6 +99,6 @@ when stream emits "end", () => {
 }
 
 /* test
-block
-comment
+	block
+	comment
 */
