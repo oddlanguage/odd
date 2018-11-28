@@ -37,15 +37,16 @@ const parser = new Parser();
 
 const compiler = new Compiler();
 
-const fs = require("fs");
-const input = fs.readFileSync("./test.odd", "utf8");
+const plugin = new ProcessorPlugin();
+
+const input = require("fs").readFileSync("./test.odd", "utf8");
 
 new Processor()
 	.set("lexer", lexer)
 	.set("preprocessor", preprocessor)
 	.set("parser", parser)
 	.set("compiler", compiler)
-	.use(new ProcessorPlugin())
+	.use(plugin)
 	.process(input)
 	.then(console.log)
 	.catch(console.error);
