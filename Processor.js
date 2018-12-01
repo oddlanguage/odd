@@ -1,5 +1,8 @@
-module.exports = class Processor {
+const Asserter = require("./Asserter");
+
+module.exports = class Processor extends Asserter {
 	constructor () {
+		super("Process");
 		this.lexer = null;
 		this.parser = null;
 		this.preprocessor = null;
@@ -68,23 +71,5 @@ module.exports = class Processor {
 		//Turn AST into target [bytecode?]
 			//Return Promise<target>
 		return this.compiler.compile(AST);
-	}
-
-	assert (property, severity = "error") {
-		//Assert that this[property] exists, and it is a usable value.
-		//If not, ignore, warn or error depending on severity of property's absence.
-		if (this.hasOwnProperty(property) && this[property] !== null) return this;
-		switch (severity) {
-			case 0: case "ignore": {
-				return this;
-			}
-			case 1: case "warn": {
-				console.log(`Expected '${property}', trying to parse without...`);
-				return this;
-			}
-			case 2: case "error": {
-				throw new Error(`Cannot parse without a ${property}.`);
-			}
-		}
 	}
 }
