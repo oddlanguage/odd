@@ -1,24 +1,27 @@
+require("clarify"); // Remove nodejs stack from error stack.
 const Processor = require("./Processor");
 const Lexer = require("./Lexer");
 const Preprocessor = require("./Preprocessor");
 const Parser = require("./Parser");
 const Compiler = require("./Compiler");
 const ProcessorPlugin = require("./ProcessorPlugin");
-require("clarify"); // Remove nodejs stack from error stack.
+
+const colourise = require("./ColouriseOddCLI");
+console.log(colourise("function str: test (bool: doStuff) { return Boolean(Math.random(1, 2)) }"));
 
 const lexer = new Lexer()
 	.rule("whitespace", /\s+/)
 	.rule("single line comment", /\/\/[^\n]*/)
 	.rule("multi line comment", /\/\*[^*]*?\*\//)
 	.rule("expression terminator", ";")
-	.rule("type annotation", /[\[\]}{]?[a-zA-Z_$][\w$]*[\[\]}{]{0,2}:/)
+	.rule("type annotation", /[\[{]?\w+?[<\[{]?\S*[>\]}]?:/)
 	.rule("punctuation", /[,\[\]\(\)}{]/)
 	.rule("operator", /[.=+\-/*%^~<>?&|!:]/)
 	.rule("number", /[\d.][\deE.]*/)
 	.rule("string", /(?<!\\)".*"/)
 	.rule("template literal", /(?<!\\)`.*`/)
 	.rule("preprocessor directive", /#|\bdefine\b/)
-	.rule("keyword", /\bfor\b|\bwhile\b|\bif\b|\belse\b|\bwhen\b|\bemits?\b|\bdefer\b|\blocal\b|\bconst\b|\bovert\b|\bdefine\b|\bfunction\b|\btype\b|\bclass\b|\bthis\b|\busing\b|\bexists\b|\bthrow\b|\breturn\b|\bnew\b|\bdelete\b|\btypeof\b|\binstanceof\b|\bin\b|\bof\b/)
+	.rule("keyword", /\band\b|\bor\b|\bthen\b|\bfor\b|\bwhile\b|\bif\b|\belse\b|\bwhen\b|\bemits?\b|\bdefer\b|\blocal\b|\bconst\b|\bovert\b|\bdefine\b|\bfunction\b|\btype\b|\bclass\b|\bthis\b|\busing\b|\bexists\b|\bthrow\b|\breturn\b|\bnew\b|\bdelete\b|\btypeof\b|\binstanceof\b|\bin\b|\bof\b/)
 	.rule("identifier", /[a-zA-Z_$][\w$]*/);
 
 const preprocessor = new Preprocessor()

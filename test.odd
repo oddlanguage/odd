@@ -1,5 +1,5 @@
-define str: a = some.very.difficult.and.intriquite.lexeme;
-define any[]: weirdArray = [[1], [1, 2], [1, 2, 3]];
+define str: a = some.very.intriquite.lexeme;
+define arr<arr<num>>: weirdArray = [[1], [1, 2], [1, 2, 3]];
 
 const b = a;
 const c = weirdArray;
@@ -15,17 +15,41 @@ const obj: objectje = [
 // }
 
 //Functions don't require the function keyword in quirks mode
-str: getName () {
+function str: getName () {
   return "Gertje";
 }
 
 const str: gert = /*#run*/ getName();
 
-//	const 😂 = 13; //This will throw an error if not commented. Might add emoji support later. !!For testing!!
+// const 😂 = 13; //This will throw an error if not commented. Might add emoji support later. !!For testing!!
 
 //Test 123
-const any[]: test1 = .23e2346;
-const any[]: test2 = -0.23e2346;
+const num: test1 = +.23e2;
+const num: test2 = -0.2345433;
+const num: test3 = -101.2345e433;
+
+//Support functions
+const str: test4 = String(233546);
+const num: test5 = Number("233546");
+const str: test6 = String();
+const bool: test7 = Boolean(1);
+Array();
+Object();
+Function();
+
+if (a == 3 and 4 or 4) then i = 0;
+if (test7 exists) then throw new Error();
+if (test8 exists) then throw new Error();
+if (new Error() instanceof Error) then continue;
+switch (1) {
+	case 1 {
+		//Do nothing
+	}
+	default {
+		continue;
+	}
+}
+break;
 
 // #i = 0;
 // #while (i++ < 10) {

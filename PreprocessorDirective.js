@@ -17,8 +17,13 @@ function stringifyRegex (regex) {
 		? String(regex)
 			.replace(/^\/|\/$/g, "")
 			.replace(/([^\\])\|/g, "$1 or ")
+			.replace(/\.\+/, "")
 		: regex;
 }
+
+/*
+	USE DEFAULT /.+/ FOR ARGUMENTS IN OPTIONAL, EXPECT AND UNTIL INSTAED OF IMMENSE IF STATEMENTS.
+*/
 
 module.exports = class PreprocessorDirective extends Asserter {
 	constructor (start, tokens) {
@@ -29,7 +34,7 @@ module.exports = class PreprocessorDirective extends Asserter {
 		this.expectation = null;
 	}
 
-	optional (expectedType, expectedLexeme) {
+	optional (expectedType = /.+/, expectedLexeme = /.+/) {
 		try {
 			return this.expect(expectedType, expectedLexeme);
 		} catch {
@@ -37,14 +42,14 @@ module.exports = class PreprocessorDirective extends Asserter {
 		}
 	}
 
-	expect (expectedType, expectedLexeme) {
+	expect (expectedType = /.+/, expectedLexeme = /.+/) {
 		const errTypeStr = stringifyRegex(expectedType);
 		const errLexemeStr = stringifyRegex(expectedLexeme);
-		
+
 		const token = this.tokens[this.index];
 
-		if ((!token.type.match(expectedType)) || (expectedLexeme && !token.lexeme.match(expectedLexeme))) throw PreprocessingError(`
-			Expected ${errTypeStr}${(expectedLexeme) ? ` '${errLexemeStr}'` : ""}, but got ${token.type} '${token.lexeme}'
+		if (!token.type.match(expectedType) || !token.lexeme.match(expectedLexeme)) throw PreprocessingError(`
+			Expected ${errTypeStr}${(errLexemeStr) ? ` '${errLexemeStr}'` : ""}, but got ${token.type} '${token.lexeme}'
 				in FILENAME.EXTENSION
 				at line LINENO, column COLUMNNO. start ${token.start} end ${token.end}
 				
@@ -57,7 +62,7 @@ module.exports = class PreprocessorDirective extends Asserter {
 		return this;
 	}
 
-	until (expectedType, expectedLexeme) {
+	until (expectedType = /.+/, expectedLexeme = /.+/) {
 		this.assert("expectation");
 
 		const errTypeStr = stringifyRegex(expectedType);
@@ -70,10 +75,10 @@ module.exports = class PreprocessorDirective extends Asserter {
 		let token = this.tokens[this.index];
 		while (this.index < this.tokens.length) {
 			token = this.tokens[this.index];
-			if (!token.type.match(this.expectation[0]) || (this.expectation[1] && !token.lexeme.match(this.expectation[1]))) { //If previous expectation is not found
+			if (!token.type.match(this.expectation[0]) || !token.lexeme.match(this.expectation[1])) { //If previous expectation is not found
 				if (!token.type.match(expectedType) || (expectedLexeme && !token.lexeme.match(expectedLexeme))) { //If until expectation is not found
 					throw PreprocessingError(`
-						Expected ${errTypeStr}${(expectedLexeme) ? ` '${errLexemeStr}'` : ""} after ${root.type} '${root.lexeme}', but got ${token.type} '${token.lexeme}'
+						Expected ${errTypeStr}${(errLexemeStr) ? ` '${errLexemeStr}'` : ""} after ${root.type} '${root.lexeme}', but got ${token.type} '${token.lexeme}'
 							in FILENAME.EXTENSION
 							at line LINENO, column COLUMNNO. start ${root.start} end ${root.end}
 							
