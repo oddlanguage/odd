@@ -43,6 +43,10 @@ module.exports = class Lexer extends Asserter {
 	}
 
 	lex () {
+		return Promise.resolve(this.lexSync());
+	}
+
+	lexSync () {
 		this.assert("input");
 
 		const tokens = [];
