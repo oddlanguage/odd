@@ -1,5 +1,6 @@
 const Asserter = require("./Asserter");
 const PreprocessorDirective = require("./PreprocessorDirective");
+const {PreprocessingError} = require("./Errors/CustomErrors");
 
 module.exports = class Preprocessor extends Asserter {
 	constructor () {
@@ -36,7 +37,7 @@ module.exports = class Preprocessor extends Asserter {
 				.assert("tokens");
 
 			const token = directive.tokens[0];
-			if (token.lexeme === "#") throw PreprocessingError(`
+			if (token.lexeme === "#") throw new PreprocessingError(`
 				This version of Odd does not yet support '#' preprocessor directives.
 					in FILENAME.EXTENSION
 					at line LINENO, column COLUMNNO.

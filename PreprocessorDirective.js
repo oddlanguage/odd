@@ -1,16 +1,7 @@
 const Asserter = require("./Asserter");
 const chalk = require("chalk");
+const {PreprocessingError} = require("./Errors/CustomErrors");
 
-function PreprocessingError (message) {
-	const lines = message.split("\n");
-	const baseIndentation = lines.filter(line => line.length)[0].match(/^[\r\t\f\v ]+/)[0].length;
-	return `\n${chalk.underline.redBright("PreprocessingError:")} `
-		+ lines
-			.join("\n")
-			.replace(new RegExp(`^[\\r\\t\\f\\v ]{1,${baseIndentation}}`, "gm"), "")
-			.replace(/^[\r\t\f\v ]*\|<-/gm, "")
-			.trim();
-}
 
 function stringifyRegex (regex) {
 	return (regex instanceof RegExp)
@@ -48,7 +39,7 @@ module.exports = class PreprocessorDirective extends Asserter {
 
 		const token = this.tokens[this.index];
 
-		if (!token.type.match(expectedType) || !token.lexeme.match(expectedLexeme)) throw PreprocessingError(`
+		if (!token.type.match(expectedType) || !token.lexeme.match(expectedLexeme)) throw new PreprocessingError(`
 			Expected ${errTypeStr}${(errLexemeStr) ? ` '${errLexemeStr}'` : ""}, but got ${token.type} '${token.lexeme}'
 				in FILENAME.EXTENSION
 				at line LINENO, column COLUMNNO. start ${token.start} end ${token.end}
@@ -77,8 +68,8 @@ module.exports = class PreprocessorDirective extends Asserter {
 			token = this.tokens[this.index];
 			if (!token.type.match(this.expectation[0]) || !token.lexeme.match(this.expectation[1])) { //If previous expectation is not found
 				if (!token.type.match(expectedType) || (expectedLexeme && !token.lexeme.match(expectedLexeme))) { //If until expectation is not found
-					throw PreprocessingError(`
-						Expected ${errTypeStr}${(errLexemeStr) ? ` '${errLexemeStr}'` : ""} after ${root.type} '${root.lexeme}', but got ${token.type} '${token.lexeme}'
+					throw new PreprocessingError(`
+						Expected ${errTypeStr}${(errLexemeStr) ? ` '${errLexemeStr}'` : ""} somewhere after ${root.type} '${root.lexeme}', but got ${token.type} '${token.lexeme}'
 							in FILENAME.EXTENSION
 							at line LINENO, column COLUMNNO. start ${root.start} end ${root.end}
 							

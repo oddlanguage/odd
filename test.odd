@@ -1,6 +1,6 @@
 //function str: test (bool: doStuff) { return Boolean(Math.random(1, 2)) }
-define str: a = some.very.intriquite.lexeme;
-define arr<arr<num>>: weirdArray😂 = [[1], [1, 2], [1, 2, 3]];
+define str: a = some.very.intriquite.lexeme
+define arr<arr<num>>: weirdArray = [[1], [1, 2], [1, 2, 3]];
 
 const b = a;
 const c = weirdArray;
