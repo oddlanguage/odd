@@ -5,7 +5,7 @@ const chalk = require("chalk");
 function LexicalError (message) {
 	const lines = message.split("\n");
 	const baseIndentation = lines.filter(line => line.length)[0].match(/^[\r\t\f\v ]+/)[0].length;
-	return `\n${chalk.underline.redBright("LexicalError:")} `
+	return chalk`\n {bgRgb(122,25,25)  LexicalError: } `
 		+ lines
 			.join("\n")
 			.replace(new RegExp(`^[\\r\\t\\f\\v ]{1,${baseIndentation}}`, "gm"), "")
@@ -18,13 +18,13 @@ module.exports = class Lexer extends Asserter {
 		super("lex");
 		this.grammars = new Map();
 		this.input = null;
-		this.colouriser = null;
-		this["error lexer"] = null;
+		this.colouriser = tokens => tokens.map(token => token.lexeme).join("");
+		this["error lexer"] = this;
 	}
 
 	rule (type, grammar) {
 		if (!(grammar instanceof RegExp)) {
-			grammar = new RegExp(grammar.replace(/(?<!\\)[\[\]\(\)]/, "\\$&"));
+			grammar = new RegExp(grammar.replace(/\W/, "\\$&"));
 		}
 		this.grammars.set(type, grammar);
 		return this;
@@ -94,7 +94,8 @@ module.exports = class Lexer extends Asserter {
 
 				const errorLineString = this.input
 					.slice(this.input.slice(0, index).lastIndexOf("\n") + 1)
-					.replace(/\n[\s\S]*/, "").trim();
+					.replace(/\n[\s\S]*/, "")
+					.trim();
 
 				this.assert("error lexer", "warn");
 				let colouredString = null;
@@ -109,8 +110,8 @@ module.exports = class Lexer extends Asserter {
 				}
 
 				throw LexicalError(`
-					Unknown lexeme \`${lexeme}\` in FILENAME.EXTENSION
-						at line ${line}, column ${column}${(lexeme.length > 1) ? " to " + (column + lexeme.length - 1) : ""}.
+					Unknown lexeme ${chalk`{italic \`${lexeme}\`}`} in ${chalk`{italic.yellowBright FILENAME.EXTENSION}`}
+						${chalk`{gray at}`} line ${chalk`{magentaBright ${line}}`}, column ${chalk`{magentaBright ${column}}`}${(lexeme.length > 1) ? " to " + chalk`{magentaBright ${(column + lexeme.length - 1)}}` : ""}.
 						
 						|<-${colouredString || errorLineString}
 						|<-${" ".repeat(Math.max(1, column - 1))}${chalk.redBright("˜".repeat(lexeme.length))}
