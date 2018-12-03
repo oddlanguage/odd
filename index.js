@@ -54,5 +54,4 @@ new Processor()
 	.set("compiler", compiler)
 	.use(plugin)
 	.process(input)
-	.then(console.log)
-	.catch(console.error);
+	.then(console.log);
