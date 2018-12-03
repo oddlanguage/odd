@@ -98,13 +98,10 @@ module.exports = class Lexer extends Asserter {
 					);
 				}
 
-				throw new LexicalError(`
-					Unknown lexeme ${chalk`{italic \`${lexeme}\`}`} in ${chalk`{italic.yellowBright FILENAME.EXTENSION}`}
-						${chalk`{gray at}`} line ${chalk`{magentaBright ${line}}`}, column ${chalk`{magentaBright ${column}}`}${(lexeme.length > 1) ? " to " + chalk`{magentaBright ${(column + lexeme.length - 1)}}` : ""}.
-						
-					|<-${errorLineString}
-					|<-${" ".repeat(Math.max(1, column - 1))}${chalk.redBright("˜".repeat(lexeme.length))}
-				`);
+				throw new LexicalError(`Unknown lexeme ${chalk`{italic \`${lexeme}\`}`}`,
+					"FILENAME.EXT",
+					{line: line, column: column},
+					`|<-${errorLineString}\n|<-${" ".repeat(Math.max(1, column - 1))}${chalk.redBright("˜".repeat(lexeme.length))}`);
 			}
 		}
 

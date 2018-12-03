@@ -2,28 +2,30 @@ const chalk = require("chalk");
 require("prototype-extensions/String");
 
 class CustomError {
-	constructor (message) {
-		const lines = message.split("\n");
-		this.message = lines
-				.join("\n")
-				.dedent()
-				.trim();
+	constructor (message, filename, position, extra) {
+		this.message = ("\t"+message).dedent().trim();
+		this.filename = filename || "no file provided";
+		this.position = position || {line: NaN, column: NaN};
+		this.extra = extra || "";
 	}
 
 	toString () {
-		return chalk`\n {bgRgb(122,25,25)  ${this.constructor.name}: } ` + this.message;
+		return "\n " + chalk` {bgRgb(122,25,25)  ${this.constructor.name}: } ${this.message}
+		|<-  {gray -} {yellowBright ${this.filename}} at line ${chalk`{magentaBright ${this.position.line}}`}, column ${chalk`{magentaBright ${this.position.column}}`}.
+
+		${this.extra && this.extra + "\n"}`.dedent();
 	}
 }
 
 class LexicalError extends CustomError {
-	constructor (message) {
-		super(message);
+	constructor (...args) {
+		super(...args);
 	}
 }
 
 class PreprocessingError extends CustomError {
-	constructor (message) {
-		super(message);
+	constructor (...args) {
+		super(...args);
 	}
 }
 

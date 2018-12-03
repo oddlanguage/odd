@@ -4,7 +4,6 @@ const Preprocessor = require("./Preprocessor");
 const Parser = require("./Parser");
 const Compiler = require("./Compiler");
 const ProcessorPlugin = require("./ProcessorPlugin");
-const colourise = require("./OddColouriseCommandLine");
 
 const lexer = new Lexer();
 lexer.rule("whitespace", /\s+/)
@@ -25,7 +24,7 @@ lexer.rule("whitespace", /\s+/)
 	.rule("literal", /\b(true|false|nil|null|undefined)\b/)
 	.rule("identifier", /[a-zA-Z_$][\w$]*/)
 	.set("error lexer", lexer)
-	.set("colouriser", colourise);
+	.set("colouriser", require("./OddColouriseCommandLine"));
 
 const preprocessor = new Preprocessor()
 	.set("directive start", /#|define/)
