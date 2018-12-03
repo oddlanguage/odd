@@ -18,6 +18,8 @@ module.exports = class Lexer extends Asserter {
 		super("lex");
 		this.grammars = new Map();
 		this.input = null;
+		this.colouriser = null;
+		this["error lexer"] = null;
 	}
 
 	rule (type, grammar) {
@@ -38,7 +40,7 @@ module.exports = class Lexer extends Asserter {
 		const check = (toCheck.match(grammar)||{});
 		const {index} = check;
 		if (index !== 0) return false;
-		const match = check[check.length - 1]; //Get the last match to support pairs in grammar rules.
+		const match = check[0]; //Get the first match to support pairs in grammar rules.
 		return match;
 	}
 
@@ -94,16 +96,28 @@ module.exports = class Lexer extends Asserter {
 					.slice(this.input.slice(0, index).lastIndexOf("\n") + 1)
 					.replace(/\n[\s\S]*/, "").trim();
 
+				this.assert("error lexer", "warn");
+				let colouredString = null;
+				if (this["error lexer"]) {
+					this.assert("colouriser");
+					colouredString = this.colouriser(
+						this["error lexer"]
+							.rule("error", lexeme)
+							.set("input", errorLineString)
+							.lexSync()
+					);
+				}
+
 				throw LexicalError(`
 					Unknown lexeme \`${lexeme}\` in FILENAME.EXTENSION
 						at line ${line}, column ${column}${(lexeme.length > 1) ? " to " + (column + lexeme.length - 1) : ""}.
 						
-						|<-${errorLineString}
-						|<-${" ".repeat(column - 1)}${chalk.redBright("˜".repeat(lexeme.length))}
+						|<-${colouredString || errorLineString}
+						|<-${" ".repeat(Math.max(1, column - 1))}${chalk.redBright("˜".repeat(lexeme.length))}
 				`);
 			}
 		}
 
-		return Promise.resolve(tokens);
+		return tokens;
 	}
 }

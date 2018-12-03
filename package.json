@@ -16,7 +16,6 @@
   "homepage": "https://github.com/maanlamp/odd#readme",
   "dependencies": {
     "chalk": "^2.4.1",
-    "pretty-error": "^2.1.1",
     "prototype-extensions": "github:maanlamp/prototype-extensions"
   },
   "devDependencies": {

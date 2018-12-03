@@ -1,18 +1,15 @@
-const prettyError = require("pretty-error").start();
-prettyError.skipNodeFiles();
-
 const Processor = require("./Processor");
 const Lexer = require("./Lexer");
 const Preprocessor = require("./Preprocessor");
 const Parser = require("./Parser");
 const Compiler = require("./Compiler");
 const ProcessorPlugin = require("./ProcessorPlugin");
-
 const colourise = require("./OddColouriseCommandLine");
-console.log(colourise("function str: test (bool: doStuff) { return Boolean(Math.random(1, 2)) }"));
 
-const lexer = new Lexer()
-	.rule("whitespace", /\s+/)
+const lexer = new Lexer();
+lexer.rule("whitespace", /\s+/)
+	.rule("string", /(?<!\\)".*"/)
+	.rule("template literal", /(?<!\\)`.*`/)
 	.rule("single line comment", /\/\/[^\n]*/)
 	.rule("multi line comment", /\/\*[^*]*?\*\//)
 	.rule("expression terminator", ";")
@@ -20,15 +17,15 @@ const lexer = new Lexer()
 	.rule("type annotation", /[\[{]?\w+?[<\[{]?\S*[>\]}]?:/)
 	.rule("operator", /[.=+\-/*%^~<>?&|!:]|\b(new|exists|instanceof|typeof)\b/)
 	.rule("controller", /\b(return|emits?|if|when|while|then|or|and|else|continue|throw|using)\b/)
-	.rule("string", /(?<!\\)".*"/)
-	.rule("template literal", /(?<!\\)`.*`/)
 	.rule("preprocessor directive", /#|\bdefine\b/)
 	.rule("storage type", /\b(const|local|type|function|class|interface)\b/)
 	.rule("storage modifier", /\b(extends|overt)\b/)
 	.rule("builtin", /\b(Function|Array|Object|String|Boolean|Number|Math|Error)\b/)
-	.rule("number", /\W(\d*\.?\d+(?:[Ee][+-]?\d+)?)/)
+	.rule("number", /\b\d*\.?\d+(?:[Ee][+-]?\d+)?/)
 	.rule("literal", /\b(true|false|nil|null|undefined)\b/)
-	.rule("identifier", /[a-zA-Z_$][\w$]*/);
+	.rule("identifier", /[a-zA-Z_$][\w$]*/)
+	.set("error lexer", lexer)
+	.set("colouriser", colourise);
 
 const preprocessor = new Preprocessor()
 	.set("directive start", /#|define/)
