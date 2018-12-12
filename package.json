@@ -3,7 +3,9 @@
   "version": "1.0.0",
   "description": "",
   "main": "index.js",
-  "scripts": {},
+  "scripts": {
+    "test": "node ./TestLexer.js"
+  },
   "repository": {
     "type": "git",
     "url": "git+https://github.com/maanlamp/odd.git"

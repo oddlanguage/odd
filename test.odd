@@ -1,5 +1,5 @@
 //function str: test (bool: doStuff) { return Boolean(Math.random(1, 2)) }
-define str: a = some.very.intriquite.lexeme
+define str: a = some.very.intriquite.lexeme;
 define arr<arr<num>>: weirdArray = [[1], [1, 2], [1, 2, 3]];
 
 const b = a;
@@ -37,6 +37,10 @@ const bool: test7 = Boolean(1);
 Array();
 Object();
 Function();
+
+repeat 3 {
+	//Do nothing
+}
 
 if (a == 3 and 4 or 4) then i = 0;
 if (test7 exists) then throw new Error();

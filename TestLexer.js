@@ -1,10 +1,4 @@
-const Processor = require("./Processor");
 const Lexer = require("./Lexer");
-const Preprocessor = require("./Preprocessor");
-const Parser = require("./Parser");
-const Compiler = require("./Compiler");
-const ProcessorPlugin = require("./ProcessorPlugin");
-
 const lexer = new Lexer();
 lexer
 	.set("error lexer", lexer)
@@ -27,32 +21,54 @@ lexer
 	.rule("literal", /\b(true|false|nil|null|undefined)\b/)
 	.rule("identifier", /[a-zA-Z_$][\w$]*/);
 
-const preprocessor = new Preprocessor()
-	.set("directive start", /#|define/)
-	.set("directive end", /[;}]/)
-	.set("verifier", directive => {
-		directive.expect("preprocessor directive", "define")
-			.optional("type annotation")
-			.expect("identifier")
-			.expect("operator", "=")
-			.expect(/operator|identifier|number|string|punctuation/)
-			.until("expression terminator");
-	});
+const tokens = lexer
+	.set("input", "define str: a = some.very.intriquite.lexeme;")
+	.lexSync();
 
-const parser = new Parser();
-
-const compiler = new Compiler();
-
-const plugin = new ProcessorPlugin();
-
-const input = require("fs").readFileSync("./test.odd", "utf8");
-
-new Processor()
-	.set("lexer", lexer)
-	.set("preprocessor", preprocessor)
-	.set("parser", parser)
-	.set("compiler", compiler)
-	.use(plugin)
-	.process(input)
-	.then(console.log)
-	.catch(err => console.error(err.toString()));
+tokens.forEach((token, i) => {
+	switch (i) {
+		case 1: case 3: case 5: case 7: {
+			if (
+				token.type === "whitespace"
+				&& token.lexeme === " "
+				) return;
+		}
+		case 4: case 8: case 10: case 12: case 14: {
+			if (
+				token.type === "identifier"
+				) return;
+		}
+		case 0: {
+			if (
+				token.type === "preprocessor directive"
+				&& token.lexeme === "define"
+				) return;
+		}
+		case 2: {
+			if (
+				token.type === "type annotation"
+				&& token.lexeme === "str:"
+				) return;
+		}
+		case 6: {
+			if (
+				token.type === "operator"
+				&& token.lexeme === "="
+				) return;
+		}
+		case 9: case 11: case 13: {
+			if (
+				token.type === "operator"
+				&& token.lexeme === "."
+				) return;
+		}
+		case 15: {
+			if (
+				token.type === "expression terminator"
+				&& token.lexeme === ";"
+				) return;
+		}
+	}
+	throw new Error(`Token no. ${i} is not supposed to be ${token.type}: ${token.lexeme}`);
+});
+console.log("Succesfully passed test!");

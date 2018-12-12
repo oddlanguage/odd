@@ -75,10 +75,11 @@ const Lexer = require("./Lexer");
 const lexer = new Lexer();
 lexer.rule({
   0: "builtin math",
-  1: "builtin math method"
-}, /\b(Math).?(floor|round|ceil)\b/);
+  1: "operator",
+  2: "builtin math method"
+}, /\b(Math)(.?)(floor|round|ceil)\b/);
 //or
-lexer.rule(["builtin math", "builtin math method"], /\b(Math).?(floor|round|ceil)\b/);
+lexer.rule(["builtin math", "operator", "builtin math method"], /\b(Math)(.?)(floor|round|ceil)\b/);
 ```
 
 ---
@@ -86,6 +87,14 @@ lexer.rule(["builtin math", "builtin math method"], /\b(Math).?(floor|round|ceil
 ### 7: Show only the error-causing lexeme when an error occurs while lexing
 _`By:`_ @maanlamp
 > Related to [ToDo 3](#3-log-the-correct-unidentifiable-lexeme-when-throwing-an-error)
-##### STATUS: `pending`
+##### STATUS: `planned`
 
 When an error occurs, the cause of the error will be stripped out of the input, and will be used for error logging. Any other lexeme that also complies to the regex, that will be created from the cause of the error, is also stripped and preserved (erroneously). Fix pls.
+
+---
+
+### 8: Make the entire processor pipeline work with streams
+_`By:`_ @maanlamp
+##### STATUS: `planned`
+
+For testing, I'm processing small files. When the language will be used in bigger projects, it will not scale if it has to load and save everything into memory. Streams were introduced exactly for this use case, so we should use them.
