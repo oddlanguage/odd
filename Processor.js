@@ -52,7 +52,7 @@ module.exports = class Processor extends Asserter {
 		//Return Promise<AST>
 		return this.lexer
 			.set("input", input)
-			.lex(input)
+			.lex()
 			.then(tokens => this.preprocessor ? this.preprocessor.preprocess(tokens) : tokens)
 			.then(this.parser.parse);
 	}
