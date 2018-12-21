@@ -17,7 +17,6 @@ module.exports = class Processor extends Asserter {
 		//Compile AST
 		return this.assert("lexer")
 			.assert("parser")
-			.assert("preprocessor", "warn")
 			.assert("compiler")
 			.parse(input)
 			.then(AST => this.transform(AST))
@@ -53,18 +52,17 @@ module.exports = class Processor extends Asserter {
 		return this.lexer
 			.set("input", input)
 			.lex()
-			.then(tokens => this.preprocessor ? this.preprocessor.preprocess(tokens) : tokens)
 			.then(this.parser.parse);
 	}
 
 	async transform (AST) {
 		if (!this.plugins.length) return AST;
 		//For every plugin
-		//	call plugin.transformer(AST)
+		//	call plugin(AST)
 		//Return Promise<modifiedAST>
 		const plugin = this.plugins.pop();
 		if (plugin) AST = await this.transform(AST);
-		return plugin.transformer(AST);
+		return plugin(AST);
 	}
 
 	compile (AST) {

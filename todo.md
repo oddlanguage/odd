@@ -103,7 +103,7 @@ For testing, I'm processing small files. When the language will be used in bigge
 
 ### 9: Turn explicitly defined preprocessor into processor plugin
 _`By:`_ @maanlamp
-##### STATUS: `planned`
+##### STATUS: `started`
 
 Since a preprocessor is not a standard part of a processor (e.g. not all processors use a preprocessor), we should embrace the plugin-based architecture and make a plugin out of it. Or several!
 
