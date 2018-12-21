@@ -15,6 +15,18 @@ const obj: objectje = [
 //   //Do nothing
 // }
 
+class Vector2 {
+	add (other) {
+		this.x += other.x;
+		this.y += other.y;
+		return this;
+	}
+
+	operator + (other) {
+		return this.add(other);
+	}
+}
+
 //Functions don't require the function keyword in quirks mode
 function str: getName () {
   return "Gertje";

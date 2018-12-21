@@ -18,7 +18,7 @@ lexer
 	.rule("punctuation", /[,\[\]\(\)}{]/)
 	.rule("type annotation", /[\[{]?\w+?[<\[{]?\S*[>\]}]?:/)
 	.rule("operator", /[.=+\-/*%^~<>?&|!:]|\b(new|exists|instanceof|typeof)\b/)
-	.rule("controller", /\b(return|emits?|if|when|while|then|or|and|else|continue|throw|using|repeat)\b/)
+	.rule("controller", /\b(return|emits?|if|when|while|then|or|and|else|continue|throw|using|repeat|operator)\b/)
 	.rule("preprocessor directive", /#|\bdefine\b/)
 	.rule("storage type", /\b(const|local|type|function|class|interface)\b/)
 	.rule("storage modifier", /\b(extends|overt)\b/)

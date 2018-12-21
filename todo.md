@@ -98,3 +98,19 @@ _`By:`_ @maanlamp
 ##### STATUS: `planned`
 
 For testing, I'm processing small files. When the language will be used in bigger projects, it will not scale if it has to load and save everything into memory. Streams were introduced exactly for this use case, so we should use them.
+
+---
+
+### 9: Turn explicitly defined preprocessor into processor plugin
+_`By:`_ @maanlamp
+##### STATUS: `planned`
+
+Since a preprocessor is not a standard part of a processor (e.g. not all processors use a preprocessor), we should embrace the plugin-based architecture and make a plugin out of it. Or several!
+
+---
+
+### 10: Have seperate pre- and post-AST plugin stages
+_`By:`_ @maanlamp
+##### STATUS: `planned`
+
+In order for some plugins (such as the preprocessor) to work, they must be able to access the token stream instead of an AST. There should be a way for a plugin to choose what stage it hooks into.
