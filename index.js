@@ -4,7 +4,7 @@ const Parser = require("./Parser");
 const Compiler = require("./Compiler");
 
 const lexer = new Lexer()
-// 	.set("colouriser", require("./OddColouriseCommandLine"))
+	.set("colouriser", require("./OddColouriseCommandLine"))
 	.rule("whitespace", /\s+/)
 	.rule("string", /(?<!\\)".*"/)
 	.rule("template literal", /(?<!\\)`.*`/)
@@ -15,12 +15,12 @@ const lexer = new Lexer()
 	.rule("block start", "{")
 	.rule("block end", "}")
 	.rule("type annotation", /[\[{]?\w+?[<\[{]?\S*[>\]}]?:/)
-	.rule("operator", /[.=+\-/*%^~<>?&|!:]|\b(new|exists|instanceof|typeof)\b/)
-	.rule("controller", /\b(return|emits?|if|when|while|then|or|and|else|continue|throw|using|repeat|operator)\b/)
+	.rule("operator", /[.=+\-/*%^~<>?&|!:]|\b(new|exists|instanceof|typeof|in)\b/)
+	.rule("controller", /\b(for|return|emits?|if|when|while|then|or|and|else|continue|throw|using|repeat|operator)\b/)
 	.rule("preprocessor directive", /#|\bdefine\b/)
 	.rule("storage type", /\b(const|local|type|function|class|interface)\b/)
 	.rule("storage modifier", /\b(implements|extends|overt)\b/)
-	.rule("builtin", /\b(Function|Array|Object|String|Boolean|Number|Math|Error)\b/)
+	.rule("builtin", /\b(Function|Array|Object|String|Boolean|Number|Math|Error|Class)\b/)
 	.rule("floating point number", /[0-9]*\.[0-9]+(?:e[+-]?[0-9]+)?/i)
 	.rule("integer number", /[0-9]+/)
 	.rule("literal", /\b(true|false|nil|null|undefined)\b/)
@@ -43,30 +43,28 @@ const compiler = new Compiler();
 
 const input = require("fs").readFileSync("./test.odd", "utf8");
 
-function preprocessor () {
-	return function () {};
+function preprocessor (tokens) {
+	return tokens;
 }
 
-function typeChecker () {
-	return function () {};
+function typeChecker (ast) {
+	return ast;
 }
 
-function optimiser () {
-	return function () {};
+function optimiser (ast) {
+	return ast;
 }
 
-function plugin () {
-	return function () {};
+function plugin (compiledCode) {
+	return compiledCode;
 }
-
-const file = null;
 
 new Processor()
-	.stage("lexer", lexer)
+	.stage("lexer", lexer.lex.bind(lexer))
 	.stage("preprocessor", preprocessor)
-	.stage("parser", parser)
+	.stage("parser", parser.parse.bind(parser))
 		.use(typeChecker)
 		.use(optimiser)
-	.stage("compiler", compiler)
+	.stage("compiler", compiler.compile.bind(compiler))
 		.use(plugin)
-	.process(file);
+	.process(input);

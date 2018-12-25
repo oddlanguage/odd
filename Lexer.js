@@ -19,6 +19,11 @@ module.exports = class Lexer {
 		return this;
 	}
 
+	set (name, value) {
+		this[name] = value;
+		return this;
+	}
+
 	static verifyGrammar (grammar, input, sliceIndex) {
 		const toCheck = input.slice(sliceIndex);
 		const check = (toCheck.match(grammar)||{});
@@ -28,8 +33,8 @@ module.exports = class Lexer {
 		return match;
 	}
 
-	lex () {
-		assert(this.input !== null, "Input must be defined in order to lex!");
+	lex (input) {
+		assert(input !== null, "Input must be defined in order to lex!");
 
 		const tokens = [];
 		let line = 1;
@@ -50,9 +55,9 @@ module.exports = class Lexer {
 			return {line, column};
 		}
 
-		while (index < this.input.length) {
+		while (index < input.length) {
 			for (const [type, grammar] of this.grammars) {
-				const lexeme = Lexer.verifyGrammar(grammar, this.input, index);
+				const lexeme = Lexer.verifyGrammar(grammar, input, index);
 				if (lexeme !== false) {
 					tokens.push(new LexicalToken(type, lexeme, index, index + lexeme.length));
 					index += lexeme.length;
@@ -64,16 +69,18 @@ module.exports = class Lexer {
 				shouldContinue = false;
 				continue;
 			} else {
-				const {line, column} = getPosition(this.input, index);
+				const {line, column} = getPosition(input, index);
 
-				let lexeme = this.input.slice(index);
+				let lexeme = input.slice(index);
 
 				for (const [, grammar] of this.grammars) {
 					lexeme = lexeme.replace(new RegExp(grammar, "g"), "");
 				}
 
-				let errorLineString = this.input
-					.slice(this.input.slice(0, index).lastIndexOf("\n") + 1)
+				let errorLineString = input
+					.slice(input
+						.slice(0, index)
+						.lastIndexOf("\n") + 1)
 					.replace(/\n[\s\S]*/, "")
 					.trim();
 
@@ -83,8 +90,7 @@ module.exports = class Lexer {
 					errorLineString = this.colouriser(
 						this["error lexer"]
 							.rule("error", lexeme)
-							.set("input", errorLineString)
-							.lex()
+							.lex(errorLineString)
 					);
 				}
 
@@ -96,9 +102,5 @@ module.exports = class Lexer {
 		}
 
 		return tokens;
-	}
-
-	lexAsync () {
-		return Promise.resolve(this.lex());
 	}
 }

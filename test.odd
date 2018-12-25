@@ -8,6 +8,14 @@ const c = weirdArray;
 const obj: objectje = [
   a = 1;
 ];
+
+//Use : to call the value before it as the first argument to the function after it.
+class guy {}
+function isNewable (value) {
+	return (value instanceof Class);
+}
+print(guy:isNewable());
+
 //Possible advanced feature
 // define objectje.b = c;
 
