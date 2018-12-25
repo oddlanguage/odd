@@ -109,8 +109,8 @@ Since a preprocessor is not a standard part of a processor (e.g. not all process
 
 ---
 
-### 10: Have seperate pre- and post-AST plugin stages
+### 10: Have seperate processor stages
 _`By:`_ @maanlamp
-##### STATUS: `planned`
+##### STATUS: `started`
 
-In order for some plugins (such as the preprocessor) to work, they must be able to access the token stream instead of an AST. There should be a way for a plugin to choose what stage it hooks into.
+In order for some plugins (such as the preprocessor) to work, they must be able to access the token stream instead of an AST. There should be a way for a user to tell a plugin what stage to hook into.
