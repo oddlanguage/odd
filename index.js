@@ -3,10 +3,8 @@ const Lexer = require("./Lexer");
 const Parser = require("./Parser");
 const Compiler = require("./Compiler");
 
-const lexer = new Lexer();
-lexer
-	.set("error lexer", lexer)
-	.set("colouriser", require("./OddColouriseCommandLine"))
+const lexer = new Lexer()
+// 	.set("colouriser", require("./OddColouriseCommandLine"))
 	.rule("whitespace", /\s+/)
 	.rule("string", /(?<!\\)".*"/)
 	.rule("template literal", /(?<!\\)`.*`/)
@@ -21,26 +19,15 @@ lexer
 	.rule("controller", /\b(return|emits?|if|when|while|then|or|and|else|continue|throw|using|repeat|operator)\b/)
 	.rule("preprocessor directive", /#|\bdefine\b/)
 	.rule("storage type", /\b(const|local|type|function|class|interface)\b/)
-	.rule("storage modifier", /\b(extends|overt)\b/)
+	.rule("storage modifier", /\b(implements|extends|overt)\b/)
 	.rule("builtin", /\b(Function|Array|Object|String|Boolean|Number|Math|Error)\b/)
-	.rule("number", /\b\d*\.?\d+(?:[Ee][+-]?\d+)?/)
+	.rule("floating point number", /[0-9]*\.[0-9]+(?:e[+-]?[0-9]+)?/i)
+	.rule("integer number", /[0-9]+/)
 	.rule("literal", /\b(true|false|nil|null|undefined)\b/)
 	.rule("identifier", /[a-zA-Z_$][\w$]*/);
 
 const parser = new Parser();
 const compiler = new Compiler();
-
-function preprocessor () {
-	const start = "preprocessor directive";
-	const end = /expression terminator|block end/;
-
-	return function transformer (AST) {
-		//Find node which type conforms to start
-		//Verify directive through to end
-		//Handle directive
-		return AST;
-	}
-}
 
 // const preprocessor = new Preprocessor()
 // 	.set("directive start", /#|define/)
@@ -56,11 +43,30 @@ function preprocessor () {
 
 const input = require("fs").readFileSync("./test.odd", "utf8");
 
+function preprocessor () {
+	return function () {};
+}
+
+function typeChecker () {
+	return function () {};
+}
+
+function optimiser () {
+	return function () {};
+}
+
+function plugin () {
+	return function () {};
+}
+
+const file = null;
+
 new Processor()
-	.set("lexer", lexer)
-	.set("parser", parser)
-	.set("compiler", compiler)
-	.use(preprocessor)
-	.process(input)
-	.then(console.log)
-	.catch(err => console.error(err.toString()));
+	.stage("lexer", lexer)
+	.stage("preprocessor", preprocessor)
+	.stage("parser", parser)
+		.use(typeChecker)
+		.use(optimiser)
+	.stage("compiler", compiler)
+		.use(plugin)
+	.process(file);

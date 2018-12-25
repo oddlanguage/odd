@@ -1,73 +1,27 @@
-const Asserter = require("./Asserter");
+require("prototype-extensions/Array");
+const assert = require("./assert");
 
-module.exports = class Processor extends Asserter {
+module.exports = class Processor {
 	constructor () {
-		super("Process");
-		this.lexer = null;
-		this.parser = null;
-		this.preprocessor = null;
-		this.compiler = null;
-		this.plugins = [];
+		this.stages = [];
 	}
 
-	process (input) {
-		//Check if parsing is possible
-		//Parse input to AST
-		//Transform AST with plugins defined by use()
-		//Compile AST
-		return this.assert("lexer")
-			.assert("parser")
-			.assert("compiler")
-			.parse(input)
-			.then(AST => this.transform(AST))
-			.then(transformedAST => this.compile(transformedAST));
-	}
-
-	set (key, value) {
-		//Register custom behaviour such as "lexer", new Lexer()
-		this[key] = value;
+	stage (name, handler) {
+		this.stages.push({ name, handler, plugins: [] })
 		return this;
 	}
 
-	use (plugin) {
-		//If plugin instanceof ProcessorPlugin
-		//	Register new plugin();
-		//Elseif plugin instanceof Array
-		//	For each item in array
-		//		Register new plugin()
-		//Elseif plugin instanceof Function
-		//	call plugin();
-		//Else
-		//	throw new Error(`${typeof plugin} is not a valid plugin type.`);
-		//Return this;
-		this.plugins.push(plugin);
+	use (...plugin) {
+		assert(this.stages[0] !== undefined, "Do not register plugins before declaring a processor stage.");
+		this.stages
+			.last()
+			.plugins
+			.concat(plugin);
 		return this;
 	}
 
-	parse (input) {
-		//Tokenise input
-		//Preprocess tokens if needed
-		//Create AST from tokenised input
-		//Return Promise<AST>
-		return this.lexer
-			.set("input", input)
-			.lex()
-			.then(this.parser.parse);
-	}
-
-	async transform (AST) {
-		if (!this.plugins.length) return AST;
-		//For every plugin
-		//	call plugin(AST)
-		//Return Promise<modifiedAST>
-		const plugin = this.plugins.pop();
-		if (plugin) AST = await this.transform(AST);
-		return plugin(AST);
-	}
-
-	compile (AST) {
-		//Turn AST into target [bytecode?]
-			//Return Promise<target>
-		return this.compiler.compile(AST);
+	process () {
+		//go through all stages, using their plugins
+		return Promise.resolve(null);
 	}
 }

@@ -1,11 +1,10 @@
-const Asserter = require("./Asserter");
+const assert = require("./assert");
 const LexicalToken = require("./LexicalToken");
 const chalk = require("chalk");
 const {LexicalError} = require("./Errors/CustomErrors");
 
-module.exports = class Lexer extends Asserter {
+module.exports = class Lexer {
 	constructor () {
-		super("lex");
 		this.grammars = new Map();
 		this.input = null;
 		this.colouriser = tokens => tokens.map(token => token.lexeme).join("");
@@ -20,11 +19,6 @@ module.exports = class Lexer extends Asserter {
 		return this;
 	}
 
-	set (key, value) {
-		this[key] = value;
-		return this;
-	}
-
 	static verifyGrammar (grammar, input, sliceIndex) {
 		const toCheck = input.slice(sliceIndex);
 		const check = (toCheck.match(grammar)||{});
@@ -35,11 +29,7 @@ module.exports = class Lexer extends Asserter {
 	}
 
 	lex () {
-		return Promise.resolve(this.lexSync());
-	}
-
-	lexSync () {
-		this.assert("input");
+		assert(this.input !== null, "Input must be defined in order to lex!");
 
 		const tokens = [];
 		let line = 1;
@@ -87,14 +77,14 @@ module.exports = class Lexer extends Asserter {
 					.replace(/\n[\s\S]*/, "")
 					.trim();
 
-				this.assert("error lexer", "warn");
+				assert(this["error lexer"] !== null, "Cannot colourise lexical error without an 'error lexer'.", "warn");
 				if (this["error lexer"]) {
-					this.assert("colouriser");
+					assert(this["colouriser"] !== null, "Cannot colourise lexical error without a 'colouriser'.");
 					errorLineString = this.colouriser(
 						this["error lexer"]
 							.rule("error", lexeme)
 							.set("input", errorLineString)
-							.lexSync()
+							.lex()
 					);
 				}
 
@@ -106,5 +96,9 @@ module.exports = class Lexer extends Asserter {
 		}
 
 		return tokens;
+	}
+
+	lexAsync () {
+		return Promise.resolve(this.lex());
 	}
 }

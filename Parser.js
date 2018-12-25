@@ -1,14 +1,5 @@
-module.exports = class Parser {
-	constructor () {
-		this.plugins = [];
-	}
-
-	use (plugin) {
-		this.plugins.push(plugin);
-		return this;
-	}
-
-	parse (tokens) {
+module.exports = class Parser {	
+	parse () {
 		//Return AST
 		return Promise.resolve({});
 	}
