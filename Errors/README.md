@@ -1,0 +1,2 @@
+# Odd Custom Errors
+The stages of Odd compilation are very complex, and will throw a lot of errors at you if you do not use it correctly. In order for the user to know what exactly they did wrong, we have implemented a couple of custom errors to better explain what went wrong, and where it did so.

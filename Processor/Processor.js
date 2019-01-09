@@ -1,6 +1,6 @@
 require("prototype-extensions/Array");
 const ProcessorStage = require("./ProcessorStage");
-const assert = require("./assert");
+const assert = require("../assert");
 
 module.exports = class Processor {
 	constructor () {

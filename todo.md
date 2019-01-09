@@ -120,7 +120,20 @@ const allowedTypes = [
 ];
 //Check something against allowedTypes
 ```
-We need to think about wether it's useful to implement this as a lexier feature, or if we sould just check
+We need to think about wether it's useful to implement this as a lexer feature, or if we sould just check if the type includes the shortened version (as a whole word).
+
+Perhaps in a way like this:
+```js
+const Lexer = require("./Lexer");
+const lexer = new Lexer();
+lexer.rule("super,specific,type", /regex/);
+/* > LexicalToken: {
+  types: ["super", "specific", "type"],
+  type: "super.specific.type",
+  lexeme: ...
+} */
+```
+This would require every token to either have a new property which is an array of all levels of specificity separated by a delimiter, or just store the raw string as a type and splitting by delimitter on demand.
 
 ---
 

@@ -1,7 +1,7 @@
-const assert = require("./assert");
+const assert = require("../assert");
 const LexicalToken = require("./LexicalToken");
 const chalk = require("chalk");
-const {LexicalError} = require("./Errors/CustomErrors");
+const {LexicalError} = require("../Errors/CustomErrors");
 
 module.exports = class Lexer {
 	constructor () {
