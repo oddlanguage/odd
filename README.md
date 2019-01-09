@@ -12,6 +12,14 @@ Odd was created with love for language, and not just for programming languages. 
 
 <br/>
 
+## Usage
+To run the odd compiler, you need to run `index.js` with node v11.6 or higher. Open your cli of choice and run
+```shell
+node . #You need to `cd` into the odd directory for this to work.
+```
+
+<br/>
+
 ## Modules
 Odd was designed with modularity in mind, so all parts of the compiler were written separately. Find them and their READMEs in their respective folders:
 
