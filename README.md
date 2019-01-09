@@ -32,6 +32,7 @@ You can already [try out the look of the language within Visual Studio Code](./V
 Odd is open-source, therefore contributions are welcome! [Read up on how to propose and/or implement a feature.](./todo.md)
 
 <br/>
+<br/>
 
 ---
 
