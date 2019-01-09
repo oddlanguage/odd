@@ -1,5 +1,5 @@
 module.exports = class Compiler {
 	compile (AST) {
-		return Promise.resolve("");
+		return Promise.resolve(AST);
 	}
 }

@@ -1,6 +1,14 @@
 //function str: test (bool: doStuff) { return Boolean(Math.random(1, 2)) }
 define str: a = some.very.intriquite.lexeme;
-define arr<arr<num>>: weirdArray = [[1], [1, 2], [1, 2, 3]];
+define [[num]]: numArr = [[1], [1, 2], [1, 2, 3]];
+define iife any: doSomething (arg) {
+	return arg * 3 - 1;
+}
+#if a then b;
+
+iife type: functionName (parameter) {
+	return parameter ^ 2;
+}
 
 const b = a;
 const c = weirdArray;
@@ -14,29 +22,33 @@ class guy {}
 function isNewable (value) {
 	return (value instanceof Class);
 }
-print(guy:isNewable());
+print(guy:isNewable()::invert());
 
 //Possible advanced feature
-// define objectje.b = c;
+define objectje.b = c;
 
-// #if 1 != 2 {
-//   //Do nothing
-// }
+#if 1 != 2 {
+  //Do nothing
+}
 
 class Vector2 {
-	add (other) {
-		this.x += other.x;
-		this.y += other.y;
+	add (Vector2: other) {
+		//Possible multiple assignment syntaxes
+		this[x, y] = other[x, y];
+		this.x, this.y = other.x, other.y;
 		return this;
 	}
 
-	operator + (other) {
+	operator + (Vector2: other) {
 		return this.add(other);
 	}
 }
 
-//Functions don't require the function keyword in quirks mode
 function str: getName () {
+  return "Gertje";
+}
+//Functions don't require the function keyword in quirks mode
+str: getName () {
   return "Gertje";
 }
 
@@ -53,7 +65,7 @@ const num: test3 = -101.2345e433;
 const str: test4 = String(233546);
 const num: test5 = Number("233546");
 const str: test6 = String();
-const bool: test7 = Boolean(1);
+const boo: test7 = Boolean("1");
 Array();
 Object();
 Function();
@@ -76,10 +88,13 @@ switch (1) {
 }
 break;
 
-// #i = 0;
-// #while (i++ < 10) {
-// 	do nothing.
-// }
+#i = 0;
+#while (i++ < 10) {
+	do nothing.
+}
+#function test (1, 2, 3) {
+	//
+}
 
 interface name {
 	//asd
