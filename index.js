@@ -33,8 +33,6 @@ const compiler = new Compiler();
 
 const input = require("fs").readFileSync("./test.odd", "utf8");
 
-
-
 function typeChecker (ast) {
 	return ast;
 }
