@@ -12,7 +12,8 @@ module.exports = class Lexer {
 	}
 
 	rule (type, grammar) {
-		if (!(grammar instanceof RegExp)) {
+		if (!(grammar instanceof RegExp || typeof grammar === "string")) throw new Error(`Unsupported grammar type [${grammar} ${typeof grammar}]`);
+		if (typeof grammar === "string") {
 			grammar = new RegExp(grammar.replace(/\W/, "\\$&"));
 		}
 		this.grammars.set(type, grammar);
