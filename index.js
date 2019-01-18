@@ -1,12 +1,12 @@
-const Processor = require("./Processor/Processor");
-const Lexer = require("./Lexer/Lexer");
-const Parser = require("./Parser/Parser");
-const Compiler = require("./Compiler/Compiler");
-const colouriser = require("./Lexer/OddColouriseCommandLine");
-const lexicalPreprocessor = require("./Preprocessor/preprocessor");
+const Processor = require("./src/Processor/Processor");
+const Lexer = require("./src/Lexer/Lexer");
+const Parser = require("./src/Parser/Parser");
+const Compiler = require("./src/Compiler/Compiler");
+const colouriser = require("./src/Lexer/OddColouriseCommandLine");
+const lexicalPreprocessor = require("./src/Preprocessor/preprocessor");
 
 const lexer = new Lexer()
-	.set("colouriser", colouriser)
+	//.set("colouriser", colouriser)
 	.rule("whitespace", /\s+/)
 	.rule("string", /(?<!\\)".*"/)
 	.rule("template literal", /(?<!\\)`.*`/)
@@ -31,7 +31,7 @@ const lexer = new Lexer()
 const parser = new Parser();
 const compiler = new Compiler();
 
-const input = require("fs").readFileSync("./test.odd", "utf8");
+const input = require("fs").createReadStream("./test.odd", {encoding: "utf8", highWaterMark: 1024});
 
 function typeChecker (ast) {
 	return ast;
@@ -45,6 +45,7 @@ function plugin (compiledCode) {
 	return compiledCode;
 }
 
+// Read up on either :: or bound class methods BABEL plugins and decide which to use
 new Processor()
 	.stage("lexer", lexer.lex.bind(lexer))
 	.stage("preprocessor", lexicalPreprocessor)

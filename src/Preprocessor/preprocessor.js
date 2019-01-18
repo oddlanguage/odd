@@ -48,6 +48,6 @@ module.exports = function lexicalPreprocessor (tokens) {
 
 	const definitions = getDefinitions(tokens);
 
-	console.log(definitions);
+	console.log("Definitions:", definitions);
 	return tokens;
 }

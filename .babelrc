@@ -1,0 +1,16 @@
+{
+	"presets": [
+		["minify", {
+			"removeConsole": "true",
+			"removeDebugger": "true",
+			"mangle": {
+				"topLevel": "true",
+				"keepFnName": "true"
+			}
+		}]
+	],
+	"plugins": [
+		"@babel/transform-modules-commonjs",
+		"transform-function-bind"
+	]
+}
