@@ -57,7 +57,7 @@
 					"include": "#type-declaration"
 				},
 				{
-					"include": "#interface-declaration"
+					"include": "#template-declaration"
 				}
 			]
 		},
@@ -130,12 +130,12 @@
 				}
 			]
 		},
-		"interface-declaration": {
-			"name": "meta.interface.odd",
-			"begin": "(interface)\\s+(\\w+)",
+		"template-declaration": {
+			"name": "meta.template.odd",
+			"begin": "(template)\\s+(\\w+)",
 			"beginCaptures": {
 				"1": {
-					"name": "storage.type.interface.odd"
+					"name": "storage.type.template.odd"
 				},
 				"2": {
 					"name": "entity.name.class.odd"
