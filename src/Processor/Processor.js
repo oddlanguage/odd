@@ -7,34 +7,63 @@ module.exports = class Processor {
 		this.stages = [];
 	}
 
-	stage (name, handler) {
-		this.stages.push(new ProcessorStage(name, handler));
+	set (key, value) {
+		//Assert not locked
+
+		this[key] = value;
+
 		return this;
 	}
 
-	use (...plugin) {
-		assert(this.stages[0] !== undefined).error("Do not register plugins before declaring a processor stage.");
+	get (key) {
+		return this[key];
+	}
+
+	stage (name, handler, plugins = []) {
+		//Assert not locked
+		//Assert stage conforms to expectations
+
+		
+		this.stages.push(new ProcessorStage({
+			name,
+			handler,
+			plugins
+		}));
+
+		return this;
+	}
+
+	use (plugins) {
+		//Assert not locked
+		//Assert plugin conforms to expectations
 
 		this.stages
 			.last()
 			.plugins
-			.concat(plugin);
+			.merge(plugins);
 
 		return this;
 	}
 
 	async process (input) {
-		assert([
-			typeof input.on === "function",
-			typeof input.end === "function"
-		]).error("Input must be a readable steam.");
-		
-		assert(this.stages[0] !== undefined).error("Cannot process without any defined stages.");
+		return this
+			.lock()
+			.stages
+			.reduce(
+				async (stageOutput, stage) => stage
+					.plugins
+					.reduce(
+						async (pluginOutput, plugin) => await plugin(await pluginOutput),
+						Promise.resolve(await stage.handler(await stageOutput))),
+				Promise.resolve(input));
+	}
 
-		for (const stage of this.stages) {
-			console.log(`Handling ${stage.name} stage.`);
-			input = await stage.handle(input);
-		}
-		return input;
+	lock () {
+		const whitelist = ["get", "process"];
+
+		//Remove all methods except whitelisted ones
+		//Maybe find another way to only expose whitelisted methods
+
+		return this;
 	}
 }
