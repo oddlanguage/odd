@@ -20,14 +20,19 @@ node . #You need to `cd` into the odd directory for this to work.
 
 <br/>
 
+## Documentation
+To read up on the current state of proposed and implemented features, [read the documentation](./Documentation)
+
+<br/>
+
 ## Modules
 Odd was designed with modularity in mind, so all parts of the compiler were written separately. Find them and their READMEs in their respective folders:
 
-- [The lexical analyser](./Lexer)
-- [The lexical preprocessor](./Preprocessor)
-- [The parser](./Parser)
-- [The compiler](./Compiler)
-- [Custom errors](./Errors)
+- [The lexical analyser](./src/Lexer)
+- [The lexical preprocessor](./src/Preprocessor)
+- [The parser](./src/Parser)
+- [The compiler](./src/Compiler)
+- [Custom errors](./src/Errors)
 
 <br/>
 
