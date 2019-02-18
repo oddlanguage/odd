@@ -7,7 +7,7 @@ const lexicalPreprocessor = require("./src/Preprocessor/preprocessor");
 
 const lexer = new Lexer()
 	//.set("colouriser", colouriser)
-	.rule("whitespace", /\s+/)
+	.ignore("whitespace", /\s+/)
 	.rule("string", /(?<!\\)".*"/)
 	.rule("template literal", /(?<!\\)`.*`/)
 	.rule("single line comment", /\/\/[^\n]*/)
@@ -23,7 +23,7 @@ const lexer = new Lexer()
 	.rule("storage type", /\b(const|local|type|function|class|template)\b/)
 	.rule("storage modifier", /\b(implements|extends|overt)\b/)
 	.rule("builtin", /\b(Function|Array|Object|String|Boolean|Number|Math|Error|Class)\b/)
-	.rule("floating point number", /[0-9]*\.[0-9]+(?:e[+-]?[0-9]+)?/i)
+	.rule("decimal number", /[0-9]*\.[0-9]+(?:e[+-]?[0-9]+)?/i)
 	.rule("integer number", /[0-9]+/)
 	.rule("literal", /\b(true|false|nil|null|undefined)\b/)
 	.rule("identifier", /[a-zA-Z_$][\w$]*/);
@@ -31,7 +31,8 @@ const lexer = new Lexer()
 const parser = new Parser();
 const compiler = new Compiler();
 
-const input = require("fs").createReadStream("./test.odd", {encoding: "utf8", highWaterMark: 1024});
+// const input = require("fs").createReadStream("./test.odd", {encoding: "utf8", highWaterMark: 1024});
+const input = require("fs").readFileSync("./test.odd", "utf8");
 
 function typeChecker (ast) {
 	return ast;
@@ -55,5 +56,5 @@ new Processor()
 	.stage("compiler", compiler.compile.bind(compiler))
 		.use(plugin)
 	.process(input)
-	//.then(console.log)
+	.then(console.log)
 	.catch(console.error);

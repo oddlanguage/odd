@@ -1,4 +1,4 @@
-<img src="./icon.png" style="display: block; width: 8rem;" />
+<img src="./logo.png" style="display: block; width: 8rem;" />
 
 #### _Hmm, that's odd..._
 
