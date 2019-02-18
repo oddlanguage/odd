@@ -105,7 +105,7 @@ module.exports = class Lexer {
 			for (const [type, grammar] of this.rules) {
 				const lexeme = Lexer.findLexeme(input.substring(index), grammar);
 				if (lexeme === null) continue;
-				const {line, column} = Lexer.getLineAndColumn(index);
+				const {line, column} = Lexer.getLineAndColumn(input, index);
 				tokens.push(new LexicalToken(type, lexeme, line, column));
 				index += lexeme.length;
 			}
