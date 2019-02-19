@@ -1,0 +1,5 @@
+function num: sum (...arguments) {
+	return arguments.sum();
+}
+
+print(sum(5, 5, 90));

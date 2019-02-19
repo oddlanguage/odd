@@ -19,7 +19,7 @@ const obj: objectje = [
 
 //Use : to call the value before it as the first argument to the function after it.
 class guy {}
-function isNewable (value) {
+function boo: isNewable (value) {
 	return (value instanceof Class);
 }
 print(guy:isNewable()::invert());

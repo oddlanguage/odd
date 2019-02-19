@@ -1,0 +1,16 @@
+class Test {
+	constructor (...arguments) {
+		this.assign(arguments); //JS Object.assign???
+	}
+
+	privateMethod (arg) { //All methods are covert/private per default
+		return arg;
+	}
+
+	overt test (arg) { //Exposing .test method
+		print(this.privateMethod(arg));
+	}
+}
+
+const test = new Test();
+test.test("test");
