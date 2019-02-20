@@ -308,7 +308,7 @@
 			"patterns": [
 				{
 					"name": "support.class.odd",
-					"match": "\\b(String|Number|Boolean|Array|Object|Function|Error|Class)\\b"
+					"match": "\\b(event|String|Number|Boolean|Array|Object|Function|Error|Class)\\b"
 				}
 			]
 		}

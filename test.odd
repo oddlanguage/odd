@@ -22,7 +22,7 @@ class guy {}
 function boo: isNewable (value) {
 	return (value instanceof Class);
 }
-print(guy:isNewable()::invert());
+print(guy():isNewable()::invert());
 
 //Possible advanced feature
 define objectje.b = c;
@@ -83,10 +83,23 @@ switch (1) {
 		//Do nothing
 	}
 	default {
-		continue;
+		break;
 	}
 }
-break;
+break; //Break only allowed in switch. Everywhere else, use continue
+
+function a (b, c, d) {
+	if
+}
+
+foreach index in names {
+	//index is the count of iterations
+}
+
+for name.first of names {
+	//name is the value names[iterator.index]
+	//name.first means: const first = name.first; at the top of a loop
+}
 
 #i = 0;
 #while (i++ < 10) {
@@ -147,13 +160,13 @@ for (person in people) {
 }
 
 const stream = fs.read("file/name.ext");
-when stream emits "error", (error: error) => {
-	throw error;
+when stream emits "error" {
+	throw event.error;
 }
-when stream emits "data", (blob: data) => {
-	print(data);
+when stream emits "data" {
+	print(event.data);
 }
-when stream emits "end", () => {
+when stream emits "end" {
 	stream.destroy();
 }
 
