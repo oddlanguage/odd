@@ -54,7 +54,7 @@ str: getName () {
 
 const str: gert = /*#run*/ getName();
 
-							const 💩 = 13; //This will throw an error if not commented. Might add emoji support later. !!For testing!!
+const 💩 💩 = 13; //This will throw an error if not commented. Might add emoji support later. !!For testing!!
 
 //Test 123
 const num: test1 = +.23e2;
