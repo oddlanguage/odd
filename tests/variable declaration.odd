@@ -1,4 +1,0 @@
-local num: a = 1;
-const str: b = "b";
-const c = 1;
-local d = c + 1;

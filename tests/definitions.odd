@@ -1,4 +1,0 @@
-define int: a = 1;
-define b = a + 1;
-
-print(a, b);
