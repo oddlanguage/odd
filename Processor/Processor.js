@@ -65,16 +65,16 @@ module.exports = class Processor {
 
 		let state = value;
 		for (const [name, stage] of this._stages) {
-			replaceConsoleLine(` 🕛  ${name}...`);
+			// replaceConsoleLine(` 🕛  ${name}...`);
 			const before = performance.now();
 			try {
 				state = await stage.handler(state);
 				//if type(state) === "generatorfunction" INJECT FUNCTION THAT RETURNS HANDLER.NEXT AND SETS ✔️ IF GENERATOR.DONE?????
 				const elapsed = Math.round(performance.now() - before);
-				replaceConsoleLine(` ✔️  ${name} OK! (took ~${elapsed}ms and produced 0 warnings)\n`);
+				// replaceConsoleLine(` ✔️  ${name} OK! (took ~${elapsed}ms and produced 0 warnings)\n`);
 			} catch (err) {
 				const elapsed = Math.round(performance.now() - before);
-				replaceConsoleLine(` ❌  ${name} FAILED! (took ~${elapsed}ms and produced 0 warnings)\n`);
+				// replaceConsoleLine(` ❌  ${name} FAILED! (took ~${elapsed}ms and produced 0 warnings)\n`);
 				error(err);
 			}
 		}

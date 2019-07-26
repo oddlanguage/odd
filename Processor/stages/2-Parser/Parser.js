@@ -1,57 +1,112 @@
 const { inflect } = require("../../../helpers/String.js");
+const inspect = require("../../../helpers/inspect.js");
 const NODES = require("./Nodes.js");
-
-const { inspect: _inspect } = require("util");
-function inspect (...values) {
-	const errLine = new Error().stack
-		.split(/\n\s*/)[2];
-	const pos = errLine.slice(errLine.lastIndexOf("\\") + 1, -1);
-	console.log(`\n\n@ ${pos}`);
-	values.forEach(value => {
-		console.log(_inspect(value, {
-			depth: Infinity,
-			colors: true,
-			compact: false
-		}));
-	});
-	console.log("\n");
-}
 
 const SKIPPED = Symbol("SKIPPED");
 module.exports = class Parser {
 	static get NO_MATCH () { return [0, null]; } //static NO_MATCH = [0, null]; //Uncomment this when class fields are implemented
 	static get SKIPPED () { return SKIPPED; }
 
+	constructor () {
+		this._rules = new Map([
+			["number", this.production(
+				`integer-number | decimal-number`
+			)],
+			["string", this.production(
+				`string | template-literal`
+			)],
+			["literal", this.production(
+				`<string> | literal`
+			)],
+			["exponentiation-expression", this.production(
+				`<expression> operator"^" <expression>`,
+				nodes => new NODES.ExponentiationExpression(nodes[0], nodes[2])
+			)],
+			["multiplication-expression", this.production(
+				`<expression> operator"*" <expression>`,
+				nodes => new NODES.ExponentiationExpression(nodes[0], nodes[2])
+			)],
+			["division-expression", this.production(
+				`<expression> operator"/" <expression>`,
+				nodes => new NODES.ExponentiationExpression(nodes[0], nodes[2])
+			)],
+			["addition-expression", this.production(
+				`<expression> operator"+" <expression>`,
+				nodes => new NODES.ExponentiationExpression(nodes[0], nodes[2])
+			)],
+			["subtraction-expression", this.production(
+				`<expression> operator"-" <expression>`,
+				nodes => new NODES.ExponentiationExpression(nodes[0], nodes[2])
+			)],
+			["math-expression", this.production(
+				`<number> | <exponentiation-expression> | <multiplication-expression> | <division-expression> | <addition-expression> | <subtraction-expression>`
+			)],
+			["more-expressions", this.production(
+				`punctuation"," expression`
+			)],
+			["expression", this.production(
+				`punctuation"(" expression <more-expressions>* punctuation")" | <math-expression> | <literal> | <const-definition> | <var-definition>`
+			)],
+			["declaration", this.production(
+				`type-annotation? identifier operator"=" <expression> semicolon`,
+				nodes => new NODES.Declaration(nodes[0], nodes[1], nodes[3])
+			)],
+			["const-definition", this.production(
+				`storage-type"const" <declaration>`,
+				nodes => new NODES.ConstDefinition(nodes[1])
+			)],
+			["var-definition", this.production(
+				`storage-type"var" <declaration>`,
+				nodes => new NODES.ConstDefinition(nodes[1])
+			)]
+		]);
+	}
+
 	production (grammar, builder) {
 		//Returns a function that checks expectations
 		return tokens => {
 			const typeLexemeRegex = /(?<type>[^"']+)(?:["'](?<lexeme>.+)["'])?/;
 			const subruleRegex = /<.+>/;
-			const rules = grammar
-				.split(/\s+/)
-				.map(chunk => {
-					const {rule, quantifier} = chunk.match(/(?<rule>[^?*+]+)(?<quantifier>[?*+])?/).groups;
-					const [min, max] = (()=>{
-						if (quantifier === "?") return [0, 1];
-						if (quantifier === "*") return [0, Infinity];
-						if (quantifier === "+") return [1, Infinity];
-						else return [1, 1];
-					})();
+			const options = grammar
+				.split(/\s*\|\s*/)
+				.map(production => production
+					.split(/\s+/)
+					.map(chunk => {
+						const {rule, quantifier} = chunk.match(/(?<rule>[^?*+]+)(?<quantifier>[?*+])?/).groups;
+						const [min, max] = (()=>{
+							if (quantifier === "?") return [0, 1];
+							if (quantifier === "*") return [0, Infinity];
+							if (quantifier === "+") return [1, Infinity];
+							else return [1, 1];
+						})();
 
-					if (subruleRegex.test(rule))
-						return {subrule: this._rules.get(rule.slice(1, - 1)), min, 	max};
-					else return {
-						...rule.match(typeLexemeRegex).groups,
-						min,
-						max
-					};
-				});
+						if (subruleRegex.test(rule))
+							return {subrule: this._rules.get(rule.slice(1, - 1)), min, 	max};
+						else return {
+							...rule.match(typeLexemeRegex).groups,
+							min,
+							max
+						};
+					}));
 
-			const [i, result] = this.expect(rules, tokens);
-			if (result === Parser.NO_MATCH)
-				return result;
+			const matches = [];
+			for (const option of options) {
+				const [i, result] = this.expect(option, tokens);
+				if (result !== null) {
+					if (builder !== undefined) {
+						matches.push([i, builder(result)]);
+					} else {
+						matches.push([i, result[0]]);
+					}
+				}
+			}
 
-			return [i, builder(result)];
+			if (matches.length === 0)
+				return Parser.NO_MATCH;
+
+			return matches.reduce((longest, current) => (current[0] > longest[0])
+				? current
+				: longest);
 		};
 	}
 
@@ -65,274 +120,47 @@ module.exports = class Parser {
 				inner: while (true) {
 					const res = rule.subrule(tokens.slice(i));
 					if (res === Parser.NO_MATCH) {
-						if (matchCount < rule.min) {
+						if (matchCount < rule.min)
 							return Parser.NO_MATCH;
-						}
+
 						result.push(Parser.SKIPPED);
+						i += 1;
 					} else {
 						result.push(res[1]);
+						i += res[0];
+						matchCount += 1;
 					}
 
-					i += res[0];
-					matchCount += 1;
 					if (matchCount >= rule.max)
 						break inner;
 					
 					continue outer;
 				}
 			} else if ("type" in rule) {
-				if (tokens[i].type !== rule.type)
-					return Parser.NO_MATCH;
-
-				if (rule.lexeme !== undefined && tokens[i].lexeme !== rule.lexeme)
-					return Parser.NO_MATCH;
-				
-				i += 1;
-				result.push(tokens[i]);
-				continue outer;
+				let matchCount = 0;
+				inner: while (true) {
+					if ((tokens[i].type !== rule.type)
+						|| (rule.lexeme !== undefined && tokens[i].lexeme !== rule.lexeme)) {
+							if (matchCount < rule.min) {
+								return Parser.NO_MATCH;
+							} else {
+								result.push(Parser.SKIPPED);
+							}
+					} else {
+						result.push(tokens[i]);
+					}
+					i += 1;
+	
+					if (matchCount >= rule.max)
+						break inner;
+					
+					continue outer;
+				}
 			}
 		}
 
 		return [i, result];
 	};
-
-	constructor () {
-		this._rules = new Map([
-			["number", tokens => {
-				let i = 0;
-				if (tokens[0].type === "decimal-number") {
-					i += 1;
-					return [i, tokens[0]];
-				}
-				
-				if (tokens[0].type === "integer-number") {
-					i += 1;
-					return [i, tokens[0]];
-				}
-				
-				return Parser.NO_MATCH;
-			}],
-			["exponentiation-expression", tokens => {
-				let i = 0;
-				let lhs;
-				let rhs;
-				const number = this._rules.get("number");
-				
-				const numberVal = number(tokens.slice(i));
-				if (numberVal[0] !== 0) {
-					i += numberVal[0];
-					lhs = numberVal[1];
-					
-					if (tokens[i].type === "operator" && tokens[i].lexeme === "^") {
-						i += 1;
-					} else return Parser.NO_MATCH;
-
-					const numberVal2 = number(tokens.slice(i));
-					if (numberVal2[0] !== 0) {
-						i += numberVal2[0];
-						rhs = numberVal2[1];
-					}
-
-					return [
-						i,
-						new NODES.ExponentiationExpression(lhs, rhs)
-					];
-				} else return Parser.NO_MATCH;
-			}],
-			["multiplication-expression", tokens => {
-				let i = 0;
-				let lhs;
-				let rhs;
-				const number = this._rules.get("number");
-				
-				const numberVal = number(tokens.slice(i));
-				if (numberVal[0] !== 0) {
-					i += numberVal[0];
-					lhs = numberVal[1];
-					
-					if (tokens[i].type === "operator" && tokens[i].lexeme === "*") {
-						i += 1;
-					} else return Parser.NO_MATCH;
-
-					const numberVal2 = number(tokens.slice(i));
-					if (numberVal2[0] !== 0) {
-						i += numberVal2[0];
-						rhs = numberVal2[1];
-					}
-
-					return [
-						i,
-						new NODES.MultiplicationExpression(lhs, rhs)
-					];
-				} else return Parser.NO_MATCH;
-			}],
-			["division-expression", tokens => {
-				let i = 0;
-				let lhs;
-				let rhs;
-				const number = this._rules.get("number");
-				
-				const numberVal = number(tokens.slice(i));
-				if (numberVal[0] !== 0) {
-					i += numberVal[0];
-					lhs = numberVal[1];
-					
-					if (tokens[i].type === "operator" && tokens[i].lexeme === "/") {
-						i += 1;
-					} else return Parser.NO_MATCH;
-
-					const numberVal2 = number(tokens.slice(i));
-					if (numberVal2[0] !== 0) {
-						i += numberVal2[0];
-						rhs = numberVal2[1];
-					}
-
-					return [
-						i,
-						new NODES.DivisionExpression(lhs, rhs)
-					];
-				} else return Parser.NO_MATCH;
-			}],
-			["addition-expression", tokens => {
-				let i = 0;
-				let lhs;
-				let rhs;
-				const number = this._rules.get("number");
-				
-				const numberVal = number(tokens.slice(i));
-				if (numberVal[0] !== 0) {
-					i += numberVal[0];
-					lhs = numberVal[1];
-					
-					if (tokens[i].type === "operator" && tokens[i].lexeme === "+") {
-						i += 1;
-					} else return Parser.NO_MATCH;
-
-					const numberVal2 = number(tokens.slice(i));
-					if (numberVal2[0] !== 0) {
-						i += numberVal2[0];
-						rhs = numberVal2[1];
-					}
-
-					return [
-						i,
-						new NODES.AdditionExpression(lhs, rhs)
-					];
-				} else return Parser.NO_MATCH;
-			}],
-			["subtraction-expression", tokens => {
-				let i = 0;
-				let lhs;
-				let rhs;
-				const number = this._rules.get("number");
-				
-				const numberVal = number(tokens.slice(i));
-				if (numberVal[0] !== 0) {
-					i += numberVal[0];
-					lhs = numberVal[1];
-					
-					if (tokens[i].type === "operator" && tokens[i].lexeme === "-") {
-						i += 1;
-					} else return Parser.NO_MATCH;
-
-					const numberVal2 = number(tokens.slice(i));
-					if (numberVal2[0] !== 0) {
-						i += numberVal2[0];
-						rhs = numberVal2[1];
-					}
-
-					return [
-						i,
-						new NODES.SubtractionExpression(lhs, rhs)
-					];
-				} else return Parser.NO_MATCH;
-			}],
-			["expression", tokens => {
-				let i = 0;
-				const names = [
-					"exponentiation-expression",
-					"multiplication-expression",
-					"division-expression",
-					"addition-expression",
-					"subtraction-expression"
-				];
-
-				const methods = names.map(name => this._rules.get(name));
-				for (const method of methods) {
-					const result = method(tokens.slice(i));
-					if (result[0] !== 0) {
-						return result;
-					}
-				}
-				return Parser.NO_MATCH;
-			}],
-			["declaration",
-			// tokens => {
-			// 	let i = 0;
-			// 	let type;
-			// 	let lhs;
-			// 	let rhs;
-
-			// 	if (tokens[i].type === "type-annotation") {
-			// 		type = tokens[i].lexeme;
-			// 		i += 1;
-			// 	}//optional
-
-			// 	if (tokens[i].type === "identifier") {
-			// 		lhs = tokens[i].lexeme;
-			// 		i += 1;
-			// 	} else return Parser.NO_MATCH;
-
-			// 	if (tokens[i].type === "operator" && tokens[i].lexeme === "=") {
-			// 		i += 1;
-			// 	} else return Parser.NO_MATCH;
-
-			// 	const expression = this._rules.get("expression");
-			// 	const value = expression(tokens.slice(i));
-			// 	if (value[0] !== 0) {
-			// 		rhs = value[1];
-			// 		i += value[0];
-			// 	} else return Parser.NO_MATCH;
-
-			// 	if (tokens[i].type === "semicolon") {
-			// 		i += 1;
-			// 	} else return Parser.NO_MATCH;
-
-			// 	return [
-			// 		i,
-			// 		new NODES.Declaration(type, lhs, rhs)
-			// 	];
-			// }
-			this.production(
-				`type-annotation? identifier operator"=" <expression> semicolon`,
-				nodes => {
-					inspect(nodes);
-					return new NODES.Declaration(nodes[0], nodes[1], nodes[3])})
-			],
-			["const-definition", this.production(
-				`storage-type"const" <declaration>`,
-				nodes => new NODES.ConstDefinition(nodes[1])
-			)],
-			["var-definition", tokens => {
-				let i = 0;
-
-				if (tokens[i].type === "storage-type" && tokens[i].lexeme === "var") {
-					i += 1;
-				}
-
-				const declaration = this._rules.get("declaration");
-				const declarationVal = declaration(tokens.slice(i));
-				if (declarationVal[0] !== 0) {
-					i += declarationVal[0];
-				} else return Parser.NO_MATCH;
-
-				return [
-					i,
-					new NODES.VarDefinition(declarationVal[1])
-				];
-			}]
-		]);
-	}
 
 	_validateName(name) {
 		if (Boolean(name.match(/\s/)) === true)
@@ -382,7 +210,7 @@ module.exports = class Parser {
 	_backTrack (tokens, offset) {
 		//Find the rule that most closely matches tokens.slice(offset)
 		//Report what probably went wrong (assignment missing a rhs value? etc.).
-		throw `No matched rules found at\n${inspect(tokens.slice(offset))}`;
+		throw `No matched rules found at\n${tokens.slice(offset).map(token => JSON.stringify(token, null, 2))}`;
 	}
 
 	parse (tokens) {
@@ -390,18 +218,20 @@ module.exports = class Parser {
 		const startLength = tokens.length;
 		let newTokens = tokens;
 
-		main: while (true) {
+		main: while (true) { //should run while newTokens.length > 0
 			const currentLength = newTokens.length;
 			for (const [,rule] of this._rules) {
 				const [lengthDifference, node] = rule(newTokens);
 
 				//Rule didn't match
-				if (lengthDifference === 0 && node === null) continue;
+				if (lengthDifference === 0 && node === null)
+					continue;
 
 				//Rule did match, update newTokens and append node to program
 				newTokens = newTokens.slice(lengthDifference);
 				program.addNode(node);
 
+				inspect(newTokens);
 				//Eager break if tokens depleted
 				if (newTokens.length === 0)
 					break main;
