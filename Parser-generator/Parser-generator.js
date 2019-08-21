@@ -84,65 +84,65 @@ module.exports = class Parser {
 			//	to the erroneus grammar the user provided.
 
 			outer: for (const option of options) {
-				const stack = [];
-				let offset = 0;
-				inner: for (let i = 0; i < option.length; i++) {
-					const expected = option[i];
-					const got = tokens[offset];
+				const matchedTokens = [];
+				let inputCursor = 0;
+				inner: for (let grammarCursor = 0; grammarCursor < option.length; grammarCursor++) {
+					const expected = option[grammarCursor];
+					const got = tokens[inputCursor];
 					switch (expected.type) {
 						case "lexeme": {
 							if (got.lexeme !== expected.lexeme.slice(1, -1)) //remove ""
 								continue outer;
-							stack.push(got);
-							offset += 1;
+							matchedTokens.push(got);
+							inputCursor += 1;
 							continue inner;
 						}
 						case "type": {
 							if (got.type !== expected.lexeme)
 								continue outer;
-							stack.push(got);
-							offset += 1;
+							matchedTokens.push(got);
+							inputCursor += 1;
 							continue inner;
 						}
 						case "subrule": {
 							const grammar = this.rules.get(expected.lexeme.slice(1, -1)); //remove <>
-							const match = grammar(tokens.slice(offset));
+							const match = grammar(tokens.slice(inputCursor));
 							if (match.isNothing())
 								continue outer;
-							stack.push(match);
-							offset += match.offset;
+							matchedTokens.push(match);
+							inputCursor += match.offset;
 							continue inner;
 						}
 						case "definition": {
 							const grammar = this.definitions.get(expected.lexeme.slice(1)); //remove #
-							const match = grammar(tokens.slice(offset));
+							const match = grammar(tokens.slice(inputCursor));
 							if (match.isNothing())
 								continue outer;
-							stack.push(match);
-							offset += match.offset;
+							matchedTokens.push(match);
+							inputCursor += match.offset;
 							continue inner;
 						}
 						case "open-paren": {
-							const openParenthesis = option[i++];
+							const openParenthesis = option[grammarCursor++];
 							const groupGrammar = [];
 							let depth = 1;
 
 							while (depth > 0) {
-								if (i >= option.length)
+								if (grammarCursor >= option.length)
 									throw `Unclosed parentheses at line ${openParenthesis.line}, column ${openParenthesis.column}`;
-								switch(option[i].type) {
+								switch(option[grammarCursor].type) {
 									case "open-paren":
 										depth += 1;
 										break;
 									case "close-paren":
 										depth -= 1;
 								}
-								groupGrammar.push(option[i++]);
+								groupGrammar.push(option[grammarCursor++]);
 							}
 							// Maybe not even match last paren?
 							//	or slice it when building
 							groupGrammar.splice(-1, 1); // Remove last close-paren
-							i -= 1; // Go back a grammar step, since we removed the close-paren
+							grammarCursor -= 1; // Go back a grammar step, since we removed the close-paren
 
 							// Skip empty groups
 							if (groupGrammar.length === 0) {
@@ -153,11 +153,11 @@ module.exports = class Parser {
 							//Maybe warn user of unneccesary nesting
 							//	(i.e.((token)) === (token) === token)
 
-							const match = this.buildRecogniser(name, groupGrammar)(tokens.slice(offset));
+							const match = this.buildRecogniser(name, groupGrammar)(tokens.slice(inputCursor));
 							if (match.isNothing())
 								continue outer;
-							stack.push(match);
-							offset += match.offset;
+							matchedTokens.push(match);
+							inputCursor += match.offset;
 							continue inner;
 						}
 						case "ignoration": {
@@ -169,7 +169,7 @@ module.exports = class Parser {
 						}
 					}
 				}
-				return new ParserMatch(offset, stack);
+				return new ParserMatch(inputCursor, matchedTokens);
 			}
 			return ParserMatch.NO_MATCH;
 		}).bind(this);
@@ -197,7 +197,7 @@ module.exports = class Parser {
 			if (offset === prevOffset)
 				throw `Unexpected ${tokens[offset].type} "${tokens[offset].lexeme}" at line ${tokens[offset].line}, column ${tokens[offset].column}.`;
 		}
-		inspect(tree);
+		setTimeout(() => inspect(tree), 0);
 		return tree;
 	}
 }

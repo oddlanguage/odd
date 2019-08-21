@@ -1,6 +1,10 @@
 // @test
 // var;
 const int: num = 1 ^ 2;
+const int: num = 1 * 2;
+const int: num = 1 / 2;
+const int: num = 1 + 2;
+const int: num = 1 - 2;
 // var int: num = 3 * 4;
 // const int: num = 5 / 6;
 // var int: num = 7 + 8;
