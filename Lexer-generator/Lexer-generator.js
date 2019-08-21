@@ -2,11 +2,11 @@
 "hide implementation";
 
 const LexicalToken = require("./LexicalToken.js");
-const assert = require("../../../helpers/assert.js");
-const type = require("../../../helpers/type.js");
-const { inflect } = require("../../../helpers/String.js");
-const { unique } = require("../../../helpers/Array.js");
-const { getPattern } = require("../../../helpers/RegExp.js");
+const assert = require("../helpers/assert.js");
+const type = require("../helpers/type.js");
+const { inflect } = require("../helpers/String.js");
+const { unique } = require("../helpers/Array.js");
+const { getPattern } = require("../helpers/RegExp.js");
 
 module.exports = class Lexer {
 	constructor () {

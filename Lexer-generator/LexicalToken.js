@@ -8,4 +8,8 @@ module.exports = class LexicalToken {
 		this.line = line;
 		this.column = column;
 	}
+
+	toString () {
+		return `LexicalToken { type: ${this.type}, lexeme: ${this.lexeme} }`;
+	}
 }

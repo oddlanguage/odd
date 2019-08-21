@@ -13,6 +13,19 @@ function replaceConsoleLine (message) {
 	process.stdout.write(message);
 }
 
+function createClockTicker () {
+	const clocks = ["🕛", "🕐", "🕑", "🕒", "🕓", "🕔", "🕕", "🕖", "🕗", "🕘", "🕙", "🕚"];
+	let i = 0;
+	return setInterval(()=>{
+		i += 1;
+		if (i > clocks.length - 1)
+			i = 0;
+		process.stdout.cursorTo(0);
+		process.stdout.write(" " + clocks[i]);
+		process.stdout.cursorTo(0);
+	}, 100);
+}
+
 module.exports = class Processor {
 	constructor () {
 		this._stages = new Map();
@@ -52,29 +65,19 @@ module.exports = class Processor {
 	}
 
 	async process (value) {
-		const clocks = ["🕛", "🕐", "🕑", "🕒", "🕓", "🕔", "🕕", "🕖", "🕗", "🕘", "🕙", "🕚"];
-		let i = 0;
-		const ticker = setInterval(()=>{
-			i += 1;
-			if (i > clocks.length - 1)
-				i = 0;
-			process.stdout.cursorTo(0);
-			process.stdout.write(" " + clocks[i]);
-			process.stdout.cursorTo(0);
-		}, 100);
-
+		const ticker = createClockTicker();
 		let state = value;
 		for (const [name, stage] of this._stages) {
-			// replaceConsoleLine(` 🕛  ${name}...`);
+			replaceConsoleLine(` 🕛  ${name}...`);
 			const before = performance.now();
 			try {
 				state = await stage.handler(state);
-				//if type(state) === "generatorfunction" INJECT FUNCTION THAT RETURNS HANDLER.NEXT AND SETS ✔️ IF GENERATOR.DONE?????
+				//if type(state) === "generatorfunction" // INJECT FUNCTION THAT RETURNS HANDLER.NEXT AND SETS ✔️ IF GENERATOR.DONE?????
 				const elapsed = Math.round(performance.now() - before);
-				// replaceConsoleLine(` ✔️  ${name} OK! (took ~${elapsed}ms and produced 0 warnings)\n`);
+				replaceConsoleLine(` ✔️  ${name} OK! (took ~${elapsed}ms and produced 0 warnings)\n`);
 			} catch (err) {
 				const elapsed = Math.round(performance.now() - before);
-				// replaceConsoleLine(` ❌  ${name} FAILED! (took ~${elapsed}ms and produced 0 warnings)\n`);
+				replaceConsoleLine(` ❌  ${name} FAILED! (took ~${elapsed}ms and produced 0 warnings)\n`);
 				error(err);
 			}
 		}

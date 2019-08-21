@@ -1,13 +1,13 @@
 "use strict";
 "hide implementation";
 
-const Lexer = require("./Lexer.js");
+const Lexer = require("../../../Lexer-generator/Lexer-generator.js");
 
 module.exports = new Lexer()
 	.define("digit", /\d/)
 	.ignore("whitespace", /\s+/)
 	.ignore("comment", /\/\/[^\n]*|\/\*[^*]*?\*\//)
-	.rule("string", /(?<!\\)".*"/)
+	.rule("string", /(?<!\\)".*?"/)
 	.rule("template-literal", /(?<!\\)`.*`/)
 	.rule("semicolon", ";")
 	.rule("punctuation", /[,\(\)]/)
@@ -27,4 +27,5 @@ module.exports = new Lexer()
 	.rule("decimal-number", /{digit}*\.{digit}+(?:e[+-]?{digit}+)?/i)
 	.rule("integer-number", /{digit}+/)
 	.rule("literal", /\b(true|false|null|undefined)\b/)
-	.rule("identifier", /[a-zA-Z_$][\w$]*/);
+	.rule("identifier", /[a-zA-Z_$][\w$]*/)
+	.rule("decorator", /@{identifier}/);

@@ -1,0 +1,60 @@
+Compiler:
+	Lexer:
+		#digit -> /\d/
+		?whitespace -> /\s+/
+		?comment    -> /\/\/[^\n]*|\/\*[^*]*?\*\//
+		string                 -> /(?<!\\)".*?(?<!\\)"/
+		template-literal       -> /(?<!\\)`.*?(?<!\\)`/
+		semicolon              -> ";"
+		punctuation            -> /[,\(\)]/
+		block-start            -> "{"
+		block-end              -> "}"
+		object-start           -> "["
+		object-end             -> "]"
+		type-annotation        -> /[[{]*\w+?[^()\s]*:(?!:)/ //not double colon
+		not-equals             -> /!=/
+		equals-equals          -> /==/
+		operator               -> /[.=+\-/*%^~<>?&|!]|::?|\b(new|exists|instanceof|typeof|in|and|or)\b/
+		controller             -> /\b(for|return|emits?|if|when|while|then|else|continue|throw|using|repeat|operator|iife)\b/
+		preprocessor-directive -> /#|\bdefine\b/
+		storage-type           -> /\b(const|var|type|function|class|template)\b/
+		storage-modifier       -> /\b(implements|extends|overt|delegate)\b/
+		builtin                -> /\b(event|Function|Array|Object|String|Boolean|Number|Math|Error|Class)\b/
+		decimal-number         -> /{digit}*\.{digit}+(?:e[+-]?{digit}+)?/i
+		integer-number         -> /{digit}+/
+		literal                -> /\b(true|false|null|undefined)\b/
+		identifier             -> /[a-zA-Z_$][\w$]*/
+		decorator              -> /@{identifier}/
+
+	Parser:
+		#number -> decimal-number
+			| integer-number;
+		#string -> string
+			| template-literal;
+		#plus-or-min -> "+"
+			| "-";
+		#term-op -> "*"
+			| "/"
+			| "%";
+		atom -> #number
+			| #string
+			| literal
+			| identifier
+			: nignog => bigbog;
+		power -> <atom> "^" <factor>
+			: tokens => tokens;
+		factor -> #plus-or-min <factor>
+			| <power>
+			: tokens => tokens;
+		term -> <factor> (#term-op <factor>)*
+			: tokens => tokens;
+		math-expression -> <term> (#plus-or-min <term>)*
+			: tokens => tokens;
+		expression -> <math-expression>
+			| <const-definition>
+			| "(" <expression> ("," <expression>)* ")"
+			: tokens => tokens;
+		declaration -> lhs:identifier "=" rhs:<expression> semicolon
+			: tokens => tokens;
+		const-definition -> "const" type-annotation? <declaration>
+			: tokens => tokens;
