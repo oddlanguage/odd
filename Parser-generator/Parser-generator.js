@@ -5,6 +5,7 @@ const DeferredMap = require("./DeferredMap.js");
 const metaLexer = require("./metaoddLexer.js");
 const ParserMatch = require("./ParserMatch.js");
 const inspect = require("../helpers/inspect.js");
+const Stack = require("./Stack.js");
 
 module.exports = class Parser {
 	constructor () {
@@ -33,121 +34,144 @@ module.exports = class Parser {
 		const name = grammar[0].lexeme;
 
 		if (grammar[1] === undefined || grammar[1].type !== "assignment")
-			throw `Error in rule "${name}": misplaced or undefined assignment at line x, column y.`;
+			throw `Error in rule "${name}": misplaced or undefined assignment at line ${(grammar[1]||{}).line}, column ${(grammar[1]||{}).column}.`;
 
 		// parse builder function (check : and => and ;)
 		// TODO: stop filtering the operators and properly parse those bois.
-		const ignoreFromIndex = grammar.findIndex(token => token.type === "or");
-		const toBuild = (ignoreFromIndex === -1)
-			? grammar.slice(2)
-			: grammar.slice(2, ignoreFromIndex);
-		const filtered = toBuild.filter(token => !["!", "?", "*", "+"].includes(token.lexeme));
+		const filtered = grammar
+			.slice(2)
+			.filter(token => !["!", "?", "*", "+"].includes(token.lexeme));
 
 		(()=>{switch (type) {
 			case "ignore":
-				return this.ignorations.set(name, this._buildRecogniser(name, filtered));
+				return this.ignorations.set(name, this.buildRecogniser(name, filtered));
 			case "define":
-				return this.definitions.set(name, this._buildRecogniser(name, filtered));
+				return this.definitions.set(name, this.buildRecogniser(name, filtered));
 			case "rule":
-				return this.rules.set(name, this._buildRecogniser(name, filtered));
+				return this.rules.set(name, this.buildRecogniser(name, filtered));
 			default:
-				throw "You done a typo, dingus!";
+				throw `What's a ${type}? You done a typo, dingus!`;
 		}})();
 
 		return this;
 	}
 
-	_buildRecogniser (name, grammar) {
+	buildRecogniser (name, grammar) {
+		const options = new Stack([]);
+			let depth = 0;
+			for (const token of grammar) {
+				switch (token.type) {
+					case "or":
+						if (depth === 0) {
+							options.push([]);
+							continue;
+						}
+					case "open-paren":
+						depth += 1;
+						break;
+					case "close-paren":
+						depth -= 1;
+				}
+				options.last().push(token);
+			}
+
+		// TODO: check through option[0] of options if lexeme === name
+		//	If so, it's left recursive.
 		return (function recognise (tokens) {
 			// TODO: Keep track of succesful parse depth
 			//	so that when a syntax error occurs, we can
 			//	suggest the most applicable alternative
 			//	to the erroneus grammar the user provided.
-			const stack = [];
-			let offset = 0;
-			for (let i = 0; i < grammar.length; i++) {
-				const expected = grammar[i];
-				const got = tokens[offset];
-				switch (expected.type) {
-					case "lexeme": {
-						if (got.lexeme !== expected.lexeme.slice(1, -1)) //remove ""
-							return ParserMatch.NO_MATCH;
-						stack.push(got);
-						offset += 1;
-						continue;
-					}
-					case "type": {
-						if (got.type !== expected.lexeme)
-							return ParserMatch.NO_MATCH;
-						stack.push(got);
-						offset += 1;
-						continue;
-					}
-					case "subrule": {
-						const grammar = this.rules.get(expected.lexeme.slice(1, -1)); //remove <>
-						const match = grammar(tokens.slice(offset));
-						if (match.isNothing())
-							return ParserMatch.NO_MATCH;
-						stack.push(match);
-						offset += match.offset;
-						continue;
-					}
-					case "definition": {
-						const grammar = this.definitions.get(expected.lexeme.slice(1)); //remove #
-						const match = grammar(tokens.slice(offset));
-						if (match.isNothing())
-							return ParserMatch.NO_MATCH;
-						stack.push(match);
-						offset += match.offset;
-						continue;
-					}
-					case "open-paren": {
-						const openParenthesis = grammar[i++];
-						const groupGrammar = [];
-						let depth = 1;
 
-						while (depth > 0) {
-							if (i >= grammar.length)
-								throw `Unclosed parentheses at line ${openParenthesis.line}, column ${openParenthesis.column}`;
-							switch(grammar[i].type) {
-								case "open-paren":
-									depth += 1;
-									break;
-								case "close-paren":
-									depth -= 1;
+			outer: for (const option of options) {
+				const stack = [];
+				let offset = 0;
+				inner: for (let i = 0; i < option.length; i++) {
+					const expected = option[i];
+					const got = tokens[offset];
+					switch (expected.type) {
+						case "lexeme": {
+							if (got.lexeme !== expected.lexeme.slice(1, -1)) //remove ""
+								continue outer;
+							stack.push(got);
+							offset += 1;
+							continue inner;
+						}
+						case "type": {
+							if (got.type !== expected.lexeme)
+								continue outer;
+							stack.push(got);
+							offset += 1;
+							continue inner;
+						}
+						case "subrule": {
+							const grammar = this.rules.get(expected.lexeme.slice(1, -1)); //remove <>
+							const match = grammar(tokens.slice(offset));
+							if (match.isNothing())
+								continue outer;
+							stack.push(match);
+							offset += match.offset;
+							continue inner;
+						}
+						case "definition": {
+							const grammar = this.definitions.get(expected.lexeme.slice(1)); //remove #
+							const match = grammar(tokens.slice(offset));
+							if (match.isNothing())
+								continue outer;
+							stack.push(match);
+							offset += match.offset;
+							continue inner;
+						}
+						case "open-paren": {
+							const openParenthesis = option[i++];
+							const groupGrammar = [];
+							let depth = 1;
+
+							while (depth > 0) {
+								if (i >= option.length)
+									throw `Unclosed parentheses at line ${openParenthesis.line}, column ${openParenthesis.column}`;
+								switch(option[i].type) {
+									case "open-paren":
+										depth += 1;
+										break;
+									case "close-paren":
+										depth -= 1;
+								}
+								groupGrammar.push(option[i++]);
 							}
-							groupGrammar.push(grammar[i++]);
+							// Maybe not even match last paren?
+							//	or slice it when building
+							groupGrammar.splice(-1, 1); // Remove last close-paren
+							i -= 1; // Go back a grammar step, since we removed the close-paren
+
+							// Skip empty groups
+							if (groupGrammar.length === 0) {
+								console.warn(`\n\nSkipping empty parentheses at line ${openParenthesis.line}, column ${openParenthesis.column}`);
+								continue inner;
+							}
+
+							//Maybe warn user of unneccesary nesting
+							//	(i.e.((token)) === (token) === token)
+
+							const match = this.buildRecogniser(name, groupGrammar)(tokens.slice(offset));
+							if (match.isNothing())
+								continue outer;
+							stack.push(match);
+							offset += match.offset;
+							continue inner;
 						}
-						// Maybe not even match last paren?
-						//	or slice it when building
-						groupGrammar.splice(-1, 1); // Remove last close-paren
-
-						// Skip empty groups
-						if (groupGrammar.length === 0) {
-							console.warn(`\n\nSkipping empty parentheses at line ${openParenthesis.line}, column ${openParenthesis.column}`);
-							continue;
+						case "ignoration": {
+							//Maybe allow this too? Matches the tokens but returns ParserMatch.skip(n);
+							throw `Error in rule "${name}": cannot reference ignoration "${expected.lexeme}". Try declaring it as a rule or definition.`;
 						}
-
-						//Maybe warn user of unneccesary nesting
-						//	(i.e.((token)) === (token) === token)
-
-						const match = this._buildRecogniser(name, groupGrammar)(tokens.slice(offset));
-						if (match.isNothing())
-							return ParserMatch.NO_MATCH;
-						stack.push(match);
-						offset += match.offset;
-						continue;
-					}
-					case "ignoration": {
-						//Maybe allow this too? Matches the tokens but returns ParserMatch.skip(n);
-						throw `Error in rule "${name}": cannot reference ignoration "${expected.lexeme}". Try declaring it as a rule or definition.`;
-					}
-					default: {
-						throw `Error in rule "${name}": no case for ${expected.type} "${expected.lexeme}".`;
+						default: {
+							throw `Error in rule "${name}": no case for ${expected.type} "${expected.lexeme}".`;
+						}
 					}
 				}
+				return new ParserMatch(offset, stack);
 			}
-			return new ParserMatch(offset, stack);
+			return ParserMatch.NO_MATCH;
 		}).bind(this);
 	}
 
@@ -159,10 +183,10 @@ module.exports = class Parser {
 			const reversed = [...this.rules]
 				.reverse()
 				.map(([,v]) => v); // Reversing all defined rules decreases calls significantly.
-			for (const recogniser of reversed) {
+			inner: for (const recogniser of reversed) {
 				const match = recogniser(tokens.slice(offset));
 				if (match.isNothing())
-					continue;
+					continue inner;
 				offset += match.offset;
 				tree.expressions.push(match.flat().build(x => x)); // x => x should be the parsed builder : tokens => ... ;
 
