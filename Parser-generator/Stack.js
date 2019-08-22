@@ -30,4 +30,9 @@ module.exports = class Stack {
 	[Symbol.iterator]() {
 		return this._stack.values();
 	}
+
+	map (fn) {
+		this._stack = this._stack.map(fn);
+		return this;
+	}
 }

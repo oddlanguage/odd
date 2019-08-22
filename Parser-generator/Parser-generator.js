@@ -75,8 +75,12 @@ module.exports = class Parser {
 				options.last().push(token);
 			}
 
-		// TODO: check through option[0] of options if lexeme === name
-		//	If so, it's left recursive.
+		// TODO: maybe check deeper if a rule is left-recursive
+		for (const first of options.map(option => option[0])) {
+			if (first.lexeme.includes(name))
+				throw `Rule "${name}" is left-recursive.`;
+		}
+
 		return (function recognise (tokens) {
 			// TODO: Keep track of succesful parse depth
 			//	so that when a syntax error occurs, we can
