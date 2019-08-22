@@ -56,10 +56,10 @@ module.exports = class Parser {
 		return this;
 	}
 
-	buildRecogniser (name, grammar) {
+	buildRecogniser (name, fullGrammar) {
 		const options = new Stack([]);
 			let depth = 0;
-			for (const token of grammar) {
+			for (const token of fullGrammar) {
 				switch (token.type) {
 					case "or":
 						if (depth === 0) {
@@ -87,61 +87,63 @@ module.exports = class Parser {
 			//	suggest the most applicable alternative
 			//	to the erroneus grammar the user provided.
 
-			outer: for (const option of options) {
+			reject: for (const grammar of options) {
 				const matchedTokens = [];
 				let inputCursor = 0;
-				inner: for (let grammarCursor = 0; grammarCursor < option.length; grammarCursor++) {
-					const expected = option[grammarCursor];
+				function consume (match) {
+					matchedTokens.push(match);
+					inputCursor += (match instanceof ParserMatch)
+						? match.offset
+						: 1;
+				}
+				accept: for (let grammarCursor = 0; grammarCursor < grammar.length; grammarCursor++) {
+					const expected = grammar[grammarCursor];
 					const got = tokens[inputCursor];
 					switch (expected.type) {
 						case "lexeme": {
 							if (got.lexeme !== expected.lexeme.slice(1, -1)) //remove ""
-								continue outer;
-							matchedTokens.push(got);
-							inputCursor += 1;
-							continue inner;
+								continue reject;
+							consume(got);
+							continue accept;
 						}
 						case "type": {
 							if (got.type !== expected.lexeme)
-								continue outer;
-							matchedTokens.push(got);
-							inputCursor += 1;
-							continue inner;
+								continue reject;
+							consume(got);
+							continue accept;
 						}
 						case "subrule": {
 							const grammar = this.rules.get(expected.lexeme.slice(1, -1)); //remove <>
 							const match = grammar(tokens.slice(inputCursor));
 							if (match.isNothing())
-								continue outer;
-							matchedTokens.push(match);
-							inputCursor += match.offset;
-							continue inner;
+								continue reject;
+							consume(match);
+							continue accept;
 						}
 						case "definition": {
 							const grammar = this.definitions.get(expected.lexeme.slice(1)); //remove #
 							const match = grammar(tokens.slice(inputCursor));
 							if (match.isNothing())
-								continue outer;
-							matchedTokens.push(match);
-							inputCursor += match.offset;
-							continue inner;
+								continue reject;
+							consume(match);
+							continue accept;
 						}
 						case "open-paren": {
-							const openParenthesis = option[grammarCursor++];
+							const openParenthesis = grammar[grammarCursor++];
 							const groupGrammar = [];
 							let depth = 1;
 
 							while (depth > 0) {
-								if (grammarCursor >= option.length)
+								if (grammarCursor >= grammar.length)
 									throw `Unclosed parentheses at line ${openParenthesis.line}, column ${openParenthesis.column}`;
-								switch(option[grammarCursor].type) {
+								switch(grammar[grammarCursor].type) {
 									case "open-paren":
 										depth += 1;
 										break;
 									case "close-paren":
 										depth -= 1;
 								}
-								groupGrammar.push(option[grammarCursor++]);
+								groupGrammar.push(grammar[grammarCursor++]);
 							}
 							// Maybe not even match last paren?
 							//	or slice it when building
@@ -151,7 +153,7 @@ module.exports = class Parser {
 							// Skip empty groups
 							if (groupGrammar.length === 0) {
 								console.warn(`\n\nSkipping empty parentheses at line ${openParenthesis.line}, column ${openParenthesis.column}`);
-								continue inner;
+								continue accept;
 							}
 
 							//Maybe warn user of unneccesary nesting
@@ -159,10 +161,9 @@ module.exports = class Parser {
 
 							const match = this.buildRecogniser(name, groupGrammar)(tokens.slice(inputCursor));
 							if (match.isNothing())
-								continue outer;
-							matchedTokens.push(match);
-							inputCursor += match.offset;
-							continue inner;
+								continue reject;
+							consume(match);
+							continue accept;
 						}
 						case "ignoration": {
 							//Maybe allow this too? Matches the tokens but returns ParserMatch.skip(n);
