@@ -25,5 +25,5 @@ module.exports = new Lexer()
 	.rule("definition", /#{name}/)
 	.rule("ignoration", /\?{name}/)
 	.rule("label", /{name}:/)
-	.rule("subrule", /<{name}>/)
+	.rule("subrule", /@{name}/)
 	.rule("type", /{name}/);

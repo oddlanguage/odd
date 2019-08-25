@@ -27,28 +27,25 @@ module.exports = class Parser {
 	}
 
 	_save (type, meta) {
-		const grammar = metaLexer.lex(meta);
+		const grammarTokens = metaLexer.lex(meta);
 
-		if (grammar[0] === undefined || grammar[0].type !== "type")
-			throw `Name is malformed or undefined at line ${(grammar[0]||{}).line}, column 0.`;
-		const name = grammar[0].lexeme;
+		if (grammarTokens[0] === undefined || grammarTokens[0].type !== "type")
+			throw `Name is malformed or undefined at line ${(grammarTokens[0]||{}).line}, column 0.`;
+		const name = grammarTokens[0].lexeme;
 
-		if (grammar[1] === undefined || grammar[1].type !== "assignment")
-			throw `Error in rule "${name}": misplaced or undefined assignment at line ${(grammar[1]||{}).line}, column ${(grammar[1]||{}).column}.`;
+		if (grammarTokens[1] === undefined || grammarTokens[1].type !== "assignment")
+			throw `Error in rule "${name}": misplaced or undefined assignment at line ${(grammarTokens[1]||{}).line}, column ${(grammarTokens[1]||{}).column}.`;
 
-		// parse builder function (check : and => and ;)
 		// TODO: stop filtering the operators and properly parse those bois.
-		const filtered = grammar
-			.slice(2)
-			.filter(token => !["!", "?", "*", "+"].includes(token.lexeme));
+		const grammar = grammarTokens.slice(2);
 
 		(()=>{switch (type) {
 			case "ignore":
-				return this.ignorations.set(name, this.buildRecogniser(name, filtered));
+				return this.ignorations.set(name, this.buildRecogniser(name, grammar));
 			case "define":
-				return this.definitions.set(name, this.buildRecogniser(name, filtered));
+				return this.definitions.set(name, this.buildRecogniser(name, grammar));
 			case "rule":
-				return this.rules.set(name, this.buildRecogniser(name, filtered));
+				return this.rules.set(name, this.buildRecogniser(name, grammar));
 			default:
 				throw `What's a ${type}? You done a typo, dingus!`;
 		}})();
@@ -57,9 +54,10 @@ module.exports = class Parser {
 	}
 
 	buildRecogniser (name, fullGrammar) {
-		const options = new Stack([]);
+		const options = [[]];
 			let depth = 0;
 			for (const token of fullGrammar) {
+				inspect(token);
 				switch (token.type) {
 					case "or":
 						if (depth === 0) {
@@ -67,15 +65,16 @@ module.exports = class Parser {
 							continue;
 						}
 					case "open-paren":
-						depth += 1;
-						break;
 					case "close-paren":
-						depth -= 1;
+						depth += (token.type === "open-paren")
+							? 1
+							: -1;
 				}
-				options.last().push(token);
+				options[options.length - 1].push(token);
 			}
 
 		// TODO: maybe check deeper if a rule is left-recursive
+		//	or figure out a way to rewrite the rule to be LL parser friendly.
 		for (const first of options.map(option => option[0])) {
 			if (first.lexeme.includes(name))
 				throw `Rule "${name}" is left-recursive.`;
@@ -87,7 +86,8 @@ module.exports = class Parser {
 			//	suggest the most applicable alternative
 			//	to the erroneus grammar the user provided.
 
-			reject: for (const grammar of options) {
+			reject:for (const grammar of options) {
+				inspect(grammar, options);
 				const matchedTokens = [];
 				let inputCursor = 0;
 				function consume (match) {
@@ -96,9 +96,10 @@ module.exports = class Parser {
 						? match.offset
 						: 1;
 				}
-				accept: for (let grammarCursor = 0; grammarCursor < grammar.length; grammarCursor++) {
+				accept:for (let grammarCursor = 0; grammarCursor < grammar.length; grammarCursor++) {
 					const expected = grammar[grammarCursor];
 					const got = tokens[inputCursor];
+					inspect("expected", expected, "got", got);
 					switch (expected.type) {
 						case "lexeme": {
 							if (got.lexeme !== expected.lexeme.slice(1, -1)) //remove ""

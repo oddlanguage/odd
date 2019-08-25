@@ -17,24 +17,24 @@ module.exports = new Parser()
 	// 	| #string
 	// 	| literal
 	// 	| identifier`)
-	// .rule(`power -> <atom> "^" <factor>`)
-	// .rule(`factor -> #plus-or-min? <factor>
-	// 	| <power>`)
-	// .rule(`term -> <factor> (#term-op <factor>)*`)
-	// .rule(`math-expression -> <term> (#plus-or-min <term>)*`)
-	// .rule(`expression -> <math-expression>
-	// 	| <const-definition>
-	// 	| "(" <expression> ("," <expression>)* ")"`)
-	// .rule(`declaration -> identifier ("=" <expression>)?`)
-	// .rule(`const-definition -> "const" type-annotation? <declaration> semicolon`);
-	.rule(`const-definition -> "const" type-annotation? identifier "=" integer-number ("^"|"*"|"/"|"+"|"-") integer-number semicolon`);
+	// .rule(`power -> @atom "^" @factor`)
+	// .rule(`factor -> #plus-or-min? @factor
+	// 	| @power`)
+	// .rule(`term -> @factor (#term-op @factor)*`)
+	// .rule(`math-expression -> @term (#plus-or-min @term)*`)
+	// .rule(`expression -> @math-expression
+	// 	| @const-definition
+	// 	| "(" @expression ("," @expression)* ")"`)
+	// .rule(`declaration -> identifier ("=" @expression)?`)
+	// .rule(`const-definition -> "const" type-annotation? @declaration semicolon`);
+	.rule(`const-definition -> "const" | "var"`);
 
+//Todo
 // Labels       : name -> label:type"lexeme" OR name -> type"lexeme"[label]
-// Builders     : .rule(`name -> production`, nodes => ...)
-// Not          : name -> x !y (x followed by anthing but y, including nothing)
+// n-repetition : name -> rule{min[,[max]]} ()
 
 // Possible additions:
-	// n-repetition : name -> rule{min[,[max]]} ()
-	// Explore other nonterminal denotations (now <nonterminal>, maybe only start with < or > (or other char(s)?)?)
-	// Parse as actual DSL (.metaodd)
-		// Decide definition token (now #, maybe @, etc.?)
+// Not          : name -> x !y (x followed by anthing but y, including nothing)
+// Builders     : .rule(`name -> production`, nodes => ...)
+// Parse as actual DSL (.metaodd)
+	// Decide definition token (now #)

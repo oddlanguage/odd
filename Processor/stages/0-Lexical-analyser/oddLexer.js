@@ -26,6 +26,6 @@ module.exports = new Lexer()
 	.rule("builtin", /\b(event|Function|Array|Object|String|Boolean|Number|Math|Error|Class)\b/)
 	.rule("decimal-number", /{digit}*\.{digit}+(?:e[+-]?{digit}+)?/i)
 	.rule("integer-number", /{digit}+/)
-	.rule("literal", /\b(true|false|null|undefined)\b/)
+	.rule("literal", /\b(true|false|nothing|undefined)\b/)
 	.rule("identifier", /[a-zA-Z_$][\w$]*/)
 	.rule("decorator", /@{identifier}/);
