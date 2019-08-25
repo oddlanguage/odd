@@ -53,6 +53,26 @@ module.exports = class Parser {
 		return this;
 	}
 
+	_hasQuantifier (grammar, grammarCursor) {
+		return grammar[grammarCursor + 1] !== undefined;
+	}
+
+	_minMax (grammar, grammarCursor) {
+		if (!this._hasQuantifier(grammar, grammarCursor))
+			return [1, 1, false];
+		const lookahead = grammar[grammarCursor + 1];
+		switch (lookahead.type) {
+			case "optional":
+				return [0, 1, true];
+			case "zero-or-more":
+				return [0, Infinity, true];
+			case "one-or-more":
+				return [1, Infinity, true];
+			default:
+				return [1, 1, false];
+		}
+	}
+
 	buildRecogniser (name, fullGrammar) {
 		const options = [[]];
 			let depth = 0;
@@ -78,20 +98,20 @@ module.exports = class Parser {
 			switch (first.type) {
 				default: continue;
 				case "lexeme":
-					if (first.lexeme.slice(1, -1) !== name)
+					if (first.lexeme.slice(1, -1) !== name) // Remove ""
 						break;
 				case "type":
 					if (first.lexeme !== name)
 						break;
 				case "subrule":
-					if (first.lexeme.slice(1) !== name)
+					if (first.lexeme.slice(1) !== name) // Remove @
 						break;
 
 				throw `Rule "${name}" is left-recursive.`;
 			}
 		}
 
-		return (function recognise (tokens) {
+		return (function recognise (input) {
 			// TODO: Keep track of succesful parse depth
 			//	so that when a syntax error occurs, we can
 			//	suggest the most applicable alternative
@@ -101,14 +121,20 @@ module.exports = class Parser {
 				const matchedTokens = [];
 				let inputCursor = 0;
 				function consume (match) {
-					matchedTokens.push(match);
-					inputCursor += (match instanceof ParserMatch)
-						? match.offset
-						: 1;
+					if (match instanceof ParserMatch) {
+						inputCursor += match.offset;
+						matchedTokens.push(match);
+					} else if (Array.isArray(match)) {
+						inputCursor += match.length;
+						matchedTokens.push(...match);
+					} else {
+						matchedTokens.push(match);
+						inputCursor += 1;
+					}
 				}
 				accept:for (let grammarCursor = 0; grammarCursor < grammar.length; grammarCursor++) {
 					const expected = grammar[grammarCursor];
-					const got = tokens[inputCursor];
+					const got = input[inputCursor];
 					switch (expected.type) {
 						case "lexeme": {
 							if (got.lexeme !== expected.lexeme.slice(1, -1)) //remove ""
@@ -117,22 +143,39 @@ module.exports = class Parser {
 							continue accept;
 						}
 						case "type": {
-							if (got.type !== expected.lexeme)
-								continue reject;
-							consume(got);
+							const [min, max, hasQuantifier] = this._minMax(grammar, grammarCursor);
+							const matches = [];
+							let i = inputCursor;
+							matcher:while (matches.length < max) {
+								const got = input[i++];
+								if (got.type !== expected.lexeme)
+									if (matches.length >= min)
+										break matcher;
+									else
+										continue reject;
+								matches.push(got);
+							}
+							consume(matches);
+							grammarCursor += hasQuantifier;
 							continue accept;
 						}
 						case "subrule": {
-							const grammar = this.rules.get(expected.lexeme.slice(1, -1)); //remove <>
-							const match = grammar(tokens.slice(inputCursor));
+							const recogniser = this.rules.get(expected.lexeme.slice(1)); //remove @
+							// TODO: extract this check into the getting of the rules instead of
+							//	the recogniser.
+							if (recogniser === undefined)
+								throw `Rule "${expected.lexeme.slice(1)}" is not defined (yet).`;
+							const match = recogniser(input.slice(inputCursor));
 							if (match.isNothing())
 								continue reject;
 							consume(match);
 							continue accept;
 						}
 						case "definition": {
-							const grammar = this.definitions.get(expected.lexeme.slice(1)); //remove #
-							const match = grammar(tokens.slice(inputCursor));
+							const recogniser = this.definitions.get(expected.lexeme.slice(1)); //remove #
+							if (recogniser === undefined)
+								throw `Rule "${expected.lexeme.slice(1)}" is not defined (yet).`;
+							const match = recogniser(input.slice(inputCursor));
 							if (match.isNothing())
 								continue reject;
 							consume(match);
@@ -169,7 +212,8 @@ module.exports = class Parser {
 							//Maybe warn user of unneccesary nesting
 							//	(i.e.((token)) === (token) === token)
 
-							const match = this.buildRecogniser(name, groupGrammar)(tokens.slice(inputCursor));
+							const recogniser = this.buildRecogniser(name, groupGrammar);
+							const match = recogniser(input.slice(inputCursor));
 							if (match.isNothing())
 								continue reject;
 							consume(match);

@@ -29,8 +29,13 @@ module.exports = new Parser()
 	.rule(`const-definition -> "const" type-annotation? @declaration semicolon`);
 
 //Todo
-// Labels       : name -> label:type"lexeme" OR name -> type"lexeme"[label]
-// n-repetition : name -> rule{min[,[max]]} ()
+// Labels                  : name -> label:type"lexeme" OR name -> type"lexeme"[label]
+// n-repetition            : name -> rule{min[,[max]]} ()
+// Reevaluate BNF alphabet : most of the rules consist of subrules,
+//	so the user would benefit from a less verbose notation.
+//	What if subrules don't need special denotation characters,
+//	and instead token types were denoted by a leading dot: rule -> subrule .type "lexeme" #definition
+//	Really easy to type
 
 // Possible additions:
 // Not          : name -> x !y (x followed by anthing but y, including nothing)
