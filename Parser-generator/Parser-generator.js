@@ -57,7 +57,6 @@ module.exports = class Parser {
 		const options = [[]];
 			let depth = 0;
 			for (const token of fullGrammar) {
-				inspect(token);
 				switch (token.type) {
 					case "or":
 						if (depth === 0) {
@@ -76,8 +75,20 @@ module.exports = class Parser {
 		// TODO: maybe check deeper if a rule is left-recursive
 		//	or figure out a way to rewrite the rule to be LL parser friendly.
 		for (const first of options.map(option => option[0])) {
-			if (first.lexeme.includes(name))
+			switch (first.type) {
+				default: continue;
+				case "lexeme":
+					if (first.lexeme.slice(1, -1) !== name)
+						break;
+				case "type":
+					if (first.lexeme !== name)
+						break;
+				case "subrule":
+					if (first.lexeme.slice(1) !== name)
+						break;
+
 				throw `Rule "${name}" is left-recursive.`;
+			}
 		}
 
 		return (function recognise (tokens) {
@@ -87,7 +98,6 @@ module.exports = class Parser {
 			//	to the erroneus grammar the user provided.
 
 			reject:for (const grammar of options) {
-				inspect(grammar, options);
 				const matchedTokens = [];
 				let inputCursor = 0;
 				function consume (match) {
@@ -99,7 +109,6 @@ module.exports = class Parser {
 				accept:for (let grammarCursor = 0; grammarCursor < grammar.length; grammarCursor++) {
 					const expected = grammar[grammarCursor];
 					const got = tokens[inputCursor];
-					inspect("expected", expected, "got", got);
 					switch (expected.type) {
 						case "lexeme": {
 							if (got.lexeme !== expected.lexeme.slice(1, -1)) //remove ""
