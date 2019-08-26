@@ -1,25 +1,18 @@
 "use strict";
 "hide implementation";
 
-const DeferredMap = require("./DeferredMap.js");
 const metaLexer = require("./metaoddLexer.js");
-const ParserMatch = require("./ParserMatch.js");
+const ParserMatch = require("./Node.js");
 const inspect = require("../helpers/inspect.js");
-const Stack = require("./Stack.js");
 
 module.exports = class Parser {
 	constructor () {
 		this.ignorations = new Map();
-		this.definitions = new Map();
 		this.rules = new Map();
 	}
 
 	ignore (meta) {
 		return this._save("ignore", meta);
-	}
-
-	define (meta) {
-		return this._save("define", meta);
 	}
 
 	rule (meta) {
@@ -29,21 +22,17 @@ module.exports = class Parser {
 	_save (type, meta) {
 		const grammarTokens = metaLexer.lex(meta);
 
-		if (grammarTokens[0] === undefined || grammarTokens[0].type !== "type")
+		if (grammarTokens[0] === undefined || grammarTokens[0].type !== "subrule")
 			throw `Name is malformed or undefined at line ${(grammarTokens[0]||{}).line}, column 0.`;
 		const name = grammarTokens[0].lexeme;
 
 		if (grammarTokens[1] === undefined || grammarTokens[1].type !== "assignment")
 			throw `Error in rule "${name}": misplaced or undefined assignment at line ${(grammarTokens[1]||{}).line}, column ${(grammarTokens[1]||{}).column}.`;
 
-		// TODO: stop filtering the operators and properly parse those bois.
 		const grammar = grammarTokens.slice(2);
-
 		(()=>{switch (type) {
 			case "ignore":
 				return this.ignorations.set(name, this.buildRecogniser(name, grammar));
-			case "define":
-				return this.definitions.set(name, this.buildRecogniser(name, grammar));
 			case "rule":
 				return this.rules.set(name, this.buildRecogniser(name, grammar));
 			default:
@@ -94,6 +83,8 @@ module.exports = class Parser {
 
 		// TODO: maybe check deeper if a rule is left-recursive
 		//	or figure out a way to rewrite the rule to be LL parser friendly.
+		//	Also, if all expectations before recursion are optional, it
+		//	can also get stuck, and thus should be marked as left-recursive.
 		for (const first of options.map(option => option[0])) {
 			switch (first.type) {
 				default: continue;
@@ -101,10 +92,10 @@ module.exports = class Parser {
 					if (first.lexeme.slice(1, -1) !== name) // Remove ""
 						break;
 				case "type":
-					if (first.lexeme !== name)
+					if (first.lexeme.slice(1) !== name) // Remove "."
 						break;
 				case "subrule":
-					if (first.lexeme.slice(1) !== name) // Remove @
+					if (first.lexeme !== name)
 						break;
 
 				throw `Rule "${name}" is left-recursive.`;
@@ -116,20 +107,24 @@ module.exports = class Parser {
 			//	so that when a syntax error occurs, we can
 			//	suggest the most applicable alternative
 			//	to the erroneus grammar the user provided.
+			// TODO: Return Node.skip(n) if quantifier is
+			//	* or ? and nothing gets matched;
 
 			reject:for (const grammar of options) {
 				const matchedTokens = [];
+				let label = null;
 				let inputCursor = 0;
 				function consume (...args) {
 					const matches = args.flat();
 					for (const match of matches) {
 						if (match instanceof ParserMatch) {
 							inputCursor += match.offset;
-							matchedTokens.push(match);
 						} else {
-							matchedTokens.push(match);
 							inputCursor += 1;
 						}
+						matchedTokens.push(match);
+						match.label = label;
+						label = null;
 					}
 				}
 				accept:for (let grammarCursor = 0; grammarCursor < grammar.length; grammarCursor++) {
@@ -141,7 +136,7 @@ module.exports = class Parser {
 							let i = inputCursor;
 							matcher:while (matches.length < max) {
 								const got = input[i++]||{};
-								if (got.lexeme !== expected.lexeme.slice(1, -1)) //remove ""
+								if (got.lexeme !== expected.lexeme.slice(1, -1)) // Remove ""
 									if (matches.length >= min)
 										break matcher;
 									else
@@ -158,7 +153,7 @@ module.exports = class Parser {
 							let i = inputCursor;
 							matcher:while (matches.length < max) {
 								const got = input[i++]||{};
-								if (got.type !== expected.lexeme)
+								if (got.type !== expected.lexeme.slice(1)) // Remove "."
 									if (matches.length >= min)
 										break matcher;
 									else
@@ -170,32 +165,12 @@ module.exports = class Parser {
 							continue accept;
 						}
 						case "subrule": {
-							const recogniser = this.rules.get(expected.lexeme.slice(1)); //remove @
+							const recogniser = this.rules.get(expected.lexeme);
 							// TODO: extract this check into the getting of the rules instead of
 							//	the recogniser.
 							if (recogniser === undefined)
-								throw `Rule "${expected.lexeme.slice(1)}" is not defined (yet).`;
+								throw `Rule "${expected.lexeme}" is not defined (yet).`;
 
-							const [min, max, hasQuantifier] = this._minMax(grammar, grammarCursor);
-							const matches = [];
-							let i = inputCursor;
-							matcher:while (matches.length < max) {
-								const match = recogniser(input.slice(i++));
-								if (match.isNothing())
-									if (matches.length >= min)
-										break matcher;
-									else
-										continue reject;
-								matches.push(match);
-							}
-							consume(matches);
-							grammarCursor += hasQuantifier;
-							continue accept;
-						}
-						case "definition": {
-							const recogniser = this.definitions.get(expected.lexeme.slice(1)); //remove #
-							if (recogniser === undefined)
-								throw `Rule "${expected.lexeme.slice(1)}" is not defined (yet).`;
 							const [min, max, hasQuantifier] = this._minMax(grammar, grammarCursor);
 							const matches = [];
 							let i = inputCursor;
@@ -260,44 +235,35 @@ module.exports = class Parser {
 							grammarCursor += hasQuantifier;
 							continue accept;
 						}
-						case "ignoration": {
-							//Maybe allow this too? Matches the tokens but returns ParserMatch.skip(n);
-							throw `Error in rule "${name}": cannot reference ignoration "${expected.lexeme}". Try declaring it as a rule or definition.`;
+						case "label": {
+							label = expected.lexeme.slice(0, -1);
+							continue accept;
 						}
 						default: {
 							throw `Error in rule "${name}": no case for ${expected.type} "${expected.lexeme}".`;
 						}
 					}
 				}
-				return new ParserMatch(inputCursor, matchedTokens);
+				return new ParserMatch(inputCursor, matchedTokens, name);
 			}
 			return ParserMatch.NO_MATCH;
 		}).bind(this);
 	}
 
 	parse (tokens) {
-		const tree = { type: "program", expressions: [] };
-		let offset = 0;
-		outer: while (offset < tokens.length) {
-			const prevOffset = offset;
-			const reversed = [...this.rules]
-				.reverse()
-				.map(([,v]) => v); // Reversing all defined rules decreases calls significantly.
-			inner: for (const recogniser of reversed) {
-				const match = recogniser(tokens.slice(offset));
-				if (match.isNothing())
-					continue inner;
-				offset += match.offset;
-				tree.expressions.push(match.flat().build(x => x)); // x => x should be the parsed builder : tokens => ... ;
+		const reversed = [...this.rules]
+			.reverse()
+			.map(([,v]) => v);
+		for (const recogniser of reversed) {
+			const match = recogniser(tokens);
+			if (match.isNothing())
+				continue;
 
-				// Short circuit if EOF
-				if (offset >= tokens.length)
-					break outer;
-			}
-			if (offset === prevOffset)
-				throw `Unexpected ${tokens[offset].type} "${tokens[offset].lexeme}" at line ${tokens[offset].line}, column ${tokens[offset].column}.`;
+			const tree = match.normalise();
+			setTimeout(() => inspect(tree), 0);
+			return tree;
 		}
-		setTimeout(() => inspect(tree), 0);
-		return tree;
+		// TODO: Get the correct token that cause the error.
+		throw `Empty file.`;
 	}
 }

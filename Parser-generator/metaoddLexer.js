@@ -22,8 +22,6 @@ module.exports = new Lexer()
 	.rule("open-paren", /\(/)
 	.rule("close-paren", /\)/)
 	.rule("function-arrow", /=>/)
-	.rule("definition", /#{name}/)
-	.rule("ignoration", /\?{name}/)
 	.rule("label", /{name}:/)
-	.rule("subrule", /@{name}/)
-	.rule("type", /{name}/);
+	.rule("type", /\.{name}/)
+	.rule("subrule", /{name}/);

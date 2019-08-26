@@ -10,9 +10,9 @@ const parser = require("./Processor/stages/1-Parser/oddParser.js");
 new Processor()
 	.stage("running lexical analysis", lexer.lex.bind(lexer))
 	.stage("building syntax tree",     parser.parse.bind(parser))
-	.stage("validating types",         curry(wait, Math.random()*3000|0))
-	.stage("optimising",               curry(wait, Math.random()*3000|0))
-	.stage("compiling",                curry(wait, Math.random()*3000|0))
+	.stage("validating types",         curry(wait, Math.random()*20|0))
+	.stage("optimising",               curry(wait, Math.random()*20|0))
+	.stage("compiling",                curry(wait, Math.random()*20|0))
 	.process(input)
 	.then(output => console.log(`\nOutput: "${output}"`))
 	.catch(error);
