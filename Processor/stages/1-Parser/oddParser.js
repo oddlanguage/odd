@@ -13,12 +13,12 @@ module.exports = new Parser()
 	.define(`term-op -> "*"
 		| "/"
 		| "%"`)
-	.rule(`atom -> #number
-		| #string
+	.rule(`atom -> identifier
 		| literal
-		| identifier`)
+		| #number
+		| #string`)
 	.rule(`power -> @atom "^" @factor`)
-	.rule(`factor -> #plus-or-min? @factor
+	.rule(`factor -> #plus-or-min @factor
 		| @power`)
 	.rule(`term -> @factor (#term-op @factor)*`)
 	.rule(`math-expression -> @term (#plus-or-min @term)*`)

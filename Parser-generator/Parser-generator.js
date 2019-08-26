@@ -120,26 +120,36 @@ module.exports = class Parser {
 			reject:for (const grammar of options) {
 				const matchedTokens = [];
 				let inputCursor = 0;
-				function consume (match) {
-					if (match instanceof ParserMatch) {
-						inputCursor += match.offset;
-						matchedTokens.push(match);
-					} else if (Array.isArray(match)) {
-						inputCursor += match.length;
-						matchedTokens.push(...match);
-					} else {
-						matchedTokens.push(match);
-						inputCursor += 1;
+				function consume (...args) {
+					const matches = args.flat();
+					for (const match of matches) {
+						if (match instanceof ParserMatch) {
+							inputCursor += match.offset;
+							matchedTokens.push(match);
+						} else {
+							matchedTokens.push(match);
+							inputCursor += 1;
+						}
 					}
 				}
 				accept:for (let grammarCursor = 0; grammarCursor < grammar.length; grammarCursor++) {
 					const expected = grammar[grammarCursor];
-					const got = input[inputCursor];
 					switch (expected.type) {
 						case "lexeme": {
-							if (got.lexeme !== expected.lexeme.slice(1, -1)) //remove ""
-								continue reject;
-							consume(got);
+							const [min, max, hasQuantifier] = this._minMax(grammar, grammarCursor);
+							const matches = [];
+							let i = inputCursor;
+							matcher:while (matches.length < max) {
+								const got = input[i++]||{};
+								if (got.lexeme !== expected.lexeme.slice(1, -1)) //remove ""
+									if (matches.length >= min)
+										break matcher;
+									else
+										continue reject;
+								matches.push(got);
+							}
+							consume(matches);
+							grammarCursor += hasQuantifier;
 							continue accept;
 						}
 						case "type": {
@@ -147,7 +157,7 @@ module.exports = class Parser {
 							const matches = [];
 							let i = inputCursor;
 							matcher:while (matches.length < max) {
-								const got = input[i++];
+								const got = input[i++]||{};
 								if (got.type !== expected.lexeme)
 									if (matches.length >= min)
 										break matcher;
@@ -165,20 +175,41 @@ module.exports = class Parser {
 							//	the recogniser.
 							if (recogniser === undefined)
 								throw `Rule "${expected.lexeme.slice(1)}" is not defined (yet).`;
-							const match = recogniser(input.slice(inputCursor));
-							if (match.isNothing())
-								continue reject;
-							consume(match);
+
+							const [min, max, hasQuantifier] = this._minMax(grammar, grammarCursor);
+							const matches = [];
+							let i = inputCursor;
+							matcher:while (matches.length < max) {
+								const match = recogniser(input.slice(i++));
+								if (match.isNothing())
+									if (matches.length >= min)
+										break matcher;
+									else
+										continue reject;
+								matches.push(match);
+							}
+							consume(matches);
+							grammarCursor += hasQuantifier;
 							continue accept;
 						}
 						case "definition": {
 							const recogniser = this.definitions.get(expected.lexeme.slice(1)); //remove #
 							if (recogniser === undefined)
 								throw `Rule "${expected.lexeme.slice(1)}" is not defined (yet).`;
-							const match = recogniser(input.slice(inputCursor));
-							if (match.isNothing())
-								continue reject;
-							consume(match);
+							const [min, max, hasQuantifier] = this._minMax(grammar, grammarCursor);
+							const matches = [];
+							let i = inputCursor;
+							matcher:while (matches.length < max) {
+								const match = recogniser(input.slice(i++));
+								if (match.isNothing())
+									if (matches.length >= min)
+										break matcher;
+									else
+										continue reject;
+								matches.push(match);
+							}
+							consume(matches);
+							grammarCursor += hasQuantifier;
 							continue accept;
 						}
 						case "open-paren": {
@@ -213,10 +244,20 @@ module.exports = class Parser {
 							//	(i.e.((token)) === (token) === token)
 
 							const recogniser = this.buildRecogniser(name, groupGrammar);
-							const match = recogniser(input.slice(inputCursor));
-							if (match.isNothing())
-								continue reject;
-							consume(match);
+							const [min, max, hasQuantifier] = this._minMax(grammar, grammarCursor);
+							const matches = [];
+							let i = inputCursor;
+							matcher:while (matches.length < max) {
+								const match = recogniser(input.slice(i++));
+								if (match.isNothing())
+									if (matches.length >= min)
+										break matcher;
+									else
+										continue reject;
+								matches.push(match);
+							}
+							consume(matches);
+							grammarCursor += hasQuantifier;
 							continue accept;
 						}
 						case "ignoration": {

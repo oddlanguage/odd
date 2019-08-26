@@ -4,7 +4,7 @@ module.exports = function error (message) {
 	if (message.toString)
 		message = message.toString();
 
-	const errorLocation = (new Error()).stack
+	const errorLocation = new Error().stack
 		.split(/\n/)[3]
 		.replace(/\\/g, "/")
 		.match(/\((.+)\)$/)[1];
