@@ -2,6 +2,7 @@
 "hide implementation";
 
 const NodeList = require("./NodeList.js");
+const inspect = require("../helpers/inspect.js");
 
 const SKIPPED = Symbol("SKIPPED");
 class ParserMatch {
@@ -12,18 +13,7 @@ class ParserMatch {
 		this.type = type;
 		this.label = "";
 		this.offset = offset;
-		this.children = NodeList.from(children);
-	}
-
-	withLabel (label) {
-		if (typeof label !== "string")
-			return this;
-		this.label = label;
-		return this;
-	}
-
-	hasLabel () {
-		return this.label !== "";
+		this.children = children;
 	}
 
 	is (value) {
@@ -38,49 +28,31 @@ class ParserMatch {
 		return this.is("SKIPPED");
 	}
 
-	flat () {
-		this.children = this.children.reduce((root, cur, i) => {
-			if (cur instanceof ParserMatch) {
-				const flattened = cur.flat().children;
-				root.children.splice(i, 1, ...flattened);
-			}
-			return root;
-		}, this).children;
-		return this;
-	}
-
 	normalise () {
-		/* TODO: Remove all tokens without labels.
-				Expected output:
+		// TODO: Remove all tokens without labels.
+		const normalised = [];
 
-		Node {
-			type: "program",
-			expressions: NodeList [
-				Node {
-					type: "const-definition",
-					annotation: "int:"
-					lhs: Node {
-						type: "identifier",
-						lexeme: "num"
-					},
-					rhs: Node {
-						type: "math-expression",
-						operator: "^",
-						l: 1,
-						r: 2
-					}
-				}
-			]
+		function extractLeaf (children) {
+			return false;
 		}
-		*/
-		return new Node(this.type, this.children);
+
+		if (this.label)
+			normalised.push(new Node({
+				[this.label]: extractLeaf(this.children)
+			}));
+
+		for (const child of this.children)
+			if (typeof child.normalise === "function")
+				normalised.push(...child.normalise());
+
+		return normalised;
 	}
 }
 
 class Node {
-	constructor (type, children) {
-		this.type = type;
-		this.children = children;
+	constructor (properties) {
+		Object.assign(this, properties);
+		// this.children = NodeList.from(children);
 	}
 
 	//Planned
@@ -92,7 +64,10 @@ class Node {
 	//nthChild (n) {} //null|Node
 	//append (node) {} //this
 	//prepend (node) {} //this
-	//select (selector) {} //null|Node
+	//select (selector, { all: false }) {} //Null|Node|NodeList
+	//selectAll (selector) { //NodeList
+	//	return this.select(selector, { all: true });
+	//}
 	//remove () {} //this
 	//replace (node) {} //node
 	//before (...nodes) {} //this

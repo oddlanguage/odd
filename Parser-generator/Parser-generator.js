@@ -84,7 +84,8 @@ module.exports = class Parser {
 		// TODO: maybe check deeper if a rule is left-recursive
 		//	or figure out a way to rewrite the rule to be LL parser friendly.
 		//	Also, if all expectations before recursion are optional, it
-		//	can also get stuck, and thus should be marked as left-recursive.
+		//	can also get stuck, and thus should be marked as (possibly)
+		//	left-recursive.
 		for (const first of options.map(option => option[0])) {
 			switch (first.type) {
 				default: continue;
@@ -251,10 +252,9 @@ module.exports = class Parser {
 	}
 
 	parse (tokens) {
-		const reversed = [...this.rules]
-			.reverse()
+		const rules = [...this.rules]
 			.map(([,v]) => v);
-		for (const recogniser of reversed) {
+		for (const recogniser of rules) {
 			const match = recogniser(tokens);
 			if (match.isNothing())
 				continue;
