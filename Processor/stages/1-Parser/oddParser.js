@@ -5,13 +5,16 @@ const Parser = require("../../../Parser-generator/Parser-generator.js");
 
 module.exports = new Parser()
 	.rule(`program -> expressions:(expression .semicolon)*`)
-	.rule(`expression -> math-expression
+	.rule(`expression -> math
 		| const-definition
 		| "(" expression ("," expression)* ")"`)
-	.rule(`math-expression -> term (plus-or-min term)*`)
-	.rule(`term -> factor (math-op factor)*`)
+	.rule(`math -> term
+		| lhs:term plus-or-min term`)
+	.rule(`term -> l:factor op:math-op r:factor
+		| factor`)
 	.rule(`factor -> plus-or-min? power`)
-	.rule(`power -> atom ("^" factor)*`)
+	.rule(`power -> l:atom op:"^" r:factor
+		| atom`)
 	.rule(`atom -> .identifier
 		| .literal
 		| number
@@ -26,11 +29,12 @@ module.exports = new Parser()
 		| "/"
 		| "%"`)
 	.rule(`const-definition -> "const" annotation:.type-annotation? declaration`)
-	.rule(`declaration -> lhs:.identifier ("=" rhs:expression)?`)
+	.rule(`declaration -> lhs:.identifier "=" rhs:expression
+		| lhs:.identifier`)
 
 // TODO:
 // n-repetition: name -> rule{min(,max?)?} ()
-// Fix labels :(
+// Make labels work better with quantifiers
 
 // Possible additions:
 // Not     : name -> x !y (x followed by anthing but y, including nothing)

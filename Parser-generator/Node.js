@@ -4,10 +4,10 @@
 const NodeList = require("./NodeList.js");
 const inspect = require("../helpers/inspect.js");
 
-const SKIPPED = Symbol("SKIPPED");
+const NOTHING = Symbol("NOTHING");
 class ParserMatch {
-	static NO_MATCH = new ParserMatch(0, [], "NOTHING");
-	static skip = (n) => new ParserMatch(n, Array(n).fill(SKIPPED).slice(), "SKIPPED");
+	static GROUP = Symbol("GROUP");
+	static NO_MATCH = new ParserMatch(0, [], NOTHING);
 
 	constructor (offset = 0, children = [], type) {
 		this.type = type;
@@ -21,31 +21,34 @@ class ParserMatch {
 	}
 
 	isNothing () {
-		return this.is("NOTHING");
+		return this.is(NOTHING);
 	}
 
-	isSkipped () {
-		return this.is("SKIPPED");
+	containsLabels () {
+		return this.children.some(child => child.label);
 	}
 
 	normalise () {
-		// TODO: Remove all tokens without labels.
-		const normalised = [];
+		function labelify (root) {
+			if (root.children) {
+				for (const child of root.children) {
+					if (child.label) {
+						root[child.label] = child.children || child;
+						if (!child.children)
+							delete child.label;
+					}
+					labelify(child);
+				}
+			}
 
-		function extractLeaf (children) {
-			return false;
+			delete root.label;
+			return root;
 		}
 
-		if (this.label)
-			normalised.push(new Node({
-				[this.label]: extractLeaf(this.children)
-			}));
+		// TODO: Remove all tokens without labels.
+		//	Figure out how >:(
 
-		for (const child of this.children)
-			if (typeof child.normalise === "function")
-				normalised.push(...child.normalise());
-
-		return normalised;
+		return labelify(this);
 	}
 }
 

@@ -113,19 +113,19 @@ module.exports = class Parser {
 
 			reject:for (const grammar of options) {
 				const matchedTokens = [];
-				let label = null;
+				let label = "";
 				let inputCursor = 0;
 				function consume (...args) {
 					const matches = args.flat();
 					for (const match of matches) {
-						if (match instanceof ParserMatch) {
+						if (match.offset) {
 							inputCursor += match.offset;
 						} else {
 							inputCursor += 1;
 						}
 						matchedTokens.push(match);
 						match.label = label;
-						label = null;
+						label = "";
 					}
 				}
 				accept:for (let grammarCursor = 0; grammarCursor < grammar.length; grammarCursor++) {
@@ -170,7 +170,7 @@ module.exports = class Parser {
 							// TODO: extract this check into the getting of the rules instead of
 							//	the recogniser.
 							if (recogniser === undefined)
-								throw `Rule "${expected.lexeme}" is not defined (yet).`;
+								throw `Rule "${expected.lexeme}" is not defined.`;
 
 							const [min, max, hasQuantifier] = this._minMax(grammar, grammarCursor);
 							const matches = [];
@@ -219,7 +219,7 @@ module.exports = class Parser {
 							//Maybe warn user of unneccesary nesting
 							//	(i.e.((token)) === (token) === token)
 
-							const recogniser = this.buildRecogniser(name, groupGrammar);
+							const recogniser = this.buildRecogniser(ParserMatch.GROUP, groupGrammar);
 							const [min, max, hasQuantifier] = this._minMax(grammar, grammarCursor);
 							const matches = [];
 							let i = inputCursor;
@@ -230,6 +230,14 @@ module.exports = class Parser {
 										break matcher;
 									else
 										continue reject;
+								// matches.push(...match.children);
+								// TODO: this is probably the correct way to
+								//	insert matches within groups. To correctly
+								//	get al labelled children, the normalisation
+								//	of nodes should save duplicate labels within
+								//	an array as a property with the name of [label].
+								//	Or, you know, just get Symbol(GROUP).children
+								//	and do the aforementioned.
 								matches.push(match);
 							}
 							consume(matches);
@@ -252,9 +260,9 @@ module.exports = class Parser {
 	}
 
 	parse (tokens) {
-		const rules = [...this.rules]
+		const recognisers = [...this.rules]
 			.map(([,v]) => v);
-		for (const recogniser of rules) {
+		for (const recogniser of recognisers) {
 			const match = recogniser(tokens);
 			if (match.isNothing())
 				continue;
@@ -264,6 +272,6 @@ module.exports = class Parser {
 			return tree;
 		}
 		// TODO: Get the correct token that cause the error.
-		throw `Empty file.`;
+		throw `No rules match.`;
 	}
 }
