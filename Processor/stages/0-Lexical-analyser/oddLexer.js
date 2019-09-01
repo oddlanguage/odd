@@ -15,7 +15,7 @@ module.exports = new Lexer()
 	.rule("block-end", "}")
 	.rule("object-start", "[")
 	.rule("object-end", "]")
-	.rule("type-annotation", /[[{]*\w+?[^()\s]*:(?!:)/) //not double colon
+	.rule("type-annotation", /[a-zA-Z\[\]\{\}\<\>]*:/)
 	.rule("not-equals", /!=/)
 	.rule("equals-equals", /==/)
 	.rule("operator", /[.=+\-/*%^~<>?&|!]|::?|\b(new|exists|instanceof|typeof|in|and|or)\b/)

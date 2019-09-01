@@ -11,7 +11,7 @@ Compiler:
 		block-end              -> "}"
 		object-start           -> "["
 		object-end             -> "]"
-		type-annotation        -> /[[{]*\w+?[^()\s]*:(?!:)/ //not double colon
+		type-annotation        -> /[a-zA-Z\[\]\{\}\<\>]*:/ //not double colon
 		not-equals             -> /!=/
 		equals-equals          -> /==/
 		operator               -> /[.=+\-/*%^~<>?&|!]|::?|\b(new|exists|instanceof|typeof|in|and|or)\b/

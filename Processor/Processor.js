@@ -72,7 +72,6 @@ module.exports = class Processor {
 			const before = performance.now();
 			try {
 				state = await stage.handler(state);
-				//if type(state) === "generatorfunction" // INJECT FUNCTION THAT RETURNS HANDLER.NEXT AND SETS ✔️ IF GENERATOR.DONE?????
 				const elapsed = Math.round(performance.now() - before);
 				replaceConsoleLine(` ✔️  ${name} OK! (took ~${elapsed}ms and produced 0 warnings)\n`);
 			} catch (err) {
