@@ -8,6 +8,14 @@ const { inflect } = require("../helpers/String.js");
 const { unique } = require("../helpers/Array.js");
 const { getPattern } = require("../helpers/RegExp.js");
 
+// TODO: Allow python-like ident blocks.
+//	Maybe through a function or a flag
+// TODO: Save only cursor offset instead
+//	of line and column for major performance
+//	increase. REQUIRED: pass along processor
+//	stage's name and source file with every
+//	stage handler.
+
 module.exports = class Lexer {
 	constructor () {
 		this._rules = new Map();
@@ -89,7 +97,7 @@ module.exports = class Lexer {
 			}
 			return {line, column};
 		}
-		
+
 		function getErrorLine (input, index) {
 			const start = input
 				.substring(0, index)
@@ -97,7 +105,7 @@ module.exports = class Lexer {
 			const end = input
 				.substring(start)
 				.indexOf("\n") + start;
-		
+
 			return input.substring(start, end);
 		}
 

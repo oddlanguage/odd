@@ -7,6 +7,14 @@ const error = require("../helpers/error.js");
 const { inflect, capitalise } = require("../helpers/String.js");
 const { performance } = require("perf_hooks");
 
+// TODO: create warn() function that optionally
+//	console.warns and increments stage warning
+//	count.
+// TODO: Maybe step away from async-await
+//	because of the horrible stack traces.
+//	Maybe .reduce? Or just wait for the
+//	proposal to hit node.
+
 function replaceConsoleLine (message) {
 	process.stdout.clearLine();
 	process.stdout.cursorTo(0);
