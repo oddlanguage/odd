@@ -8,9 +8,9 @@ module.exports = new Parser()
 	.rule(`expression -> math
 		| const-definition
 		| "(" expression ("," expression)* ")"`)
-	.rule(`math -> term
-		| lhs:term plus-or-min term`)
-	.rule(`term -> l:factor op:math-op r:factor
+	.rule(`math -> l:atom op:plus-or-min r:math
+		| term`)
+	.rule(`term -> l:factor op:math-op r:math
 		| factor`)
 	.rule(`factor -> plus-or-min? power`)
 	.rule(`power -> l:atom op:"^" r:factor

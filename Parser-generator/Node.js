@@ -2,7 +2,6 @@
 "hide implementation";
 
 const NodeList = require("./NodeList.js");
-const inspect = require("../helpers/inspect.js");
 
 const NOTHING = Symbol("NOTHING");
 class ParserMatch {
@@ -24,27 +23,56 @@ class ParserMatch {
 		return this.is(NOTHING);
 	}
 
+	static hasLabel (target) {
+		if (target.label)
+			return true;
+		if (target.children)
+			for (const child of (target.children))
+				if (ParserMatch.hasLabel(child))
+					return true;
+		return false;
+	}
+
 	static flatten (target) {
-		while (!target.label && (target.children||[]).length === 1)
+		while ((target.children||[]).length === 1) {
+			if (target.label)
+				target.children[0].label = target.label;
 			target = target.children[0];
-		return target.children || target;
+		}
+		return target;
+	}
+
+	static filter (target) {
+		if (target.label)
+			return target;
+		if (target.children)
+			target.children = target.children.filter(child => ParserMatch.hasLabel(child));
+		return target;
 	}
 
 	normalise () {
-		for (const i in this.children) {
-			const child = this.children[i];
-			this.children[i] = ParserMatch.flatten(child);
-			if (child.normalise)
-				child.normalise();
-		}
-		return this;
+		// TODO: This almost works, need to filter
+		//	semicolons from (expression .semicolon)*
+		function normalise (root) {
+			for (const i in root.children) {
+				normalise(root.children[i]);
+				root.children[i] = ParserMatch.flatten(root.children[i]);
+				root.children[i] = ParserMatch.filter(root.children[i]);
+				root.children[i] = new Node(root.children[i]);
+				if (typeof root.children[i].offset === "number")
+					delete root.children[i].offset;
+			}
+			return new Node(root);
+		};
+		return normalise(this);
 	}
 }
 
 class Node {
 	constructor (properties) {
-		Object.assign(this, properties);
-		// this.children = NodeList.from(children);
+		Object.assign(this,
+			Object.fromEntries(
+				Object.entries(properties)));
 	}
 
 	//Planned

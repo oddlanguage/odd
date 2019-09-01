@@ -109,7 +109,9 @@ module.exports = class Parser {
 			//	suggest the most applicable alternative
 			//	to the erroneus grammar the user provided.
 			// TODO: Return Node.skip(n) if quantifier is
-			//	* or ? and nothing gets matched;
+			//	* or ? and nothing gets matched to
+			//	preserve labels, which in turn are
+			//	important to AST normalisation
 
 			reject:for (const grammar of options) {
 				const matchedTokens = [];
@@ -125,8 +127,8 @@ module.exports = class Parser {
 						}
 						matchedTokens.push(match);
 						match.label = label;
-						label = "";
 					}
+					label = "";
 				}
 				accept:for (let grammarCursor = 0; grammarCursor < grammar.length; grammarCursor++) {
 					const expected = grammar[grammarCursor];
@@ -176,13 +178,14 @@ module.exports = class Parser {
 							const matches = [];
 							let i = inputCursor;
 							matcher:while (matches.length < max) {
-								const match = recogniser(input.slice(i++));
+								const match = recogniser(input.slice(i));
 								if (match.isNothing())
 									if (matches.length >= min)
 										break matcher;
 									else
 										continue reject;
 								matches.push(match);
+								i += match.offset;
 							}
 							consume(matches);
 							grammarCursor += hasQuantifier;
@@ -224,21 +227,14 @@ module.exports = class Parser {
 							const matches = [];
 							let i = inputCursor;
 							matcher:while (matches.length < max) {
-								const match = recogniser(input.slice(i++));
+								const match = recogniser(input.slice(i));
 								if (match.isNothing())
 									if (matches.length >= min)
 										break matcher;
 									else
 										continue reject;
-								// matches.push(...match.children);
-								// TODO: this is probably the correct way to
-								//	insert matches within groups. To correctly
-								//	get al labelled children, the normalisation
-								//	of nodes should save duplicate labels within
-								//	an array as a property with the name of [label].
-								//	Or, you know, just get Symbol(GROUP).children
-								//	and do the aforementioned.
 								matches.push(match);
+								i += match.offset;
 							}
 							consume(matches);
 							grammarCursor += hasQuantifier;
@@ -260,18 +256,18 @@ module.exports = class Parser {
 	}
 
 	parse (tokens) {
-		const recognisers = [...this.rules]
-			.map(([,v]) => v);
-		for (const recogniser of recognisers) {
-			const match = recogniser(tokens);
-			if (match.isNothing())
-				continue;
+		let offset = 0;
+		const recogniser = [...this.rules][0][1];
+		const match = recogniser(tokens);
+		if (match.isNothing())
+			throw `The uppermost grammar doesn't match the file.`;
+		offset += match.offset;
+		if (offset < tokens.length)
+			throw `The uppermost grammar doesn't match the entire file.`;
 
-			const tree = match.normalise();
-			setTimeout(() => inspect(tree), 0);
-			return tree;
-		}
+		const tree = match.normalise();
+		setTimeout(() => inspect(tree), 0);
+		return tree;
 		// TODO: Get the correct token that cause the error.
-		throw `No rules match.`;
 	}
 }

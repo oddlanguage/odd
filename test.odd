@@ -1,6 +1,7 @@
 // @test
-const int: num = 1 ^ 2;
-// const int: num = 3 * 4;
-// const int: num = 5 / 6;
-// const int: num = 7 + 8;
-// const int: num = 9 - 10;
+const int: num1 = 1 ^ 2 ^ 3 * 3;
+const int: num2 = 3 * 4 * 5;
+const int: num3 = 5 / 6;
+const int: num4 = 7 + 8;
+const int: num5 = 9 - 10;
+const int: num6 = const int: num7 = 6;
