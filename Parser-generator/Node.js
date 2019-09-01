@@ -24,31 +24,20 @@ class ParserMatch {
 		return this.is(NOTHING);
 	}
 
-	containsLabels () {
-		return this.children.some(child => child.label);
+	static flatten (target) {
+		while (!target.label && (target.children||[]).length === 1)
+			target = target.children[0];
+		return target.children || target;
 	}
 
 	normalise () {
-		function labelify (root) {
-			if (root.children) {
-				for (const child of root.children) {
-					if (child.label) {
-						root[child.label] = child.children || child;
-						if (!child.children)
-							delete child.label;
-					}
-					labelify(child);
-				}
-			}
-
-			delete root.label;
-			return root;
+		for (const i in this.children) {
+			const child = this.children[i];
+			this.children[i] = ParserMatch.flatten(child);
+			if (child.normalise)
+				child.normalise();
 		}
-
-		// TODO: Remove all tokens without labels.
-		//	Figure out how >:(
-
-		return labelify(this);
+		return this;
 	}
 }
 
