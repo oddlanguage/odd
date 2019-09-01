@@ -1,6 +1,8 @@
 # Odd Language
 <div align="center">
-	<img src="./odd.svg" alt="An orange rectangle with rounded edges, with the word 'odd' written on it. The last 'd' is raised above the corpus height of the rest of the word." width="50%">
+	<img src="./odd.svg" alt="An orange rectangle with rounded edges, with the word 'odd' written on it. The last 'd' is raised above the corpus height of the rest of the word." width="33%">
+	<br/>
+	<i>Hmm, that's <b>odd</b>.</i>
 </div>
 
 ## 📚 Bibliography
