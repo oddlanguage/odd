@@ -72,14 +72,14 @@ module.exports = class Processor {
 		`);
 	}
 
-	async process (value) {
+	async process () {
 		const ticker = createClockTicker();
-		let state = value;
+		let input = Promise.resolve();
 		for (const [name, stage] of this._stages) {
 			replaceConsoleLine(` 🕛  ${name}...`);
 			const before = performance.now();
 			try {
-				state = await stage.handler(state);
+				input = await stage.handler(input);
 				const elapsed = Math.round(performance.now() - before);
 				replaceConsoleLine(` ✔️  ${name} OK! (took ~${elapsed}ms and produced 0 warnings)\n`);
 			} catch (err) {
@@ -90,6 +90,6 @@ module.exports = class Processor {
 		}
 		clearInterval(ticker);
 
-		return state;
+		return input;
 	}
 }
