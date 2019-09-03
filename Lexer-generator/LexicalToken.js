@@ -2,7 +2,7 @@
 "hide implementation";
 
 module.exports = class LexicalToken {
-	constructor (type, lexeme, line, column) {
+	constructor (type, lexeme = null, line = null, column = null) {
 		this.type = type;
 		this.lexeme = lexeme;
 		this.line = line;

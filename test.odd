@@ -1,7 +1,22 @@
+repeat 10 with index as i {
+	print(i);
+}
+
+// import "./test.odd" as test;
+//
 // @test
-const int: num1 = 1 ^ 2 ^ 3 * 3;
-const int: num2 = 3 * 4 * 5;
-const int: num3 = 5 / 6;
-const int: num4 = 7 + 8;
-const int: num5 = 9 - 10;
-const int: num6 = const int: num7 = 6;
+// const int: num1 = 1 ^ 2 ^ 3 * 3;
+// const int: num2 = 3 * 4 * 5;
+// const int: num3 = 5 / 6;
+// const int: num4 = 7 + 8;
+// const int: num5 = 9 - 10;
+// const int: num6 = const int: num7 = 6;
+//
+// for item in iterator with index as i
+// 	print(i);
+//
+// from 0 to 9 with index as i
+// 	print(i);
+//
+// repeat 10 with index as i
+// 	print(i);
