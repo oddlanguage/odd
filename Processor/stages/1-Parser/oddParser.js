@@ -4,10 +4,14 @@
 const Parser = require("../../../Parser-generator/Parser-generator.js");
 
 module.exports = new Parser()
-	.rule(`program -> expressions:(expression .semicolon)*`)
-	.rule(`expression -> math
+	.rule(`program -> expressions:expression*`)
+	.rule(`expression -> expression-body .semicolon
+		| controllers`)
+	.rule(`controllers -> loop
+		| using
+		| if`)
+	.rule(`expression-body -> math
 		| const-definition
-		| loop
 		| "(" expression ("," expression)* ")"`)
 	.rule(`math -> l:atom op:plus-or-min r:math
 		| term`)
@@ -30,18 +34,22 @@ module.exports = new Parser()
 		| "/"
 		| "%"`)
 	.rule(`const-definition -> "const" annotation:.type-annotation? declaration`)
-	.rule(`declaration -> lhs:.identifier "=" rhs:expression
+	.rule(`declaration -> lhs:.identifier "=" rhs:expression-body
 		| lhs:.identifier`)
 	.rule(`loop -> for-of
 		| from-to
 		| repeat`)
-	.rule(`for-of -> "for" .identifier "of" .identifier with? block
-		| "for" "(" identifier "of" identifier ")" with? block`)
-	.rule(`from-to -> "from" expression "to" expression with? block`)
-	.rule(`repeat -> "repeat" math with? block`)
-	.rule(`with -> "with" .identifier "as" .identifier ("," .identifier "as" .identifier)*`)
-	.rule(`block -> expression .semicolon
-		| .INDENT (expresion .semicolon)+ .DEDENT`);
+	.rule(`for-of -> "for" for-of-body
+		| "for" "(" for-of-body ")" with? block`)
+	.rule(`for-of-body -> name:.identifier "of" iterable:expression-body`)
+	.rule(`from-to -> "from" from-to-body with? block
+		| "from" "(" from-to-body ")" with? block`)
+	.rule(`from-to-body -> from:expression-body "to" to:expression-body`)
+	.rule(`repeat -> "repeat" count:expression-body with? block`)
+	.rule(`with -> "with" with-body+`)
+	.rule(`with-body -> name:.identifier "as" label:.identifier ("," with-body)*`)
+	.rule(`block -> .INDENT expression+ .DEDENT`)
+	.rule(`using -> "using" scope:expression-body ("," scope:expression-body)*`);
 
 // TODO:
 // n-repetition: name -> rule{min(,max?)?} ()

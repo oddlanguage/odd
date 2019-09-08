@@ -263,10 +263,9 @@ module.exports = class Parser {
 			throw `The uppermost grammar doesn't match the file.`;
 		offset += match.offset;
 		if (offset < tokens.length)
-			throw `The uppermost grammar doesn't match the entire file.`;
+			throw(`The uppermost grammar doesn't match the entire file.`);
 
 		const tree = match.normalise();
-		setTimeout(() => inspect(tree), 0);
 		return tree;
 		// TODO: Get the correct token that cause the error.
 	}

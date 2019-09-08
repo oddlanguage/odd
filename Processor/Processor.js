@@ -6,6 +6,7 @@ const type = require("../helpers/type.js");
 const error = require("../helpers/error.js");
 const { inflect, capitalise } = require("../helpers/String.js");
 const { performance } = require("perf_hooks");
+const inspect = require("../helpers/inspect.js");
 
 // TODO: create warn() function that optionally
 //	console.warns and increments stage warning
@@ -39,18 +40,7 @@ module.exports = class Processor {
 		this._stages = new Map();
 	}
 
-	_stageFromHandler (handler) {
-		const name = captialise(handler.name) || uid();
-		this._stages.set(name, {
-			name,
-			handler
-		});
-
-		return this;
-	}
-	_stageFromNameAndHandler(name, handler) {
-		//No assertions, only called if name is a string and handler is a function
-
+	stage (name, handler) {
 		name = capitalise(name);
 		this._stages.set(name, {
 			name,
@@ -58,18 +48,6 @@ module.exports = class Processor {
 		});
 
 		return this;
-	}
-	stage (...args) {
-		if (args.length === 1 && type(args[0]).match("function"))
-			return this._stageFromHandler(args[0]);
-		else if (type(args[0]) === "string" && type(args[1]).match("function"))
-			return this._stageFromNameAndHandler(args[0], args[1]);
-		else error(`
-			Unsupported ${inflect("argument", args.length)}: ${args.map(arg => type(arg)).join(", ")}.
-			Supported formats:
-				function: handler
-				[string: name, function: handler]
-		`);
 	}
 
 	async process () {
@@ -79,6 +57,7 @@ module.exports = class Processor {
 			replaceConsoleLine(` 🕛  ${name}...`);
 			const before = performance.now();
 			try {
+				inspect(input);
 				input = await stage.handler(input);
 				const elapsed = Math.round(performance.now() - before);
 				replaceConsoleLine(` ✔️  ${name} OK! (took ~${elapsed}ms and produced 0 warnings)\n`);

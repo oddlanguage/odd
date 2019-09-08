@@ -158,6 +158,9 @@ module.exports = class Lexer {
 		}
 
 		if (this._usePythonBlocks) {
+			// TODO: This also recognises normal indenting as blocks.
+			//	Python uses colons to denote block start.
+			//	what will we use?
 			const indentStack = new IndentStack();
 			for (let i = 0; i < tokens.length; i++) {
 				if (tokens[i].type === "_newline") {
@@ -181,11 +184,9 @@ module.exports = class Lexer {
 					}
 				}
 			}
-			console.log(indentStack.last());
 			indentStack.popTillInitial(
-				() => tokens.splice(-1, 0, new LexicalToken("DEDENT")));
+				() => tokens.splice(tokens.length, 0, new LexicalToken("DEDENT")));
 			tokens = tokens.filter(token => !["_newline", "_whitespace"].includes(token.type));
-			console.log(tokens);
 		}
 
 		if (this._generateOEF)

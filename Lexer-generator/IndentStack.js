@@ -9,7 +9,6 @@ module.exports = class IndentStack {
 	}
 
 	pop () {
-		console.log(this._stack);
 		if (this._stack.length === 1)
 			throw `Cannot pop the last element of the stack.`;
 		return this._stack.pop();
@@ -39,7 +38,6 @@ module.exports = class IndentStack {
 	}
 
 	includesLargerThan (value) {
-		console.log(this._stack.slice().reverse().some(i => i > value));
 		return this._stack.slice().reverse().some(i => i > value);
 	}
 }
