@@ -9,13 +9,19 @@ const { unique } = require("../helpers/Array.js");
 const { getPattern } = require("../helpers/RegExp.js");
 const IndentStack = require("./IndentStack.js");
 
-// TODO: Allow python-like ident blocks.
-//	Maybe through a function or a flag
 // TODO: Save only cursor offset instead
 //	of line and column for major performance
-//	increase. REQUIRED: pass along processor
-//	stage's name and source file with every
-//	stage handler.
+//	increase. Find out a way to signal a higher-up
+//	error handler that it should parse the offset
+//	into line and column.
+// TODO: Save postprocessing functions
+//	(such as usePythonBlocks and generateEOF)
+//	as an "after": this.after(tokens => insertIndentsAndDedents(tokens))
+//	return this._postprocessors
+//		.reduce((tokens, processor) => processor(tokens), tokens);
+// TODO: Allow context-aware rules such as C-style types:
+//	.rule("name other-name another-name", /(name)(other)(another)/)
+//	Thinka bout the best syntax, or just allow multiple.
 
 module.exports = class Lexer {
 	constructor () {
