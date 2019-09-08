@@ -6,6 +6,7 @@ const Lexer = require("../../../Lexer-generator/Lexer-generator.js");
 module.exports = new Lexer()
 	.define("digit", /\d/)
 	.ignore("comment", /\/\/[^\n]*\n?|\/\*[^*]*?\*\//)
+	.ignore("weird-whitespace", /[\f\v]+/)
 	.rule("string", /(?<!\\)".*?"/)
 	.rule("template-literal", /(?<!\\)`.*`/)
 	.rule("semicolon", ";")
@@ -28,5 +29,4 @@ module.exports = new Lexer()
 	.rule("literal", /\b(true|false|nothing|undefined)\b/)
 	.rule("identifier", /[a-zA-Z_$][\w$]*/)
 	.rule("decorator", /@{identifier}/)
-	.ignore("weird-whitespace", /[\f\v]+/)
 	.usePythonBlocks();
