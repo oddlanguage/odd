@@ -1,2 +1,1 @@
-repeat 10 with index as i
-	const int: c = 1;
+const int: a = 1;

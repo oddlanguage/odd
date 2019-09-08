@@ -49,14 +49,15 @@ module.exports = new Parser()
 	.rule(`with -> "with" with-body+`)
 	.rule(`with-body -> name:.identifier "as" label:.identifier ("," with-body)*`)
 	.rule(`block -> .INDENT expression+ .DEDENT`)
-	.rule(`using -> "using" scope:expression-body ("," scope:expression-body)*`);
+	.rule(`using -> "using" scope:expression-body ("," scope:expression-body)*`)
+	.rule(`if -> "if" expression-body block ("else" "if" expression-body block)* (else block)?`);
 
 // TODO:
 // n-repetition: name -> rule{min(,max?)?} ()
 // Make labels work better with quantifiers
 
 // Possible additions:
+// label$  : change $ to n-th entry (i.e. 3xcapture$: would make labels capture1, capture2 and capture3)
 // Not     : name -> x !y (x followed by anthing but y, including nothing)
 // Builders: .rule(`name -> production`, nodes => ...)
-// Parse as actual DSL (.metaodd)
-	// Decide definition token (now #)
+// Parse as actual DSL (.meta.odd)
