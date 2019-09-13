@@ -4,15 +4,14 @@
 const Parser = require("../../../Parser-generator/Parser-generator.js");
 
 module.exports = new Parser()
-	.rule(`program -> expressions:expression*`)
+	.rule(`program -> expression*`)
 	.rule(`expression -> expression-body .semicolon
-		| controllers`)
-	.rule(`controllers -> loop
+		| controller`)
+	.rule(`controller -> loop
 		| using
 		| if`)
 	.rule(`expression-body -> math
-		| const-definition
-		| "(" expression ("," expression)* ")"`)
+		| "(" expression-body ("," expression-body)* ")"`)
 	.rule(`math -> l:atom op:plus-or-min r:math
 		| term`)
 	.rule(`term -> l:factor op:math-op r:math
@@ -20,7 +19,9 @@ module.exports = new Parser()
 	.rule(`factor -> plus-or-min? power`)
 	.rule(`power -> l:atom op:"^" r:factor
 		| atom`)
-	.rule(`atom -> .identifier
+	.rule(`atom -> function-call
+		| const-definition
+		| .identifier
 		| .literal
 		| number
 		| string`)
@@ -46,18 +47,23 @@ module.exports = new Parser()
 		| "from" "(" from-to-body ")" with? block`)
 	.rule(`from-to-body -> from:expression-body "to" to:expression-body`)
 	.rule(`repeat -> "repeat" count:expression-body with? block`)
-	.rule(`with -> "with" with-body+`)
+	.rule(`with -> "with" with-body`)
 	.rule(`with-body -> name:.identifier "as" label:.identifier ("," with-body)*`)
 	.rule(`block -> .INDENT expression+ .DEDENT`)
-	.rule(`using -> "using" scope:expression-body ("," scope:expression-body)*`)
-	.rule(`if -> "if" expression-body block ("else" "if" expression-body block)* (else block)?`);
+	.rule(`using -> "using" using-body ("," using-body)*`)
+	.rule(`using-body -> scope:expression-body`)
+	.rule(`function-call -> name:.identifier "(" arg-list? ")"`)
+	.rule(`arg-list -> arg ("," arg)*`)
+	.rule(`arg -> (name:.identifier "=")? expression-body`)
+	.rule(`if -> "if" expression-body block else-if* else?`)
+	.rule(`else-if -> "else" "if" expression-body block`)
+	.rule(`else -> "else" block`);
 
 // TODO:
 // n-repetition: name -> rule{min(,max?)?} ()
 // Make labels work better with quantifiers
 
 // Possible additions:
-// label$  : change $ to n-th entry (i.e. 3xcapture$: would make labels capture1, capture2 and capture3)
+// $       : $ references the current rule (i.e. test -> $ === test -> test)
 // Not     : name -> x !y (x followed by anthing but y, including nothing)
-// Builders: .rule(`name -> production`, nodes => ...)
 // Parse as actual DSL (.meta.odd)

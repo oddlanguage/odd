@@ -267,6 +267,6 @@ module.exports = class Parser {
 
 		const tree = match.normalise();
 		return tree;
-		// TODO: Get the correct token that cause the error.
+		// TODO: Get the correct token that caused the error.
 	}
 }

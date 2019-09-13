@@ -1,1 +1,9 @@
-const int: a = 1;
+call(arg1 = recursive(123));
+const num: a = 10 * test();
+
+if test1
+	test();
+else if test2
+	yeet();
+else
+	mcSkeet();
