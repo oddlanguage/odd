@@ -2,6 +2,22 @@
 "hide implementation";
 
 const NodeList = require("./NodeList.js");
+const inspect = require("../helpers/inspect.js");
+
+function mapTree (root, fn) {
+	function flattenTree (node) {
+		const arr = [node];
+		if (node.children)
+			for (const child of node.children)
+				arr.push(...flattenTree(child));
+		return arr;
+	}
+
+	for (const node of flattenTree(root))
+		fn(node)
+
+	return root;
+}
 
 const GROUP = Symbol("GROUP");
 const NOTHING = Symbol("NOTHING");
@@ -14,7 +30,9 @@ module.exports = class ParserMatch {
 		this.type = type;
 		this.label = "";
 		this.offset = offset;
-		this.children = children;
+		this.parent = null;
+		this.children = children
+			.map(child => (child.parent = this, child));
 	}
 
 	is (value) {
@@ -26,6 +44,10 @@ module.exports = class ParserMatch {
 	}
 
 	normalise () {
+		mapTree(this, (node) => ((node.children||[]).length === 1)
+			? (node.children = node.children[0].children, node)
+			: node);
+		inspect(this);
 		return this;
 	}
 }

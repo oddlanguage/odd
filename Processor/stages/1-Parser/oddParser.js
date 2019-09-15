@@ -9,22 +9,27 @@ module.exports = new Parser()
 		| controller`)
 	.rule(`controller -> loop
 		| using
-		| if`)
+		| if
+		| return`)
 	.rule(`expression-body -> math
 		| "(" expression-body ("," expression-body)* ")"`)
-	.rule(`math -> l:atom op:plus-or-min r:math
+	.rule(`math -> l:molecule op:plus-or-min r:math
 		| term`)
 	.rule(`term -> l:factor op:math-op r:math
 		| factor`)
 	.rule(`factor -> plus-or-min? power`)
-	.rule(`power -> l:atom op:"^" r:factor
-		| atom`)
-	.rule(`atom -> function-call
-		| const-definition
+	.rule(`power -> l:molecule op:"^" r:factor
+		| molecule`)
+	.rule(`molecule -> atom molecule-trailer?`)
+	.rule(`atom -> var-definition
+		| function-definition
 		| .identifier
 		| .literal
 		| number
 		| string`)
+	.rule(`molecule-trailer -> "(" call-arg-list? ")"
+		| "[" expression-body "]"
+		| "." molecule`)
 	.rule(`number -> .integer-number
 		| .decimal-number`)
 	.rule(`string -> .string
@@ -34,7 +39,7 @@ module.exports = new Parser()
 	.rule(`math-op -> "*"
 		| "/"
 		| "%"`)
-	.rule(`const-definition -> "const" annotation:.type-annotation? declaration`)
+	.rule(`var-definition -> (.var-keyword annotation:.type-annotation? | "auto") declaration`)
 	.rule(`declaration -> lhs:.identifier "=" rhs:expression-body
 		| lhs:.identifier`)
 	.rule(`loop -> for-of
@@ -52,12 +57,15 @@ module.exports = new Parser()
 	.rule(`block -> .INDENT expression+ .DEDENT`)
 	.rule(`using -> "using" using-body ("," using-body)*`)
 	.rule(`using-body -> scope:expression-body`)
-	.rule(`function-call -> name:.identifier "(" arg-list? ")"`)
-	.rule(`arg-list -> arg ("," arg)*`)
-	.rule(`arg -> (name:.identifier "=")? expression-body`)
+	.rule(`call-arg-list -> call-arg ("," call-arg)*`)
+	.rule(`call-arg -> (name:.identifier "=")? expression-body`)
 	.rule(`if -> "if" expression-body block else-if* else?`)
 	.rule(`else-if -> "else" "if" expression-body block`)
-	.rule(`else -> "else" block`);
+	.rule(`else -> "else" block`)
+	.rule(`return -> "return" value:expression-body`)
+	.rule(`function-definition -> .function-keyword annotation:.type-annotation? .identifier "(" declare-arg-list? ")" block`)
+	.rule(`declare-arg-list -> declare-arg ("," declare-arg)*`)
+	.rule(`declare-arg -> annotation:.type-annotation? name:.identifier ("=" value:expression-body)?`);
 
 // TODO:
 // n-repetition: name -> rule{min(,max?)?} ()

@@ -1,9 +1,17 @@
-call(arg1 = recursive(123));
-const num: a = 10 * test();
+const num: a = 10 * test.best();
+// function test: call (test: arg0 = 2, test: a123)
+// 	choice(arg0, arg1);
 
-if test1
-	test();
-else if test2
-	yeet();
-else
-	mcSkeet();
+// function recursive (type: arg)
+// 	print(arg);
+// 	return recursive(arg - 1);
+
+// call(arg1 = recursive(123));
+// const num: a = 10 * test();
+
+// if test1
+// 	test();
+// else if test2
+// 	yeet();
+// else
+// 	mcSkeet();

@@ -57,7 +57,6 @@ module.exports = class Processor {
 			replaceConsoleLine(` 🕛  ${name}...`);
 			const before = performance.now();
 			try {
-				inspect(input);
 				input = await stage.handler(input);
 				const elapsed = Math.round(performance.now() - before);
 				replaceConsoleLine(` ✔️  ${name} OK! (took ~${elapsed}ms and produced 0 warnings)\n`);
