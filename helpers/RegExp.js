@@ -1,3 +1,6 @@
+"use strict";
+"hide implementation";
+
 const type = require("./type.js");
 const assert = require("./assert.js");
 

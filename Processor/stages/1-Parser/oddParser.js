@@ -4,68 +4,32 @@
 const Parser = require("../../../Parser-generator/Parser-generator.js");
 
 module.exports = new Parser()
-	.rule(`program -> expression*`)
-	.rule(`expression -> expression-body .semicolon
-		| controller`)
-	.rule(`controller -> loop
-		| using
-		| if
-		| return`)
-	.rule(`expression-body -> math
-		| "(" expression-body ("," expression-body)* ")"`)
-	.rule(`math -> l:molecule op:plus-or-min r:math
-		| term`)
-	.rule(`term -> l:factor op:math-op r:math
-		| factor`)
-	.rule(`factor -> plus-or-min? power`)
-	.rule(`power -> l:molecule op:"^" r:factor
-		| molecule`)
-	.rule(`molecule -> atom molecule-trailer?`)
-	.rule(`atom -> var-definition
-		| function-definition
-		| .identifier
-		| .literal
-		| number
-		| string`)
-	.rule(`molecule-trailer -> "(" call-arg-list? ")"
-		| "[" expression-body "]"
-		| "." molecule`)
-	.rule(`number -> .integer-number
-		| .decimal-number`)
-	.rule(`string -> .string
-		| .template-literal`)
-	.rule(`plus-or-min -> "+"
-		| "-"`)
-	.rule(`math-op -> "*"
-		| "/"
-		| "%"`)
-	.rule(`var-definition -> (.var-keyword annotation:.type-annotation? | "auto") declaration`)
-	.rule(`declaration -> lhs:.identifier "=" rhs:expression-body
-		| lhs:.identifier`)
-	.rule(`loop -> for-of
-		| from-to
-		| repeat`)
-	.rule(`for-of -> "for" for-of-body
-		| "for" "(" for-of-body ")" with? block`)
-	.rule(`for-of-body -> name:.identifier "of" iterable:expression-body`)
-	.rule(`from-to -> "from" from-to-body with? block
-		| "from" "(" from-to-body ")" with? block`)
-	.rule(`from-to-body -> from:expression-body "to" to:expression-body`)
-	.rule(`repeat -> "repeat" count:expression-body with? block`)
-	.rule(`with -> "with" with-body`)
-	.rule(`with-body -> name:.identifier "as" label:.identifier ("," with-body)*`)
-	.rule(`block -> .INDENT expression+ .DEDENT`)
-	.rule(`using -> "using" using-body ("," using-body)*`)
-	.rule(`using-body -> scope:expression-body`)
+	.rule(`program -> statement*`)
+	.rule(`statement -> expression .semicolon`)
+	.rule(`expression -> function-call
+		| atom
+		| math
+		| "(" expression ")"`)
+	.rule(`function-call -> name:.identifier function-trailer`)
+	.rule(`function-trailer -> "(" call-arg-list ")"
+		| any-string`)
 	.rule(`call-arg-list -> call-arg ("," call-arg)*`)
-	.rule(`call-arg -> (name:.identifier "=")? expression-body`)
-	.rule(`if -> "if" expression-body block else-if* else?`)
-	.rule(`else-if -> "else" "if" expression-body block`)
-	.rule(`else -> "else" block`)
-	.rule(`return -> "return" value:expression-body`)
-	.rule(`function-definition -> .function-keyword annotation:.type-annotation? .identifier "(" declare-arg-list? ")" block`)
-	.rule(`declare-arg-list -> declare-arg ("," declare-arg)*`)
-	.rule(`declare-arg -> annotation:.type-annotation? name:.identifier ("=" value:expression-body)?`);
+	.rule(`call-arg -> expression
+		| .identifier ("=" expression)?`)
+	.rule(`any-number -> .integer-number
+		| .decimal-number`)
+	.rule(`any-string -> .string
+		| .template-literal`)
+	.rule(`math -> math-atom "^" math
+		| math-atom mult-or-div math
+		| math-atom plus-or-min math
+		| math-atom`)
+	.rule(`math-atom -> plus-or-min? atom`)
+	.rule(`mult-or-div -> "*" | "/"`)
+	.rule(`plus-or-min -> "+" | "-"`)
+	.rule(`atom -> any-string
+		| any-number
+		| .literal`)
 
 // TODO:
 // n-repetition: name -> rule{min(,max?)?} ()

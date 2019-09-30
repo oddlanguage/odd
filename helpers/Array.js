@@ -1,3 +1,6 @@
+"use strict";
+"hide implementation";
+
 function unique (array, by) {
 	if (typeof by !== "function")
 		return [...(new Set(array))];

@@ -1,7 +1,6 @@
 "use strict";
 "hide implementation";
 
-const uid = require("../helpers/uid.js");
 const type = require("../helpers/type.js");
 const error = require("../helpers/error.js");
 const { inflect, capitalise } = require("../helpers/String.js");

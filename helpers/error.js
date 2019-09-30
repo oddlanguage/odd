@@ -1,3 +1,6 @@
+"use strict";
+"hide implementation";
+
 //THIS DOES NOT PROPERLY EXTRACT ERRORS FROM PROMISE REJECTIONS
 
 module.exports = function error (message) {

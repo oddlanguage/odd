@@ -1,17 +1,20 @@
-const num: a = 10 * test.best();
-// function test: call (test: arg0 = 2, test: a123)
-// 	choice(arg0, arg1);
+call-test(call-test"asdasd", -1);
 
-// function recursive (type: arg)
-// 	print(arg);
-// 	return recursive(arg - 1);
+// const Http-Client: http-client = import"http"; //Imports everything from http, but the parser is smart enough to only import anything that is used later in the file.
 
-// call(arg1 = recursive(123));
-// const num: a = 10 * test();
+// template Http-Response //A template is an interface but for composition
+// 	String: toString();
+// 	Bool: ok;
+// 	Error: error;
 
-// if test1
-// 	test();
-// else if test2
-// 	yeet();
+// fun Http-Response: http (string: method, string: url)
+// 	return http-client.find(method)(url);
+
+// const response = await http("get", "httpstat.us/"_Random.choice("404", "200"));
+// // a(x) |> b = b(a(x));
+// // a(x)::b(y) = b.bind(a(x))(y);
+
+// if not response.ok
+// 	exit(response.toString());
 // else
-// 	mcSkeet();
+// 	pass();

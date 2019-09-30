@@ -2,7 +2,8 @@
 "hide implementation";
 
 const metaLexer = require("./metaoddLexer.js");
-const ParserMatch = require("./Node.js");
+const ParserMatch = require("./ParserMatch.js");
+const AST = require("./AST.js");
 const inspect = require("../helpers/inspect.js");
 
 module.exports = class Parser {
@@ -64,22 +65,22 @@ module.exports = class Parser {
 
 	buildRecogniser (name, fullGrammar) {
 		const options = [[]];
-			let depth = 0;
-			for (const token of fullGrammar) {
-				switch (token.type) {
-					case "or":
-						if (depth === 0) {
-							options.push([]);
-							continue;
-						}
-					case "open-paren":
-					case "close-paren":
-						depth += (token.type === "open-paren")
-							? 1
-							: -1;
-				}
-				options[options.length - 1].push(token);
+		let depth = 0;
+		for (const token of fullGrammar) {
+			switch (token.type) {
+				case "or":
+					if (depth === 0) {
+						options.push([]);
+						continue;
+					}
+				case "open-paren":
+				case "close-paren":
+					depth += (token.type === "open-paren")
+						? 1
+						: -1;
 			}
+			options[options.length - 1].push(token);
+		}
 
 		// TODO: maybe check deeper if a rule is left-recursive
 		//	or figure out a way to rewrite the rule to be LL parser friendly.
@@ -262,11 +263,10 @@ module.exports = class Parser {
 		if (match.isNothing())
 			throw `The uppermost grammar doesn't match the file.`;
 		offset += match.offset;
-		if (offset < tokens.length){inspect(match);
-			throw(`The uppermost grammar doesn't match the entire file.`);}
+		if (offset < tokens.length)
+			throw `The uppermost grammar doesn't match the entire file.`;
 
-		const tree = match.normalise();
-		return tree;
+		return AST.from(match);
 		// TODO: Get the correct token that caused the error.
 	}
 }

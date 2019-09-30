@@ -1,3 +1,6 @@
+"use strict";
+"hide implementation";
+
 function capitalise (string) {
 	return string.replace(/(\b[a-z])/gi, char => char.toUpperCase());
 }

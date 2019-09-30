@@ -1,3 +1,6 @@
+"use strict";
+"hide implementation";
+
 function getConstructor (value) {
 	return value.constructor || {name: "null"};
 }

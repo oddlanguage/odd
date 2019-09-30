@@ -1,3 +1,6 @@
+"use strict";
+"hide implementation";
+
 const { inspect: _inspect } = require("util");
 
 module.exports = function inspect (...values) {

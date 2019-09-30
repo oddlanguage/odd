@@ -15,7 +15,7 @@
 	- [⚙️ Processor](#%e2%9a%99%ef%b8%8f-processor)
 		- [💬 OddLexer](#%f0%9f%92%ac-oddlexer)
 		- [🌲 OddParser](#%f0%9f%8c%b2-oddparser)
-		- [🖥️ OddVM](#%f0%9f%96%a5%ef%b8%8f-oddvm)
+		- [🖥️ OddInterpreter](#%f0%9f%96%a5%ef%b8%8f-oddinterpreter)
 	- [🤸 Author](#%f0%9f%a4%b8-author)
 	- [<img alt="Creative Commons License" src="https://i.creativecommons.org/l/by-nc-nd/3.0/80x15.png"/> Licence](#img-alt%22creative-commons-license%22-src%22httpsicreativecommonsorglby-nc-nd3080x15png%22-licence)
 </details>
@@ -35,7 +35,7 @@
 The processor is comprised of several stages:
 ### 💬 [OddLexer](./Processor/stages/0-Lexical-analyser/README.md)
 ### 🌲 [OddParser](./Processor/stages/1-Parser/README.md)
-### 🖥️ [OddVM](./Processor/stages/5-Compiler/README.md)
+### 🖥️ [OddInterpreter](./Processor/stages/4-Interpreter/README.md)
 
 <br/>
 <br/>
