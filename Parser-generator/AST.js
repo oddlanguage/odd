@@ -4,7 +4,8 @@
 const covert = require("../helpers/private.js");
 const inspect = require("../helpers/inspect.js");
 const seqId = require("../helpers/ID.js").seq;
-const astSelectorLexer = require("./astSelectorLexer.js");
+const astQueryLexer = require("./astQueryLexer.js");
+const { unique } = require("../helpers/Array");
 
 module.exports = class AST {
 	static from (treelike) {
@@ -55,69 +56,136 @@ module.exports = class AST {
 		return this._parent;
 	}
 
-	select (selector, all = false) {
-		const grammar = astSelectorLexer.lex(selector);
-		const options = [[]];
-		for (const token of grammar) {
-			switch (token.type) {
+	get siblings () {
+		return this.parent.children.filter(child => child !== this);
+	}
+
+	select (query, all = false) {
+		const splitQueryByComma = (options, selector) => {
+			switch (selector.type) {
 				case "comma":
 					options.push([]);
-					continue;
+					return options;
 			}
-			options[options.length - 1].push(token);
-		}
-		inspect(options);
+			options[options.length - 1].push(selector);
+			return options;
+		};
 
-		const allMatches = [];
-		for (const option of options) {
-			const matches = [];
-			nextSelector:for (const selector of option) {
-				for (const childCursor in this.children) {
-					const node = this.children[childCursor];
-					const lookahead = this.children[childCursor + 1];
-					const lookbehind = this.children[childCursor - 1];
-					switch (selector.type) {
-						case "anything": {
-							matches.push(node);
-							continue nextSelector;
-						}
-						case "lexeme": {
-							if (node.lexeme === selector.lexeme.slice(1, -1)) // Remove ""
-								matches.push(node);
-							continue nextSelector;
-						}
-						case "type": {
-							if (node.type === selector.lexeme)
-								matches.push(node);
-							continue nextSelector;
-						}
-						case "label": {
-							if (node.label === selector.lexeme.slice(1)) // Remove .
-								matches.push(node);
-							continue nextSelector;
-						}
-						case "following": {
-							throw `if (matches[matches.length - 1]._siblingIndex === parse(lookahead)._siblingIndex + 1)`;
-						}
-						case "preceding": {
-							throw `if (matches[matches.length - 1]._siblingIndex > parse(lookahead)._siblingIndex)`;
-						}
-						case "parent": {
-							throw `if (parse(lookahead).parent._id === matches[matches.length - 1]._id)`;
-						}
-						case "child": {
-							throw `if (matches[matches.length - 1].children.contains(parse(lookahead)))`;
-						}
-						default: {
-							throw new Error(`${selector.type} ("${selector.lexeme}") selectors aren't implemented (yet).`)
-						}
-					}
+		const groupSelectors = option => option
+			.reduce((pairs, selector, i, selectors) => {
+				const lookaheads = selectors.slice(i+1, i+3);
+
+				if (selectors.length === 1) {
+					pairs[pairs.length - 1].push(selector);
+					return pairs;
 				}
-			}
-			allMatches.push(...matches);
-		}
 
-		return allMatches;
+				if (selectors.length > 2 && i > selectors.length - 3)
+					return pairs;
+
+				if (selector.type.startsWith("op-")) {
+					pairs.push([]);
+					return pairs;
+				}
+
+				if (lookaheads[0] && lookaheads[0].type.startsWith("op-")) {
+					if (!lookaheads[1])
+						throw `Malformed query: missing operand.`;
+					else if (lookaheads[1].type.startsWith("op-"))
+						throw `Malformed query: expected descriptor but got "${lookaheads[1].type}".`;
+					pairs[pairs.length - 1].push(selector, ...lookaheads);
+				} else {
+					if (!lookaheads[0])
+						throw `Malformed query: missing operator.`;
+					else if (!lookaheads[0].type.startsWith("op-"))
+						throw `Malformed query: expected operator but got "${lookaheads[0].type}".`;
+					pairs[pairs.length - 1].push(selector);
+				}
+
+				return pairs;
+			}, [[]]);
+
+		const selectNode = (selector, target) => {
+			switch (selector.type) {
+				default:
+					throw `Unknown selector "${selector.type}" (${selector.lexeme}).`;
+				case "anything":
+					return target;
+				case "lexeme":
+					if (target.lexeme === selector.lexeme.slice(1, 1)) // Remove ""
+						return target;
+				case "label":
+					if (target.type === selector.lexeme.slice(1)) // Remove .
+						return target;
+				case "type":
+					if (target.type === selector.lexeme)
+						return target;
+			}
+		};
+
+		const getCandidates = selector =>
+			(candidates, child) => {
+				if (selectNode(selector, child))
+					candidates.push(child);
+				return candidates;
+		};
+
+		const getMatches = (selectorGroup, targets) => {
+			const isCompositeSelector = (selectorGroup.length > 1);
+			const roots = targets
+				.map(target => target
+					.flatten()
+					.reduce(getCandidates(selectorGroup[0]), []))
+				.flat();
+
+			if (!isCompositeSelector)
+				return roots;
+
+			return roots.reduce((matches, root) => {
+				const operator = selectorGroup[1];
+				const selector = selectorGroup[2];
+				switch (operator.type.slice(3)) { // Remove op-
+					default:
+						throw `Unknown operator "${operator.type}" (${operator.lexeme}).`;
+					case "later-sibling":
+					case "preceding":
+					case "following":
+						matches.push(...root.parent.children.reduce(getCandidates(selector), []));
+						break;
+					case "parent":
+					case "child":
+						matches.push(...root.children.reduce(getCandidates(selector), []));
+						break;
+					case "ancestor":
+						matches.push(...unique(root
+							.flatten()
+							.slice(1) // Skip self
+							.reduce(getCandidates(selector), [])));
+						break;
+				}
+
+				return matches;
+			}, []);
+		};
+
+		const selectNodes = (matches, option) => {
+			matches.push(...option
+				.reduce((candidates, selectorGroup) => {
+					return getMatches(selectorGroup, candidates);
+				}, [this]));
+			return matches;
+		};
+
+		// Options[Option[SelectorGroup[Selector{}]]]
+		const matches = unique(astQueryLexer
+			.lex(query)
+			.reduce(splitQueryByComma, [[]])
+			.map(groupSelectors)
+			.reduce(selectNodes, []));
+
+		return (all)
+			? matches
+			: matches[0];
 	}
 
 	selectAll (selector) {
