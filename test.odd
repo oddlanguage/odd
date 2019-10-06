@@ -1,4 +1,4 @@
-call-test(call-test"asdasd", -1);
+call-test(call-test"asdasd", -11 ^ 5);
 
 // const Http-Client: http-client = import"http"; //Imports everything from http, but the parser is smart enough to only import anything that is used later in the file.
 

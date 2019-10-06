@@ -6,8 +6,13 @@ const Parser = require("../../../Parser-generator/Parser-generator.js");
 module.exports = new Parser()
 	.rule(`program -> statement*`)
 	.rule(`statement -> expression .semicolon`)
-	.rule(`expression -> function-call
-		| atom
+	.rule(`expression -> simple-expression
+		| composite-expression`)
+	.rule(`simple-expression -> "await" atom
+		| "defer" atom
+		| .not atom
+		| atom`)
+	.rule(`composite-expression -> function-call
 		| math
 		| "(" expression ")"`)
 	.rule(`function-call -> name:.identifier function-trailer`)
@@ -20,13 +25,13 @@ module.exports = new Parser()
 		| .decimal-number`)
 	.rule(`any-string -> .string
 		| .template-literal`)
-	.rule(`math -> math-atom "^" math
-		| math-atom mult-or-div math
-		| math-atom plus-or-min math
-		| math-atom`)
-	.rule(`math-atom -> plus-or-min? atom`)
-	.rule(`mult-or-div -> "*" | "/"`)
-	.rule(`plus-or-min -> "+" | "-"`)
+	.rule(`math -> term (plus-min term)*`)
+	.rule(`term -> factor (mult-div-mod factor)*`)
+	.rule(`factor -> plus-min factor
+		| power`)
+	.rule(`power -> simple-expression ("^" factor)?`)
+	.rule(`mult-div-mod -> "*" | "/" | "%"`)
+	.rule(`plus-min -> "+" | "-"`)
 	.rule(`atom -> any-string
 		| any-number
 		| .literal`)

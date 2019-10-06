@@ -13,10 +13,9 @@ module.exports = class AST {
 	}
 
 	constructor (treelike) {
-		covert(this, "_id", seqId());
 		covert(this, "_parent", null);
 		covert(this, "_root", null);
-		covert(this, "_siblingIndex", null);
+		covert(this, "_siblings", null);
 		this.type = treelike.type;
 		this.label = treelike.label || "";
 		this.lexeme = treelike.lexeme || "";
@@ -24,7 +23,7 @@ module.exports = class AST {
 		this.column = treelike.column || null;
 		this.children = (treelike.children || [])
 			.map(child => AST.from(child))
-			.map((child, i) => (child._parent = this, child._siblingIndex = i, child));
+			.map((child, i) => (child._parent = this, child));
 	}
 
 	flatten (node = this) {
@@ -57,6 +56,8 @@ module.exports = class AST {
 	}
 
 	get siblings () {
+		if (this._siblings)
+			return this._siblings;
 		return this.parent.children.filter(child => child !== this);
 	}
 
@@ -132,36 +133,42 @@ module.exports = class AST {
 
 		const getMatches = (selectorGroup, targets) => {
 			const isCompositeSelector = (selectorGroup.length > 1);
-			const roots = targets
+			const candidates = targets
 				.map(target => target
 					.flatten()
 					.reduce(getCandidates(selectorGroup[0]), []))
 				.flat();
 
 			if (!isCompositeSelector)
-				return roots;
+				return candidates;
 
-			return roots.reduce((matches, root) => {
+			return candidates.reduce((matches, candidate) => {
 				const operator = selectorGroup[1];
 				const selector = selectorGroup[2];
 				switch (operator.type.slice(3)) { // Remove op-
 					default:
 						throw `Unknown operator "${operator.type}" (${operator.lexeme}).`;
-					case "later-sibling":
-					case "preceding":
-					case "following":
-						matches.push(...root.parent.children.reduce(getCandidates(selector), []));
-						break;
+					case "preceding":{ // Block to allow scoping of i
+						const i = candidate.parent.children.findIndex(child => child === candidate);
+						matches.push(...getCandidates(selector)(matches, candidate.parent.children[i - 1] || {}));
+						break;}
+					case "following":{
+						const i = candidate.parent.children.findIndex(child => child === candidate);
+						matches.push(...getCandidates(selector)(matches, candidate.parent.children[i + 1] || {}));
+						break;}
 					case "parent":
-					case "child":
-						matches.push(...root.children.reduce(getCandidates(selector), []));
+						matches.push(...candidate.children.reduce(getCandidates(selector), []));
 						break;
 					case "ancestor":
-						matches.push(...unique(root
+						matches.push(...unique(candidate
 							.flatten()
 							.slice(1) // Skip self
 							.reduce(getCandidates(selector), [])));
 						break;
+					case "later-sibling": // All B loosely following A
+					case "earlier-sibling": // All B loosely preceding A
+					case "child":
+						throw `"${operator.type}" (${operator.lexeme}) not implemented yet.`;
 				}
 
 				return matches;
