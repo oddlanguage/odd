@@ -266,6 +266,7 @@ module.exports = class Parser {
 		if (offset < tokens.length)
 			throw `The uppermost grammar doesn't match the entire file.`;
 
+		// TODO: Go through all import nodes and parse those.
 		return AST.from(match);
 		// TODO: Get the correct token that caused the error.
 	}
