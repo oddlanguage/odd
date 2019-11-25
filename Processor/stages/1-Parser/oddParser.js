@@ -8,29 +8,34 @@ module.exports = new Parser()
 	.rule(`statement -> loop
 		| expression ";"`)
 	// TODO: Moet zijn: for ident in expression, maar kan nog niet want expression reduceert nog niet naar .identifier
-	.rule(`loop -> "for" .identifier "in" .identifier block
+	.rule(`loop -> "for" .identifier "in" expression block
 		| "while" expression block`)
 	.rule(`expression -> operator-unary-left expression
-		| expression-body`)
+		| expression-body trailer*
+		| "(" expressions? ")"`)
+	.rule(`expressions -> expression ("," expression)*`)
+	.rule(`trailer -> "." .identifier
+		| "@" expression
+		| arg-list`)
 	.rule(`operator-unary-left -> "..." | "import" | "export" | "return" | "await" | "defer" | "not" | "yield" | "throw" | "typeof"`)
 	.rule(`expression-body -> literal
 		| assignment
 		| function
 		| object
-		| function-call`)
+		| .identifier`)
 	.rule(`literal -> .literal
-		| .number`)
-	.rule(`function-call -> .identifier arg-list`)
+		| .number
+		| string`)
 	.rule(`arg-list -> object
 		| string
 		| "(" args? ")"`)
 	.rule(`string -> .string+`)
 	.rule(`args -> arg ("," arg)*`)
-	.rule(`arg -> label type? .identifier "=" expression
-		| type? expression`)
+	.rule(`arg -> label? expression`)
 	.rule(`label -> .identifier ":"`)
 	.rule(`object -> "[" entries? "]"`)
 	.rule(`entries -> entry ("," entry)*`)
+	// TODO: Allow empty entries (e.g. [0,] = [0, nothing])?
 	.rule(`entry -> .identifier "=" expression
 		| expression`)
 	.rule(`assignment -> type .identifier "=" expression
@@ -44,11 +49,11 @@ module.exports = new Parser()
 	.rule(`block -> block-start statement+ block-end
 		| expression`)
 	.rule(`param-list -> "(" params? ")"`)
-	.rule(`spread-params -> (param ",")* "..." .identifier`)
 	.rule(`params -> spread-params
 		| param ("," param)*`)
-	.rule(`param -> .identifier "=" expression
-		| .identifier`)
+	.rule(`spread-params -> (param ",")* type? "..." .identifier`)
+	.rule(`param -> type .identifier ("=" expression)?
+		| .identifier ("=" expression)?`)
 	.rule(`block-start -> "{"`)
 	.rule(`block-end -> "}"`);
 

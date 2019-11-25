@@ -104,7 +104,7 @@ module.exports = class Parser {
 			}
 		}
 
-		return (function recognise (input) {
+		const recognise = (input) => {
 			// TODO: Keep track of succesful parse depth
 			//	so that when a syntax error occurs, we can
 			//	suggest the most applicable alternative
@@ -241,6 +241,10 @@ module.exports = class Parser {
 							grammarCursor += hasQuantifier;
 							continue accept;
 						}
+						// TODO: Label should label the entire following grammar,
+						//	not just set a variable because that cannot guarantee
+						//	that the label be assigned to the correct part of the
+						//	grammar.
 						case "label": {
 							label = expected.lexeme.slice(0, -1);
 							continue accept;
@@ -253,7 +257,9 @@ module.exports = class Parser {
 				return new ParserMatch(inputCursor, matchedTokens, name);
 			}
 			return ParserMatch.NO_MATCH;
-		}).bind(this);
+		}
+
+		return recognise.bind(this);
 	}
 
 	parse (tokens) {

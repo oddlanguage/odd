@@ -31,8 +31,16 @@
 // 	]
 // ];
 
-fun combine = ...b -> true;
+// str multiline =
+// 	`test`
+// 	`plus`
+// 	`another`
+// 	`piece`
+// 	`of`
+// 	`text`;
 
-// test``;
-// test[];
-// test();
+fun combine = (fun[] ...functions) ->
+	x -> functions.reduce((r, f) -> f(r), x);
+
+int[] a = [b = [c = [`d`, `e`, `f`]]];
+a.b.c@0; // > `ddd`
