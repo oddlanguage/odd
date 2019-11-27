@@ -39,10 +39,10 @@
 // 	`of`
 // 	`text`;
 
-// fun combine = (fun[] ...functions) ->
-// 	x -> functions.reduce((r, f) -> f(r), x);
+fun combine = (fun[] ...functions) ->
+	x -> functions.reduce((r, f) -> f(r), x);
 
 // obj a = [b = [c = [`d`, `e`, `f`]]];
 // a.b.c@(0).repeat(3); // > `ddd`
 
-// 123,123,234.1e-4356;
+123,123,234.1e-4356;
