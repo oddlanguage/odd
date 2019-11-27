@@ -11,5 +11,5 @@ module.exports = new Lexer()
 	.rule("operator", /\.\.\.|[@*=\-+%^/\.!|&><]|[*=\-+%^/><!|&]=|import|export|return|await|defer|and|or|not|yield|exists|throw/)
 	.rule("literal", /nothing|infinity|true|false/)
 	.rule("interpunction", /[\(\)\{\}\[\],:;]/)
-	.rule("number", /\d*\.\d+(?:[eE][+-]?\d+)?|\d+/)
+	.rule("number", /(?:\d+(?:,\d+)*)*\.\d+(?:[eE][+-]?\d+)?|(?:\d+(?:,\d+)*)+/)
 	.rule("identifier", /[a-zA-Z][a-zA-Z-]*/);

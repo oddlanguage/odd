@@ -16,7 +16,8 @@ module.exports = new Parser()
 	.rule(`expressions -> expression ("," expression)*`)
 	.rule(`trailer -> "." .identifier
 		| "@" expression
-		| arg-list`)
+		| argument-list
+		| "exists"`)
 	.rule(`operator-unary-left -> "..." | "import" | "export" | "return" | "await" | "defer" | "not" | "yield" | "throw" | "typeof"`)
 	.rule(`expression-body -> literal
 		| assignment
@@ -26,12 +27,12 @@ module.exports = new Parser()
 	.rule(`literal -> .literal
 		| .number
 		| string`)
-	.rule(`arg-list -> object
+	.rule(`argument-list -> object
 		| string
-		| "(" args? ")"`)
+		| "(" arguments? ")"`)
 	.rule(`string -> .string+`)
-	.rule(`args -> arg ("," arg)*`)
-	.rule(`arg -> label? expression`)
+	.rule(`arguments -> argument ("," argument)*`)
+	.rule(`argument -> label? expression`)
 	.rule(`label -> .identifier ":"`)
 	.rule(`object -> "[" entries? "]"`)
 	.rule(`entries -> entry ("," entry)*`)
@@ -44,15 +45,15 @@ module.exports = new Parser()
 	.rule(`type -> .identifier "[" "]"
 		| .identifier "<" type ("," type)* ">"
 		| .identifier`)
-	.rule(`function -> param-list "->" block
+	.rule(`function -> parameter-list "->" block
 		| .identifier "->" block`)
 	.rule(`block -> block-start statement+ block-end
 		| expression`)
-	.rule(`param-list -> "(" params? ")"`)
+	.rule(`parameter-list -> "(" params? ")"`)
 	.rule(`params -> spread-params
-		| param ("," param)*`)
-	.rule(`spread-params -> (param ",")* type? "..." .identifier`)
-	.rule(`param -> type .identifier ("=" expression)?
+		| parameter ("," parameter)*`)
+	.rule(`spread-params -> (parameter ",")* type? "..." .identifier`)
+	.rule(`parameter -> type .identifier ("=" expression)?
 		| .identifier ("=" expression)?`)
 	.rule(`block-start -> "{"`)
 	.rule(`block-end -> "}"`);
