@@ -65,8 +65,11 @@ module.exports = new Parser()
 	.rule(`class-block -> block-start class-statement* block-end
 		| class-statement`)
 	.rule(`class-statement -> is-statement
-		| statement`)
+		| statement
+		| modifier-statement`)
 	.rule(`is-statement -> "is" expressions ";"`)
+	.rule(`modifier-statement -> modifier+ statement`)
+	.rule(`modifier -> "static" | "overt"`)
 	.rule(`dotted-name -> .identifier ("." .identifier)*`);
 
 // TODO:
