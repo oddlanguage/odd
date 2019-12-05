@@ -1,131 +1,36 @@
-// // single arg anonymous function
-// fun<boo> fun-a = arg-a -> true;
-// // function with default parameter values
-// fun<boo> fun-b = (arg-b = true) -> true;
-// // empty arglist
-// fun<boo> fun-c = () -> true;
-// // optional typing
-// var fun-c = () -> false;
+import Thread from `async`;
+import random from `random`;
 
-// var a = () -> {
-// 	var b = nothing;
-// };
+class Eater ->
+	eat () ->
+		print`$name eats.`;
 
-// for c in d {
-// 	var e = infinity;
-// }
+class Pooper ->
+	poop () ->
+		print`$name poops.`;
 
-// while true {
-// 	var f = nothing;
-// }
+class Sleeper ->
+	sleep (int seconds) ->
+		print`$name sleeps $seconds seconds.`;
+		Thread.sleep(seconds);
 
-// [
-// 	[
-// 		a = true,
-// 		b = false,
-// 		infinity,
-// 		nothing
-// 	],
-// 	[
-// 		//nothing
-// 	]
-// ];
+class Animal (obj args) ->
+	is Eater, Pooper, Sleeper;
+	str name = args.name;
+	int age = 0;
+	boo alive = true;
 
-// str multiline =
-// 	`test`
-// 	`plus`
-// 	`another`
-// 	`piece`
-// 	`of`
-// 	`text`;
+	die () ->
+		alive = false;
 
-type T -> a | b | c | d;
+	live (int max-age = 10) ->
+		while alive
+			if age > max-age
+				die();
+			eat();
+			poop();
+			sleep(10);
+			age += 1;
 
-f(T) combine = (f ...functions) ->
-	(T x) -> functions.reduce((a, f) -> f(a), x);
-
-// obj a = [b = [c = [`d`, `e`, `f`]]];
-// a.b.c@(0).repeat(3); // > `ddd`
-
-// 123,123,234.1e-4356;
-
-// class Object -> {
-
-// 	readonly fun iterator = entries;
-
-// 	fun<itr<any, any>> entries = () -> {};
-// 	fun<itr<any>> keys = () -> {};
-// 	fun<itr<any>> values = () -> {};
-
-// 	fun<this> freeze = () -> {};
-
-// 	fun<str> to-string = () ->
-// 		`[ ${this.entries().map(([key, value]) -> `$key: $value`)} ]`;
-
-// }
-
-// class Array -> {
-// 	is Object;
-
-// 	int size = 0;
-
-// 	static fun<arr> from = (any target) ->
-// 		[ ...target.values() ];
-
-// 	// Mutator
-// 	fun<arr> push = () -> {};
-// 	fun<any> pop = () -> {};
-// 	fun<any> shift = () -> {};
-// 	fun<arr> unshift = () -> {};
-// 	fun<arr> reverse = () -> {};
-// 	fun<arr> sort = (fun sorter) -> {};
-// 	fun<arr> remove = (int start, int end?) -> {};
-// 	fun<this> clear = () -> {};
-
-// 	// Accessor
-// 	fun<arr> concat = (any ...others) -> {};
-// 	fun<boo> includes = (any value) -> {};
-// 	fun<str> join = (fun mapper) -> {};
-// 	fun<arr> slice = (int start, int end?) -> {};
-// 	fun<arr> first = (int n) -> {};
-// 	fun<arr> last = (int n) -> {};
-
-// 	// Iterator
-// 	fun<boo> every = (fun predicate) -> {};
-// 	fun<boo> some = (fun predicate) -> {};
-// 	fun<arr> filter = (fun predicate) -> {};
-// 	fun<any> find = (fun predicate) -> {};
-// 	fun<int> index  = (fun predicate) -> {}; // or literal value
-// 	fun<int> last-index  = (fun predicate) -> {}; // or literal value
-// 	fun<arr> map = (fun mapper) -> {};
-// 	fun<any> reduce = (fun reducer) -> {};
-// 	fun<int> min = (fun mapper) -> {};
-// 	fun<int> max = (fun mapper) -> {};
-
-// }
-
-// class Number -> {
-// 	is Object;
-
-// 	static fun<num> parse = (str input) -> {};
-
-// 	// Only works for signed positive int
-// 	// fun<int> iterator = () -> {
-// 	// 	var i = 0;
-// 	// 	while i < this
-// 	// 		yield i += 1;
-// 	// };
-
-// 	fun<str> to-string = () -> {};
-
-// 	fun<num> fixed = (int n) -> {};
-// 	fun<num> precision = () -> {};
-
-// }
-
-// class String -> {
-// 	is Object, Array;
-
-// 	fun<chr> char = (int index) -> {};
-
-// }
+Animal(name: `jeff`)
+	.live(Random.int(10));
