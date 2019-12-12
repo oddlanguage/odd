@@ -1,0 +1,10 @@
+class Array ->
+	fun reduce (lambda, default = this[0]) ->
+		var any acc = default;
+		for fn of this
+			acc = fn(acc);
+		return acc;
+
+
+fun combine (f[] ...fs) ->
+	T x -> fs.reduce((T a, f fn) -> fn(a), x);
