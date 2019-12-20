@@ -6,8 +6,9 @@ const Parser = require("../../../Parser-generator/Parser-generator.js");
 module.exports = new Parser()
 	.rule(`program -> statement*`)
 	.rule(`statement -> loop
+		| class
+		| function
 		| expression ";"`)
-	// TODO: Moet zijn: for ident in expression, maar kan nog niet want expression reduceert nog niet naar .identifier
 	.rule(`loop -> "for" .identifier "in" expression block
 		| "while" expression block`)
 	.rule(`expression -> operator-unary-left expression
@@ -36,19 +37,19 @@ module.exports = new Parser()
 	.rule(`argument-name -> .identifier ":"`)
 	.rule(`object -> "[" entries? "]"`)
 	.rule(`entries -> entry ("," entry)*`)
-	// TODO: Allow empty entries? e.g. [0,] = [0, nothing]
-	// TODO: Cleanup "is" expressions ";"
+	// TODO: Allow empty entries? e.g. [0,] == [0, nothing]
 	.rule(`entry -> type? .identifier "=" expression
 		| expression`)
-	.rule(`assignment -> const-assignment
-		| var-assignment`)
+	.rule(`assignment -> var-assignment
+		| const-assignment`)
 	.rule(`const-assignment -> type dotted-name ("=" expression)?
 		| dotted-name "=" expression`)
-	.rule(`var-assignment -> "var" dotted-name ("=" expression)?`)
+	.rule(`var-assignment -> "var" type? dotted-name ("=" expression)?`)
 	.rule(`type -> .identifier "[" "]"
 		| .identifier "<" type ("," type)* ">"
 		| .identifier`)
-	.rule(`function -> parameter-list "->" block
+	.rule(`function -> "fun" .identifier parameter-list? "->" block
+		| parameter-list "->" block
 		| .identifier "->" block`)
 	.rule(`block -> block-start statement* block-end
 		| expression`)
@@ -60,8 +61,8 @@ module.exports = new Parser()
 		| type .identifier ("=" expression)?
 		| .identifier "?"?
 		| .identifier ("=" expression)?`)
-	.rule(`block-start -> "{"`)
-	.rule(`block-end -> "}"`)
+	.rule(`block-start -> .indent`)
+	.rule(`block-end -> .dedent`)
 	.rule(`class -> "class" .identifier parameter-list? "->" class-block`)
 	.rule(`class-block -> block-start class-statement* block-end
 		| class-statement`)

@@ -7,7 +7,7 @@ const type = require("../helpers/type.js");
 const { inflect } = require("../helpers/String.js");
 const { unique } = require("../helpers/Array.js");
 const { getPattern } = require("../helpers/RegExp.js");
-const IndentStack = require("./IndentStack.js");
+const IndentStack = require("../Processor/stages/1-Blocker/IndentStack.js");
 
 // TODO: Save only cursor offset instead
 //	of line and column for major performance
@@ -91,6 +91,7 @@ module.exports = class Lexer {
 	async _lexStream (stream) {
 		throw `Lexical analysis of streams is not yet implemented.`;
 	}
+	
 	_lexString (input) {
 		function getLineAndColumn (input, index) {
 			let line = 1;
@@ -163,43 +164,9 @@ module.exports = class Lexer {
 				handleError("Unknown lexeme", input, index, Array.from(this._rules, ([,rule]) => rule.pattern));
 		}
 
-		if (this._usePythonBlocks) {
-			// TODO: This also recognises normal indenting as blocks.
-			//	Python uses colons to denote block start.
-			//	what will we use?
-			const indentStack = new IndentStack();
-			for (let i = 0; i < tokens.length; i++) {
-				if (tokens[i].type === "_newline") {
-					let indent = 0;
-					i += 1;
-					if (i >= tokens.length) // Reached EOF
-						break;
-					while (tokens[i].type === "_whitespace") {
-						indent += 1;
-						tokens.splice(i, 1);
-					}
-					if (indent > indentStack.last()) {
-						indentStack.push(indent);
-						tokens.splice(i, 0, new LexicalToken("INDENT"))
-					} else if (indent < indentStack.last()) {
-						if (!indentStack.includes(indent))
-							throw `Inconsistent indent at line X, column Y.`;
-						indentStack.popTill(
-							() => !indentStack.includesLargerThan(indent),
-							() => tokens.splice(i, 0, new LexicalToken("DEDENT")));
-					}
-				}
-			}
-			indentStack.popTillInitial(
-				() => tokens.splice(tokens.length, 0, new LexicalToken("DEDENT")));
-			tokens = tokens.filter(token => !["_newline", "_whitespace"].includes(token.type));
-		}
-
-		if (this._generateOEF)
-			tokens.push(new LexicalToken("EOF"));
-
 		return tokens;
 	}
+
 	lex (...args) {
 		if (type(args[0]) === "string")
 			return this._lexString(args[0]);
@@ -211,28 +178,5 @@ module.exports = class Lexer {
 				string: input
 				ReadableStream: input
 		`;
-	}
-
-	usePythonBlocks (flag = true) {
-		// TODO: Implement this warning.
-		//	Should probably also be warned the other way around
-		//	i.e. when using python blocks and calling .ignore whitespace.
-		// if (ingoring whitespace or newline) {
-		// 	console.warn("Cannot both ignore whitespace and use python blocks.");
-		// 	return this;
-		// }
-		this._usePythonBlocks = flag;
-		if (this._usePythonBlocks) {
-			this.rule("_newline", /(?:\r*\n)+/);
-			this.rule("_whitespace", /[ \t]/);
-		}
-		else
-			for (const name of ["_newline", "_whitespace"])
-				this._rules.delete(name);
-		return this;
-	}
-
-	generateOEF (flag = true) {
-		this._generateOEF = flag;
 	}
 }

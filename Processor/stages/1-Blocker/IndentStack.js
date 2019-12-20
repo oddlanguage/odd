@@ -17,11 +17,10 @@ module.exports = class IndentStack {
 	popTill (comparison, forEach) {
 		if (typeof comparison !== "function")
 			throw `Comparison must be a function.`;
-		while (!comparison()) {
-			let tmp = this.pop();
-			if (typeof forEach === "function")
-				forEach(tmp);
-		}
+		if (typeof forEach !== "function")
+			throw `ForEach must be a function.`;
+		while (!comparison())
+			forEach(this.pop());
 		return this;
 	}
 
@@ -35,9 +34,5 @@ module.exports = class IndentStack {
 
 	includes (value) {
 		return this._stack.includes(value);
-	}
-
-	includesLargerThan (value) {
-		return this._stack.slice().reverse().some(i => i > value);
 	}
 }
