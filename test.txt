@@ -1,5 +1,0 @@
-fun any pipe (fun[] ...fs) ->
-	any x -> fs.reduce((c, f) -> f(c), x);
-// versus
-fun pipe = any (fun[] ... fs) ->
-	any x -> fs.reduce((c, f) -> f(c), x);

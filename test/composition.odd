@@ -1,12 +1,12 @@
 import Thread from `async`;
-import random from `random`;
+import Random from `random`;
 
 class Eater ->
-	fun eat () ->
+	fun eat ->
 		print`$name eats.`;
 
 class Pooper ->
-	fun poop () ->
+	fun poop ->
 		print`$name poops.`;
 
 class Sleeper ->
@@ -20,7 +20,7 @@ class Animal (obj ...args) ->
 	overt int age = 0;
 	overt var boo alive = true;
 
-	fun die () ->
+	fun die ->
 		alive = false;
 
 	fun live (int max-age = 10) ->

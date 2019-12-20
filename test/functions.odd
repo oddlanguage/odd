@@ -1,10 +1,24 @@
+import Coerce from `coerce`;
+
 class Array ->
-	fun reduce (lambda, default = this[0]) ->
+	fun iterator ->
+		var int i = 0;
+		while i < this.size
+			yield this@i;
+
+	overt fun reduce (lambda, default = this@0) ->
 		var any acc = default;
 		for fn of this
 			acc = fn(acc);
 		return acc;
+	
+	overt fun partition (predicate = Coerce.boolean) ->
+		return this.reduce(([T,T] parts, T v) ->
+			parts@(predicate(v)).add(v));
 
+class Function ->
+	static overt fun combine (f[] ...fs) ->
+		return (T x) -> fs.reduce((T acc, f fn) -> fn(acc), x);
 
-fun combine (f[] ...fs) ->
-	T x -> fs.reduce((T a, f fn) -> fn(a), x);
+	overt fun apply (any[] ...args) ->
+		return this(...args);
