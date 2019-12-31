@@ -1,36 +1,47 @@
 import Thread from `async`;
 import Random from `random`;
 
-class Eater ->
-	fun eat ->
+class Eater -> {
+	fun eat -> {
 		print`$name eats.`;
+	}
+}
 
-class Pooper ->
-	fun poop ->
+class Pooper -> {
+	fun poop -> {
 		print`$name poops.`;
+	}
+}
 
-class Sleeper ->
-	fun sleep (int seconds) ->
+class Sleeper -> {
+	fun sleep (int seconds) -> {
 		print`$name sleeps $seconds seconds.`;
 		Thread.sleep(seconds);
+	}
+}
 
-class Animal (obj ...args) ->
+class Animal (obj ...args) -> {
 	is Eater, Pooper, Sleeper;
-	overt str name = args.name;
-	overt int age = 0;
-	overt var boo alive = true;
 
-	fun die ->
+	var int age = 0;
+	readonly str name = args.name;
+	readonly var boo alive = true;
+
+	fun die -> {
 		alive = false;
+	}
 
-	fun live (int max-age = 10) ->
-		while alive
+	fun live (int max-age = 10) -> {
+		while alive {
 			if age > max-age
 				die();
 			eat();
 			poop();
 			sleep(10);
 			age += 1;
+		}
+	}
+}
 
 Animal(name: `jeff`)
 	.live(Random.int(10));

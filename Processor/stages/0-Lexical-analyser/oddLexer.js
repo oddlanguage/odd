@@ -4,11 +4,12 @@
 const Lexer = require("../../../Lexer-generator/Lexer-generator.js");
 
 module.exports = new Lexer()
-	.ignore("weird-whitespace", /[\r\f\v]+/)
+	.ignore("whitespace", /\s+/)
+	// .ignore("weird-whitespace", /[\r\f\v]+/)
 	.ignore("comment", /\/\/[^\n]*/)
-	.rule("newline", /\n/)
-	.rule("tab", /\t+/)
-	.rule("space", / +/)
+	// .rule("newline", /\n/)
+	// .rule("tab", /\t+/)
+	// .rule("space", / +/)
 	.rule("string", /`.*(?<!\\)`/)
 	.rule("keyword", /\?|class|fun|for|in|while|->|if|else|is|static|var|overt|readonly|break|continue|import|from|export|return|await|defer|and|or|not|yield|exists|throw/)
 	.rule("operator", /\.\.\.|[@*=\-+%^/\.!|&><]|[*=\-+%^/><!|&]=/)

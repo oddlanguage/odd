@@ -5,6 +5,7 @@ const Parser = require("../../../Parser-generator/Parser-generator.js");
 
 module.exports = new Parser()
 	.rule(`program -> statement*`)
+	// TODO: if statements
 	.rule(`statement -> loop
 		| class
 		| function
@@ -15,16 +16,17 @@ module.exports = new Parser()
 		| expression-body trailer*
 		| "(" expressions? ")" trailer*`)
 	.rule(`expressions -> expression ("," expression)*`)
-	.rule(`trailer -> "." .identifier
-		| "@" expression
+	.rule(`trailer -> "@" expression
 		| argument-list`)
-	.rule(`operator-unary-left -> "..." | "import" | "export" | "return" | "await" | "defer" | "not" | "yield" | "throw" | "typeof"`)
+	// .rule(`operator-unary-left -> "..." | "export" | "return" | "await" | "defer" | "not" | "yield" | "throw" | "typeof"`)
 	.rule(`expression-body -> literal
 		| assignment
 		| function
 		| object
 		| class
-		| .identifier`)
+		| import
+		| dotted-name`)
+	.rule(`dotted-name -> .identifier ("." .identifier)*`)
 	.rule(`literal -> .literal
 		| .number
 		| string`)
@@ -45,9 +47,9 @@ module.exports = new Parser()
 	.rule(`const-assignment -> type dotted-name ("=" expression)?
 		| dotted-name "=" expression`)
 	.rule(`var-assignment -> "var" type? dotted-name ("=" expression)?`)
-	.rule(`type -> .identifier "[" "]"
-		| .identifier "<" type ("," type)* ">"
-		| .identifier`)
+	.rule(`type -> dotted-name "[" "]"
+		| dotted-name "<" type ("," type)* ">"
+		| dotted-name`)
 	.rule(`function -> "fun" .identifier parameter-list? "->" block
 		| parameter-list "->" block
 		| .identifier "->" block`)
@@ -72,7 +74,7 @@ module.exports = new Parser()
 	.rule(`is-statement -> "is" expressions ";"`)
 	.rule(`modifier-statement -> modifier+ statement`)
 	.rule(`modifier -> "static" | "overt" | "readonly"`)
-	.rule(`dotted-name -> .identifier ("." .identifier)*`);
+	.rule(`import -> "import" .identifier "from" string`);
 
 // TODO:
 // n-repetition: name -> rule{min(,max?)?} ()

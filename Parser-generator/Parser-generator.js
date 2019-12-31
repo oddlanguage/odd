@@ -114,6 +114,8 @@ module.exports = class Parser {
 			//	preserve labels, which in turn are
 			//	important to AST normalisation
 
+			const errors = [];
+
 			reject:for (const grammar of options) {
 				const matchedTokens = [];
 				let label = "";
@@ -143,8 +145,8 @@ module.exports = class Parser {
 								if (got.lexeme !== expected.lexeme.slice(1, -1)) // Remove ""
 									if (matches.length >= min)
 										break matcher;
-									else
-										continue reject;
+									else{errors.push(`Expected ${expected.lexeme} but got ${input[i].lexeme}`);
+										continue reject;}
 								matches.push(got);
 							}
 							consume(matches);
@@ -160,8 +162,8 @@ module.exports = class Parser {
 								if (got.type !== expected.lexeme.slice(1)) // Remove "."
 									if (matches.length >= min)
 										break matcher;
-									else
-										continue reject;
+									else{errors.push(`Expected ${expected.lexeme} but got ${input[i].lexeme}`);
+										continue reject;}
 								matches.push(got);
 							}
 							consume(matches);
@@ -183,8 +185,8 @@ module.exports = class Parser {
 								if (match.isNothing())
 									if (matches.length >= min)
 										break matcher;
-									else
-										continue reject;
+									else{errors.push(`Expected ${expected.lexeme} but got ${input[i].lexeme}`);
+										continue reject;}
 								matches.push(match);
 								i += match.offset;
 							}
@@ -232,8 +234,8 @@ module.exports = class Parser {
 								if (match.isNothing())
 									if (matches.length >= min)
 										break matcher;
-									else
-										continue reject;
+									else{errors.push(`Expected ${expected.lexeme} but got ${input[i].lexeme}`);
+										continue reject;}
 								matches.push(match);
 								i += match.offset;
 							}
@@ -254,6 +256,7 @@ module.exports = class Parser {
 						}
 					}
 				}
+				errors.length = 0;
 				return new ParserMatch(inputCursor, matchedTokens, name);
 			}
 			return ParserMatch.NO_MATCH;
@@ -269,11 +272,15 @@ module.exports = class Parser {
 		if (match.isNothing())
 			throw `The uppermost grammar doesn't match the file.`;
 		offset += match.offset;
-		if (offset < tokens.length)
-			throw `The uppermost grammar doesn't match the entire file.`;
+
+		// TODO: Not all matches properly return an offset, so this check will not catch errors
+		// if (offset < tokens.length)
+		//	throw `Grammar doesn't  match ENTIRE file`;
 
 		// TODO: Go through all import nodes and parse those.
 		return AST.from(match);
 		// TODO: Get the correct token that caused the error.
+
+		// TODO: Squash AST. For every nonterminal A that is a nonterminal B, reduce to B.
 	}
 }

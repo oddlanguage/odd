@@ -39,6 +39,10 @@ module.exports = class AST {
 			yield node;
 	}
 
+	toString () {
+		return this.selectAll("*").map(node => (node.lexeme) ? `"${node.lexeme}"` : `${node.type} ->\n  `).join(" ");
+	}
+
 	get root () {
 		if (this._root)
 			return this._root;
