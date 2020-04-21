@@ -1,0 +1,7 @@
+import json from `json`;
+
+str data-str = `{ "foo": 1, "bar": [ 10, "apples" ] }`;
+obj data-json = [ foo: 1, bar: [ 10, `apples` ] ];
+
+print(json.objectify(data-str) == data-json);
+print(json.stringify(data-json) == data-str);

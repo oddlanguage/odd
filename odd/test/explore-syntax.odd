@@ -1,0 +1,86 @@
+// The goal of this file is to explore syntax for basic everyday
+//	operations in a modern day language.
+// The purpose of odd is to provide an expression-oriented,
+//	typesafe and visually pleasing interface.
+
+// The goal of the code is the following:
+// Given a list of n Question objects named "questions",
+//	where a Question object has the following properties:
+//		id :: string
+//		answer :: Answer
+//		parent :: Maybe<Question>
+//		verify :: Maybe<Answer -> boolean>
+//		expected :: Maybe<any>
+//		required :: boolean,
+//	return wether all questions are properly answered,
+//	where properly answered means:
+//		if question is required
+//		and answer is valid,
+//	where an Answer object has the following properties:
+//		type :: str
+//		value :: any
+//	where a valid answer means
+//		the answer is not nothing
+//		if the answered question has a parent
+//			question.parent.verify(answer) should yield true
+
+// ==============================================>
+// Syntax 1
+str fun normalise (any input) ->
+	`$input`.lowercase();
+
+class Answer (
+	// this.value is shorthand for declaring a parameter
+	//	and at the same time setting a property
+	// 	named value, and allowing setting
+	//	through named arguments:
+	// Answer answer = Answer(value: `value`);
+	any this.value,
+	str this.type?);
+
+class Question (
+	str this.id,
+	boo this.required,
+	Answer this.answer,
+	any this.expected?,
+	Question this.parent?) ->
+
+	overt boo fun is-valid ->
+		return not this.required
+			or this.parent.is-valid()
+			and match this.answer.type
+				`=` -> [this.answer.value, this.expected].map(normalise).equal()
+				else -> this.answer.value exists;
+
+print(questions.every(?.is-valid()));
+// <==============================================
+
+// Syntax 2
+str fun normalise (any input) ->
+	return `$input`.lowercase();
+
+class Answer ->
+	// this.value is shorthand for setting a parameter
+	// 	in the constructor named value, and allowing setting
+	//	through named arguments:
+	// Answer answer = Answer(value: `value`);
+	any this.value;
+	// In this case value should be colourised as a parameter.
+	maybe str this.type;
+
+class Question ->
+	str this.id;
+	boo this.required;
+	Answer this.answer;
+	maybe any this.expected;
+	maybe Question this.parent;
+
+	overt boo fun is-valid ->
+		return not this.required
+			or this.parent.is-valid()
+			and match this.answer.type
+				`=` -> [this.answer.value, this.expected].map(normalise).equal()
+				else -> this.answer.value exists;
+
+print(questions.every(question -> question.is-valid()));
+// <==============================================

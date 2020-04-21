@@ -1,0 +1,44 @@
+import Thread from `async`;
+import Random from `random`;
+
+class Age (int current, int max) ->
+	readonly var int current = current;
+	int max = max;
+
+class Life (int max-age) ->
+	has	Age(0, max-age) as age;
+	readonly var boo alive = true;
+
+	fun live ->
+		while life.alive
+			if age.current > age.max
+				life.die();
+			eat();
+			poop();
+			sleep(10);
+			age.current += 1;
+
+	fun die ->
+		alive = false;
+
+class Eater ->
+	fun eat ->
+		print`$name eats.`;
+
+class Pooper ->
+	fun poop ->
+		print`$name poops.`;
+
+class Sleeper ->
+	fun sleep (int seconds) ->
+		Thread.sleep(seconds);
+
+class Animal (str name) ->
+	is Eater, Pooper, Sleeper;
+	has Life;
+	readonly str name = name;
+
+Animal(
+	name: `jeff`,
+	max-age: Random.int(10))
+	.live();

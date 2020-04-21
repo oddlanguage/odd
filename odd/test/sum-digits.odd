@@ -1,0 +1,11 @@
+fun sum-digits (int num, int radix = 10) ->
+	num
+		.to-string(radix)
+		.reduce((int sum, char digit) -> sum + int.parse(digit), 0);
+
+[
+	[ value: 1, expected: 1 ],
+	[ value: 1234, expected: 10 ],
+	[ value: `fe`, radix: 16, expected: 29 ],
+	[ value: `f0e`, radix: 16, expected: 29 ]
+].each(obj entry -> print(sum-digits(entry.value, entry.radix) == entry.expected));

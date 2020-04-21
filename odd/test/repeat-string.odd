@@ -1,0 +1,14 @@
+fun repeat-std (str input, int n) ->
+	input.repeat(n);
+
+fun repeat-reduce (str input, int n) ->
+	0.to(n).reduce(str output -> `$output$input`, input);
+
+fun repeat-imperative (str input, int n) ->
+	var str output = input;
+	for i of n
+		output = `$output$input`;
+	return output;
+
+for function of [repeat-std, repeat-reduce, repeat-imperative]
+	print(function(`ha`, 5));
