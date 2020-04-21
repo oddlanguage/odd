@@ -22,7 +22,7 @@ Odd is highly W.I.P. but these are the main goals of the language:
 ## 🖥️ Usage
 To use the Odd compiler (not finished), run it through node:
 ```shell
-# node -v
+node -v
 # -> v13.12.0
 node --harmony ./odd/compiler.js test.odd
 # -> ✔️ Reading file DONE (292.70 μs)
