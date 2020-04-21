@@ -15,6 +15,7 @@ Odd is highly W.I.P. but these are the main goals of the language:
 - Flowing syntax (like a language should have).
 - Small footprint: should work on high- and low-end devices.
 - Adopt a good few parts of functional programming into developer mindset.
+- No (unnecessary) dependencies: it's cute to call it _"reinventing the wheel"_, but in reality Odd doesn't need [an ASCII art of Guy fiery in some dependency's dependecy](https://medium.com/s/silicon-satire/i-peeked-into-my-node-modules-directory-and-you-wont-believe-what-happened-next-b89f63d21558), or any other useless import for that fact.
 
 <br/>
 <br/>
