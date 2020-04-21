@@ -25,7 +25,14 @@ To use the Odd compiler (not finished), run it through node:
 # node -v
 # -> v13.12.0
 node --harmony ./odd/compiler.js test.odd
-# -> <Document Parse Tree>
+# -> ✔️ Reading file DONE (292.70 μs)
+# -> ✔️ Generating lexer DONE (233.90 μs)
+# -> ✔️ Parsing DONE (12.41 ms)
+# -> { children: [ ... ],
+#      ok: true,
+#      type: "program",
+#      label: null,
+#      error: null }
 ```
 Should work with some older versions of Node, but Odd is being developed with the newest versions of node to guarantee best performance and the newest javascript features.
 
