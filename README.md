@@ -20,3 +20,7 @@ _Hmm, that's **odd**..._
 
 ## 🤸 Author
 Conceptualised and authored by [@maanlamp](https://github.com/maanlamp). Feel free to contribute: [Create an issue](https://github.com/oddlanguage/odd/issues/new) or get in contact otherwise.
+
+## License
+Copyright 2020 Maanlamp.
+This project is licensed under MIT.
