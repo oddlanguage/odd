@@ -72,7 +72,7 @@ The Parser API has two methods.
 
 <br/>
 
-#### <code>_Parser_: **rule**(_string_: **name**, _ParserCombinator_: **parser**)</code>
+<code>_Parser_: **rule**(_string_: **name**, _ParserCombinator_: **parser**)</code>
 
 Define a rule for the parser to recognise. You can reference a rule with the `rule` _parser combinator_, or by directly referencing another function.
 
@@ -109,7 +109,7 @@ It's discouraged to write your own combinator from scratch. Use the builtin comb
 
 <br/>
 
-#### <code>_Promise\<Result\>_: **parse**(_AsyncIterable\<Token\>_: **tokens**)</code>
+<code>_Promise\<Result\>_: **parse**(_AsyncIterable\<Token\>_: **tokens**)</code>
 
 Returns a `Promise` that will resolve to a `Result`. A `Result` is the internal representation of a parsing. To check if a result was succesful, check the `ok` property. The result can be regarded as the _parse tree_. You can call `.AST()` on a `Result` to get only the _abstract syntax tree_.
 
@@ -123,53 +123,53 @@ The parser also comes with some default combinators, which can be found under th
 
 <br/>
 
-#### <code>_Result_: **lexeme**(_string_: **expected**)</code>
+<code>_Result_: **lexeme**(_string_: **expected**)</code>
 
 The `lexeme` combinator takes an argument `expected`. This combinator returns a function that matches the first token whose key `lexeme` has the value of `expected`.
 
 <br/>
 
-#### <code>_Result_: **type**(_string_: **expected**)</code>
+<code>_Result_: **type**(_string_: **expected**)</code>
 
 The `type` combinator takes an argument `expected`. This combinator returns a function that matches the first token whose key `type` has the value of `expected`.
 
 <br/>
 
-#### <code>_Result_: **sequence**(_ParserCombinator[]_: **...parsers**)</code>
+<code>_Result_: **sequence**(_ParserCombinator[]_: **...parsers**)</code>
 
 The `sequence` combinator takes any sequence of parser combinators, and evaluates them in order. It returns a succesful `Result` if no parser failed. Otherwise it returns the first failed result.
 
 <br/>
 
-#### <code>_Result_: **some**(_ParserCombinator_: **parser**)</code>
+<code>_Result_: **some**(_ParserCombinator_: **parser**)</code>
 
 The `some` combinator takes any parser and runs it until it doesn't match anything. It returns a succesful `Result` whether or not anything matched (zero or more).
 
 <br/>
 
-#### <code>_Result_: **many**(_ParserCombinator_: **parser**)</code>
+<code>_Result_: **many**(_ParserCombinator_: **parser**)</code>
 
 The `many` combinator takes any parser and runs it until it doesn't match anything. It returns a succesful `Result` if one or more parses succeeded. If no parse was successful it returns the failed result.
 
 <br/>
 
-#### <code>_Result_: **maybe**(_ParserCombinator_: **parser**)</code>
+<code>_Result_: **maybe**(_ParserCombinator_: **parser**)</code>
 
 The `maybe` combinator takes any parser and returns the `Result` of that parser, with its `ok` field always set to `true`.
 
 <br/>
 
-#### <code>_Result_: **rule**(_string_: **name**)</code>
+<code>_Result_: **rule**(_string_: **name**)</code>
 
 The `rule` combinator takes an argument `name`. This combinator looks for a parser rule of name `name`. This is useful for when you want to reference a rule before its initialisation.
 
 <br/>
 
-#### <code>_Result_: **label**(_string_: **name**, _ParserCombinator_: **parser**)</code>
+<code>_Result_: **label**(_string_: **name**, _ParserCombinator_: **parser**)</code>
 
 The `label` combinator takes the arguments `name` and `parser`. This combinator runs `parser` and adds the label `name` to it. This is useful for referring to this particular node.
 
-#### <code>_Result_: **delimited**(_ParserCombinator_: **parser**, _ParserCombinator_: **delimiter**)</code>
+<code>_Result_: **delimited**(_ParserCombinator_: **parser**, _ParserCombinator_: **delimiter**)</code>
 
 The `delimited` combinator takes the arguments `parser` and `delimiter`. This combinator checks for the occurence of one or more `parser`, followed by zero or more sequences of `delimiter` followed by `parser` (EBNF: `x (y x)*`). This is useful for constucts such as rules delimited by a comma. It returns a succesful `Result` if at least one `parser` was succesful, or if it matched one or more `parser`s with `delimiter` between each `parser`.
 

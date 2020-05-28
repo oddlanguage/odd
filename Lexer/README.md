@@ -97,25 +97,25 @@ export new Lexer();
 
 The Lexer API has five methods:
 
-#### <code>_Lexer_: **ignore**(_string_: **name**, (_string_|_RegExp_): **pattern**)</code>
+<code>_Lexer_: **ignore**(_string_: **name**, (_string_|_RegExp_): **pattern**)</code>
 
 Define a rule that, when encountered, is recognised but its result is discarded.
 
 <br/>
 
-#### <code>_Lexer_: **define**(_string_: **name**, (_string_|_RegExp_): **pattern**)</code>
+<code>_Lexer_: **define**(_string_: **name**, (_string_|_RegExp_): **pattern**)</code>
 
 Define a pattern that will never match, but can be used inside other rules with the `{rule}` syntax. A rule can be inserted in a pattern by typing that rule's name surrounded by accolades. Note that ignorations and other rules can be inserted with the same syntax, but they would produce tokens if their pattern would match. Also note that inserting a pattern will merge its flags into the receiving pattern. Any sticky (`y`) flag is ignored because it is used internally.
 
 <br/>
 
-#### <code>_Lexer_: **rule**(_string_: **name**, (_string_|_RegExp_): **pattern**)</code>
+<code>_Lexer_: **rule**(_string_: **name**, (_string_|_RegExp_): **pattern**)</code>
 
 Define a rule for the lexer to recognise. Can also be referenced in other rules. The **`name`** parameter must match the regex `/[a-z]+[\-a-z]*/i` (or in English: any upper- or lowercase words separated by hyphens). The **`pattern`** parameter can be either a _string_ or a _RegExp_; strings will be converted to regular expressions, escaping all characters to their literal form.
 
 <br/>
 
-#### <code>_AsyncIterator\<Token\>_: **lex**(_ReadableStream_: **input**)</code>
+<code>_AsyncIterator\<Token\>_: **lex**(_ReadableStream_: **input**)</code>
 
 Returns an `AsyncIterator` that spits out a `Token` each iteration until the end of the file. It does **not** generate an `EOF` token. If a character or lexeme is encountered that does not match any rule, it will error and tell you the source location. Multiple rules can match a single lexeme, but the longer match will be returned. If all matches are of the same length, the first match will be returned.
 
