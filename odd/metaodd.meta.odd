@@ -1,0 +1,14 @@
+program -> metarule*
+
+metarule -> .identifier "->" label:chunks (end | EOF)
+
+chunks -> chunk ("|" chunk)*
+
+chunk -> ((.label? atom)+ | "(" chunks ")") quantifier?
+
+atom -> .type
+	| .identifier
+	| .lexeme
+	| .self
+
+quantifier -> .quantifier | "{" .number ("," .number?)? "}"

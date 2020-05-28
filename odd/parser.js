@@ -7,7 +7,7 @@ import { type, lexeme, options, sequence, some, maybe, many, rule, delimited, la
 const program = some(
 	rule("statement"));
 
-// statement -> ((("export" "default"?)? (function-definition | class-definition | declaration)) | expression) ";"
+// statement -> ((("export" "default"?)? (function-definition | declaration)) | expression) ";"
 const statement = sequence(
 	options(
 		sequence(
@@ -18,7 +18,7 @@ const statement = sequence(
 						lexeme("default")))),
 			options(
 				rule("function-definition"),
-				rule("class-definition"),
+				// rule("class-definition"),
 				rule("declaration"))),
 		rule("expression")),
 	lexeme(";"));
@@ -84,12 +84,17 @@ const parameters = options(
 
 // parameter -> typed-parameter | .identifier
 const parameter = options(
-	rule("typed-parameter"),
-	type("identifier"));
+		rule("typed-parameter"),
+		sequence(
+			maybe(
+				lexeme("...")),
+			type("identifier")));
 
 // typed-parameter -> type .identifier
 const typedParameter = sequence(
 	rule("type"),
+	maybe(
+		lexeme("...")),
 	type("identifier"));
 
 // atom -> .literal | .number | .identifier
@@ -98,13 +103,19 @@ const atom = options(
 	type("number"),
 	type("identifier"));
 
-// trailer -> arguments | compound-string | object | .operator expression | ternary
+// trailer ->
+// 	arguments
+// 	| compound-string
+// 	| object
+// 	| .operator+ expression
+// 	| ternary
 const trailer = options(
 	rule("arguments"),
 	rule("compound-string"),
 	rule("object"),
 	sequence(
-		type("operator"),
+		many(
+			type("operator")),
 		rule("expression")),
 	rule("ternary"),
 	lexeme("exists"));
@@ -156,33 +167,34 @@ const cases = sequence(
 		rule("case"),
 		lexeme(",")));
 
-// case -> expression -> expression
+// case -> expression "->" expression
 const matchCase = sequence(
 	rule("expression"),
 	lexeme("->"),
 	rule("expression"));
 
-// object -> "[" fields? "]"
+// object -> "{" fields? "}"
 const obj = sequence(
-	lexeme("["),
+	lexeme("{"),
 	maybe(
 		rule("fields")),
-	lexeme("]"));
+	lexeme("}"));
 
 // fields -> field ("," field)*
 const fields = delimited(
 	rule("field"),
 	lexeme(","));
 
-// field -> (.identifier ":")? expression
+// field -> .identifier ":" expression
 const field = sequence(
-	maybe(
-		sequence(
-			type("identifier"),
-			lexeme(":"))),
+	type("identifier"),
+	lexeme(":"),
 	rule("expression"));
 
-// type -> "(" type ")" | .identifier ("or" type | "<" type ">")? ("[" "]")?
+// type ->
+// 	"(" type ")"
+// 	| .identifier ("or" type
+// 	| "<" type ("," type)* ">")? ("[" "]")?
 const oddType = options(
 	sequence(
 		lexeme("("),
@@ -197,60 +209,62 @@ const oddType = options(
 					rule("type")),
 				sequence(
 					lexeme("<"),
-					rule("type"),
+					delimited(
+						rule("type"),
+						lexeme(",")),
 					lexeme(">")))),
 		maybe(
 			sequence(
 				lexeme("["),
 				lexeme("]")))));
 
-// class-definition -> "class" .identifier is? parameters? ("->" ("static" | "var" | "overt" | "readonly")* (typed-class-field | class-field) ("," (typed-class-field | class-field))*)?
-const oddClass = sequence(
-	lexeme("class"),
-	type("identifier"),
-	maybe(
-		rule("is")),
-	maybe(
-		rule("parameters")),
-	maybe(
-		sequence(
-			lexeme("->"),
-			delimited(
-				sequence(
-					some(
-						options(
-							lexeme("var"),
-							lexeme("static"),
-							lexeme("overt"),
-							lexeme("readonly"))),
-					options(
-						rule("typed-class-field"),
-						rule("class-field"))),
-				lexeme(",")))));
+// // class-definition -> "class" .identifier is? parameters? ("->" ("static" | "var" | "overt" | "readonly")* (typed-class-field | class-field) ("," (typed-class-field | class-field))*)?
+// const oddClass = sequence(
+// 	lexeme("class"),
+// 	type("identifier"),
+// 	maybe(
+// 		rule("is")),
+// 	maybe(
+// 		rule("parameters")),
+// 	maybe(
+// 		sequence(
+// 			lexeme("->"),
+// 			delimited(
+// 				sequence(
+// 					some(
+// 						options(
+// 							lexeme("var"),
+// 							lexeme("static"),
+// 							lexeme("overt"),
+// 							lexeme("readonly"))),
+// 					options(
+// 						rule("typed-class-field"),
+// 						rule("class-field"))),
+// 				lexeme(",")))));
 
-// class-field -> ("this" ".")? .identifier ("=" expression)?
-const classField = sequence(
-	maybe(
-		sequence(
-			lexeme("this"),
-			lexeme("."))),
-	type("identifier"),
-	maybe(
-		sequence(
-			lexeme("="),
-			rule("expression"))));
+// // class-field -> ("this" ".")? .identifier ("=" expression)?
+// const classField = sequence(
+// 	maybe(
+// 		sequence(
+// 			lexeme("this"),
+// 			lexeme("."))),
+// 	type("identifier"),
+// 	maybe(
+// 		sequence(
+// 			lexeme("="),
+// 			rule("expression"))));
 
-// typed-class-field -> type class-field
-const typedClassField = sequence(
-	rule("type"),
-	rule("class-field"));
+// // typed-class-field -> type class-field
+// const typedClassField = sequence(
+// 	rule("type"),
+// 	rule("class-field"));
 
-// is -> "is" expression ("," expression)*
-const is = sequence(
-	lexeme("is"),
-	delimited(
-		rule("expression"),
-		lexeme(",")));
+// // is -> "is" expression ("," expression)*
+// const is = sequence(
+// 	lexeme("is"),
+// 	delimited(
+// 		rule("expression"),
+// 		lexeme(",")));
 
 export default new Parser()
 	.rule("program",             program)
@@ -276,8 +290,8 @@ export default new Parser()
 	.rule("object",              obj)
 	.rule("fields",              fields)
 	.rule("field",               field)
-	.rule("type",                oddType)
-	.rule("class-definition",    oddClass)
-	.rule("class-field",         classField)
-	.rule("typed-class-field",   typedClassField)
-	.rule("is",                  is);
+	.rule("type",                oddType);
+	// .rule("class-definition",    oddClass)
+	// .rule("class-field",         classField)
+	// .rule("typed-class-field",   typedClassField)
+	// .rule("is",                  is)

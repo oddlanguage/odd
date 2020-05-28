@@ -32,6 +32,7 @@ export default class Parser {
 		//	bc I'm too stupid to figure out how to get this
 		//	working otherwise.
 		// TODO: Don't be stupid.
+
 		for await (const token of stream) {
 			this.#tokens.push(token);
 		}

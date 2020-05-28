@@ -1,6 +1,7 @@
 "use strict";
 
 import Location from "./Location.js";
+import { escapeString } from "../util.js";
 
 export default class Token {
 
@@ -11,7 +12,7 @@ export default class Token {
 	}
 
 	toString () {
-		return `${this.type} "${this.lexeme}" at ${this.location}`;
+		return `${this.type} "${escapeString(this.lexeme)}" at ${this.location}`;
 	}
 
 	static EOF = new Token("EOF", "", new Location(null, null));
