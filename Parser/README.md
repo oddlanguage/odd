@@ -226,7 +226,8 @@ The intention for the Odd Parser Generator is to also allow for EBNF rules to be
 The language used to define a parser would be similar to a superset of EBNF, called MetaOdd, which includes a small amount of helpful syntactic constructs, and changes a few notations.
 
 MetaOdd defined in terms of itself:
-```ebnf
+
+```
 program -> metarule*
 
 metarule -> .identifier "->" chunks (end | EOF)
