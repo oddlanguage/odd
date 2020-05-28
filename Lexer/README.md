@@ -1,8 +1,11 @@
 # Odd Lexer Generator
 
-<div align="center"><img src="./oddlexer.png" alt="A stylised diagram of a State-Machine, symbolising a Lexical Analyser that recognises an 'O', followed by óne or more 'D's." width=33% /></div>
-
-The Odd Lexer Generator is a lexical analyser generator written in javascript.
+<div align="center">
+  <img src="./oddlexer.png" alt="A stylised diagram of a State-Machine, symbolising a Lexical Analyser that recognises an 'O', followed by óne or more 'D's." width=33% />
+  <br/>
+  <br/>
+  The Odd Lexer Generator is a lexical analyser generator written in javascript.
+</div>
 
 <br/>
 <br/>

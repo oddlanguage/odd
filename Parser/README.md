@@ -1,8 +1,11 @@
 # Odd Parser Generator
 
-<div align="center"><img src="./oddparser.png" alt="A stylised diagram symbolising a parse tree of the word 'dod', which is an odd misspelling of 'odd'." width=33% /></div>
-
-The Odd Parser Generator is a parser generator written in javascript.
+<div align="center">
+  <img src="./oddparser.png" alt="A stylised diagram symbolising a parse tree of the word 'dod', which is an odd misspelling of 'odd'." width=33% />
+  <br/>
+  <br/>
+  The Odd Parser Generator is a parser generator written in javascript.
+</div>
 
 <br/>
 <br/>
