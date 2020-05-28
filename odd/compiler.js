@@ -8,7 +8,6 @@ import File from "../File.js";
 import Url from 'url';
 import metalexer from "./metalexer.js";
 import metaparser from "./metaparser.js";
-import parserbuilder from "./parserbuilder.js"
 
 const hyphenLike = /^[-–]/; // Some terminals/hosts replace hyphens with en/em-dashes... wtf???
 const files = process.argv
@@ -52,6 +51,6 @@ const inspect = result => console.log(Util.inspect(result, false, Infinity, true
 pipes.map(
 	pipe => pipe
 		.process()
-		.then(result => inspect(result.asTree()))
+		.then(result => inspect(result.AST()))
 		.catch(error => overwrite(
 			`❌ ${capitalise(error.name || "Internal")} ERROR: ${(error?.message?.stack) ? error.message.stack.split("\n").filter(ln => !(/internal\//.test(ln))).join("\n") : error.message || error}`)));

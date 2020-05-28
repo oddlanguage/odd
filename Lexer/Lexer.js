@@ -8,6 +8,19 @@ import Location from "./Location.js";
 
 export default class Lexer {
 
+	// TODO: Use next js #private fields instead
+	//	of underscored this._fields.
+
+	// TODO: Move EOF functionality out of the
+	//	parser combinators into the lexer,
+	// TODO: Decide if we even want to do EOF
+	//	(EOF is used to note end of tokenstream but
+	//	an exhausted iterator returns
+	//	{ done: true, value: undefined })
+	//	If yes, should it be configurable?
+
+	// TODO: Lex binary format?
+
 	constructor () {
 		this._rules = new Map();
 	}

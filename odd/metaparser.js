@@ -1,5 +1,5 @@
 import Parser from "../Parser/Parser.js";
-import { maybe, some, rule, sequence, type, options, delimited, many } from "../Parser/combinators.js";
+const { maybe, some, rule, sequence, type, options, delimited, many }  = Parser.combinators;
 
 // program -> metarule*
 const program = some(rule("metarule"));

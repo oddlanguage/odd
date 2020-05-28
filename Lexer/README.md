@@ -1,6 +1,6 @@
 # Odd Lexer Generator
 
-<div align="center"><img src="./oddlexer.png" alt="" width=33% /></div>
+<div align="center"><img src="./oddlexer.png" alt="A stylised diagram of a State-Machine, symbolising a Lexical Analyser that recognises an 'O', followed by óne or more 'D's." width=33% /></div>
 
 The Odd Lexer Generator is a lexical analyser generator written in javascript.
 
@@ -8,9 +8,9 @@ The Odd Lexer Generator is a lexical analyser generator written in javascript.
 <br/>
 
 ## 🧠 Philosophy
-To make a computer understand the vocabulary of a language, you need to tell it exactly how your words are spelt. That is where a lexical analyser (hereafter _"Lexer"_) comes in: it is to a computer what the dictionary is to a human.
+To make a computer understand the vocabulary of a language, you need to tell it exactly how your words are spelt. That is where a lexical analyser (hereafter _"lexer"_) comes in: it is to a computer what the dictionary is to a human.
 
-You could write a Lexer by hand, but that reduces the flexibility and development speed of your end product (language). This is why _Lexer Generators_ are made. For the same reason the Odd Lexer Generator was made: to allow for quick and flexible language definition(s).
+You could write a lexer by hand, but that reduces the flexibility and development speed of your end product (language). This is why _Lexer Generators_ are made. For the same reason the Odd Lexer Generator was made: to allow for quick and flexible language definition(s).
 
 ### Why not use existing tools?
 Odd originally was a hobby project, which is a valid reason on its own. That meant that working on it had to be fun, or at least lead to a fun experience. Using existing tools was not fun. They are often old, ugly, and mix concerns that should be separated. Most lexer generators invent their own meta-version of the language it was implemented in, resulting in -- for example -- an ugly c-file that is both some form of language declaration, and a program.
@@ -73,6 +73,7 @@ _What are these return statements and assignments doing in my definition file?_
 </details>
 
 <br/>
+
 Even if the Odd Lexer Generator would not be faster than (or as fast as) existing tools, at least it should be vastly more intuitive and pleasureable to use (as long as you know Regular Expressions 🙃).
 
 <br/>
@@ -96,25 +97,25 @@ export new Lexer();
 
 The Lexer API has five methods:
 
-<code>.ignore(_string_: **name**, _string_|_RegExp_: **pattern**)</code>
+#### <code>_Lexer_: **ignore**(_string_: **name**, (_string_|_RegExp_): **pattern**)</code>
 
 Define a rule that, when encountered, is recognised but its result is discarded.
 
 <br/>
 
-<code>.define(_string_: **name**, _string_|_RegExp_: **pattern**)</code>
+#### <code>_Lexer_: **define**(_string_: **name**, (_string_|_RegExp_): **pattern**)</code>
 
 Define a pattern that will never match, but can be used inside other rules with the `{rule}` syntax. A rule can be inserted in a pattern by typing that rule's name surrounded by accolades. Note that ignorations and other rules can be inserted with the same syntax, but they would produce tokens if their pattern would match. Also note that inserting a pattern will merge its flags into the receiving pattern. Any sticky (`y`) flag is ignored because it is used internally.
 
 <br/>
 
-<code>.rule(_string_: **name**, _string_|_RegExp_: **pattern**)</code>
+#### <code>_Lexer_: **rule**(_string_: **name**, (_string_|_RegExp_): **pattern**)</code>
 
 Define a rule for the lexer to recognise. Can also be referenced in other rules. The **`name`** parameter must match the regex `/[a-z]+[\-a-z]*/i` (or in English: any upper- or lowercase words separated by hyphens). The **`pattern`** parameter can be either a _string_ or a _RegExp_; strings will be converted to regular expressions, escaping all characters to their literal form.
 
 <br/>
 
-<code>.lex(_ReadableStream_: **input**)</code>
+#### <code>_AsyncIterator\<Token\>_: **lex**(_ReadableStream_: **input**)</code>
 
 Returns an `AsyncIterator` that spits out a `Token` each iteration until the end of the file. It does **not** generate an `EOF` token. If a character or lexeme is encountered that does not match any rule, it will error and tell you the source location. Multiple rules can match a single lexeme, but the longer match will be returned. If all matches are of the same length, the first match will be returned.
 

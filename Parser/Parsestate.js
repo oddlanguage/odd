@@ -1,6 +1,6 @@
 "use strict";
 
-export default class Parsestate {
+export default class ParseState {
 
 	#index = 0;
 	#furthest = 0;

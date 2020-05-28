@@ -33,7 +33,7 @@ export default class Result {
 		return this;
 	}
 
-	asTree () {
+	AST () {
 		return Tree
 			.from(this)
 			.filter(node => typeof node.type !== "symbol");

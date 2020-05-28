@@ -1,6 +1,6 @@
 program -> metarule*
 
-metarule -> .identifier "->" label:chunks (end | EOF)
+metarule -> .identifier "->" chunks (end | EOF)
 
 chunks -> chunk ("|" chunk)*
 
@@ -12,3 +12,5 @@ atom -> .type
 	| .self
 
 quantifier -> .quantifier | "{" .number ("," .number?)? "}"
+
+// TODO: "{" .number ("," .number?)? "}" is somehow lexed as one lexeme??
