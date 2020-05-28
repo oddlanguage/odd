@@ -2,8 +2,6 @@
 
 <div align="center"><img src="./oddparser.png" alt="A stylised diagram symbolising a parse tree of the word 'dod', which is an odd misspelling of 'odd'." width=33% /></div>
 
-TODO TODO TODO TODO TODO TODO TODO TODO TODO: VERANDER DIT PLAATJE
-
 The Odd Parser Generator is a parser generator written in javascript.
 
 <br/>
