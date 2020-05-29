@@ -4,7 +4,7 @@ const { maybe, some, rule, sequence, type, options, delimited, many }  = Parser.
 // program -> metarule*
 const program = some(rule("metarule"));
 
-// metarule -> .identifier "->" chunks (end | EOF)
+// metarule -> .identifier "->" chunks (.end | .EOF)
 const metarule = sequence(
 	type("identifier"),
 	type("arrow"),

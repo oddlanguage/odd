@@ -1,6 +1,6 @@
 program -> metarule*
 
-metarule -> .identifier "->" chunks (end | EOF)
+metarule -> .identifier "->" chunks (.end | .EOF)
 
 chunks -> chunk ("|" chunk)*
 

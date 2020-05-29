@@ -22,5 +22,3 @@ export default new Lexer()
 	.rule("group-start",            "(")
 	.rule("group-end",              ")")
 	.rule("self",                   "$");
-
-	// TODO: This lexer freezes when trying to consume all tokens
