@@ -48,8 +48,8 @@ When Odd is finished, it will be a standalone executable requiring no separate N
 
 ## 🗺️ Roadmap
 Some work has yet to be done for odd to release as v1.0. The following is a list of compiler stages to get to **v1.0**:
-- [x] **0.1**: Lexical Analysis of `.meta.odd` files ([Read about the lexer generator](./Lexer/README.md) or [look at the metalexer](odd/lexer.js)).
-- [x] **0.2**: Parsing of `.meta.odd` files  ([Read about the parser generator](./Parser/README.md) or [look at the metaparser](odd/lexer.js)).
+- [x] **0.1**: Lexical Analysis of `.meta.odd` files ([Read about the lexer generator](./Lexer/README.md) or [look at the metalexer](odd/metalexer.js)).
+- [x] **0.2**: Parsing of `.meta.odd` files  ([Read about the parser generator](./Parser/README.md) or [look at the metaparser](odd/metaparser.js)).
 - [ ] **0.3**: Building a parser from the parsed metalanguage
 - [ ] **0.4**: Parsing of `.odd` files
 - [ ] **0.5**: Lexical Analysis of `.odd` files
