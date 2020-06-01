@@ -4,8 +4,7 @@ import { splitArray } from "../util.js";
 
 // TODO: This should probably not be its own file?
 // How is this linked to the parser generator?
-
-const url = Url.resolve(import.meta.url, "../../Parser/Parser.js");
+const url = Url.resolve(import.meta.url, "../Parser/Parser.js");
 const program = node => `import Parser from "${url}";\nconst { sequence, options, some, rule, type, lexeme, many, maybe } = Parser.combinators;\n\nexport default new Parser()\n\t${node.children.map(rule => `.rule("${rule.children[0].lexeme}", ${interpreter.interpret(rule)})`).join("\n\t")}`;
 
 const metarule = node => interpreter.interpret(node.children[2]);
@@ -73,5 +72,4 @@ export default interpreter
 	.rule("chunks",      chunks)
 	.rule("chunk",       chunk)
 	.rule("atom",        atom)
-	.rule("group",       group)
-	;
+	.rule("group",       group);
