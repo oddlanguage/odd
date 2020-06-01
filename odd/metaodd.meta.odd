@@ -4,9 +4,10 @@ metarule -> .identifier "->" chunks (.end | .EOF)
 
 chunks -> chunk+ ("|" chunk+)*
 
-chunk -> .label? (atom | group) quantifier?
+chunk -> .label? value quantifier?
 
-atom -> .type
+value -> group
+	| .type
 	| .identifier
 	| .lexeme
 	| .self
@@ -14,5 +15,3 @@ atom -> .type
 group -> "(" chunks ")"
 
 quantifier -> .quantifier | "{" .number ("," .number?)? "}"
-
-// TODO: "{" .number ("," .number?)? "}" is somehow lexed as one lexeme??
