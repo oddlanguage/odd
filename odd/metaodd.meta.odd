@@ -2,14 +2,16 @@ program -> metarule*
 
 metarule -> .identifier "->" chunks (.end | .EOF)
 
-chunks -> chunk ("|" chunk)*
+chunks -> chunk+ ("|" chunk+)*
 
-chunk -> ((.label? atom)+ | "(" chunks ")") quantifier?
+chunk -> .label? (atom | group) quantifier?
 
 atom -> .type
 	| .identifier
 	| .lexeme
 	| .self
+
+group -> "(" chunks ")"
 
 quantifier -> .quantifier | "{" .number ("," .number?)? "}"
 
