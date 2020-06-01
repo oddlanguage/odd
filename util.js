@@ -76,3 +76,23 @@ export const partition = (target, predicate) =>
 	target.reduce((partitions, value) =>
 		(partitions[Number(!predicate(value))].push(value), partitions),
 		[[], []]);
+
+// TODO: UGLY: This can be nicer
+export const splitArray = (target, separator) => {
+	const chunks = [];
+	const splitHere = Symbol("Split here");
+	const check = item => (typeof separator === "function" && separator(item) || separator === item)
+		? splitHere
+		: item;
+	const raw = [splitHere, ...target.map(check)];
+
+	for (const item of raw) {
+		if (item === splitHere) {
+			chunks.push([]);
+		} else {
+			chunks[chunks.length - 1].push(item);
+		}
+	}
+
+	return chunks;
+}

@@ -26,18 +26,22 @@ To use the Odd compiler (not finished), download it and run it through node:
 node -v
 # -> v13.12.0
 node --harmony ./odd/compiler.js metaodd.meta.odd
-# -> ✔️ Reading file DONE (280.80 μs)
-# -> ✔️ Generating lexer DONE (177.30 μs)
-# -> ✔️ Generating parser DONE (6.35 ms)
-# -> Tree {
-#      type: "program",
-#      children: [
-#        Tree { type: "metarule", children: [ ... ] },
-#        Tree { type: "metarule", children: [ ... ] },
-#        Tree { type: "metarule", children: [ ... ] },
-#        Tree { type: "metarule", children: [ ... ] },
-#        Tree { type: "metarule", children: [ ... ] },
-#        Tree { type: "metarule", children: [ ... ] } ] }
+# -> ✔️ Reading file DONE (222.30 μs)
+# -> ✔️ Generating lexer lexer DONE (135.30 μs)
+# -> ✔️ Parsing parser parser DONE (6.51 ms)
+# -> ✔️ Interpreting parser parser DONE (710.60 μs)
+# -> 
+# -> import Parser from "file:///C:/Git/Parser/Parser.js";
+# -> const { sequence, options, some, rule, type, lexeme, many, maybe } = Parser.combinators;
+# ->
+# -> export default new Parser()
+# ->     .rule("program", some(rule("metarule")))
+# ->     .rule("metarule", sequence(type("identifier"), lexeme("->"), rule("chunks"), options(type("end"), type("EOF"))))
+# ->     .rule("chunks", sequence(many(rule("chunk")), some(sequence(lexeme("|"), many(rule("chunk"))))))
+# ->     .rule("chunk", sequence(maybe(type("label")), options(rule("atom"), rule("group")), maybe(rule("quantifier"))))
+# ->     .rule("atom", options(type("type"), type("identifier"), type("lexeme"), type("self")))
+# ->     .rule("group", sequence(lexeme("("), rule("chunks"), lexeme(")")))
+# ->     .rule("quantifier", options(type("quantifier"), sequence(lexeme("{"), type("number"), maybe(sequence(lexeme(","), maybe(type("number")))), lexeme("}"))))
 ```
 Should work with some older versions of Node, but Odd is being developed with the newest versions of node to guarantee best performance and the newest javascript features.
 
@@ -50,9 +54,9 @@ When Odd is finished, it will be a standalone executable requiring no separate N
 Some work has yet to be done for odd to release as v1.0. The following is a list of compiler stages to get to **v1.0**:
 - [x] **0.1**: Lexical Analysis of `.meta.odd` files ([Read about the lexer generator](./Lexer/README.md) or [look at the metalexer](odd/metalexer.js)).
 - [x] **0.2**: Parsing of `.meta.odd` files  ([Read about the parser generator](./Parser/README.md) or [look at the metaparser](odd/metaparser.js)).
-- [ ] **0.3**: Building a parser from the parsed metalanguage
-- [ ] **0.4**: Parsing of `.odd` files
-- [ ] **0.5**: Lexical Analysis of `.odd` files
+- [x] **0.3**: Building a parser from the parsed metalanguage AST (\<docs pending...\>).
+- [ ] **0.4**: Lexical Analysis of `.odd` files
+- [ ] **0.5**: Parsing of `.odd` files
 - [ ] **0.6**: Semantic Analysis of `.odd` files
 - [ ] **0.7**: Type Validation of `.odd` files
 - [ ] **0.8**: At least one working compilation/transpilation target (probably javascript first)

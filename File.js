@@ -2,10 +2,11 @@
 
 import URL from "url";
 import fs from "fs";
+import { promises } from "dns";
 
 export default class File {
 
-	static async *stream (url, chunksize = 64 * 1024) {
+	static async *readStream (url, chunksize = 64 * 1024) {
 		const _url = URL.parse(url);
 
 		if (!_url.protocol)
@@ -35,6 +36,22 @@ export default class File {
 			}
 			default: throw new Error(`Unsupported protocol "${_url.protocol}".`);
 		}
+	}
+
+	// TODO: Actually make async writestream
+	static writeStream (path, data) {
+		let resolve;
+		let reject;
+		const promise = new Promise((res, rej) => {
+			resolve = res;
+			reject = rej;
+		});
+		fs.writeFile(path, data, err => {
+			return (err)
+				? reject(err)
+				: resolve(data);
+		});
+		return promise;
 	}
 
 }
