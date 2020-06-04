@@ -10,6 +10,9 @@ export default class Pipeline {
 	}
 
 	stage (name, handler) {
+		if (this._stages.has(name))
+			throw new Error(`Cannot save rule "${name}" muiltple times.`);
+
 		this._stages.set(name, new Stage(name, handler));
 		return this;
 	}
