@@ -1,19 +1,18 @@
 import Url from "url";
-import Interpreter from "../Interpreter/Interpreter.js";
 import { splitArray } from "../util.js";
 
 // TODO: This should probably not be its own file?
 // How is this linked to the parser generator?
 const url = Url.resolve(import.meta.url, "../Parser/Parser.js");
-const program = node => `import Parser from "${url}";\nconst { sequence, options, some, rule, type, lexeme, many, maybe } = Parser.combinators;\n\nexport default new Parser()\n\t${node.children.map(rule => `.rule("${rule.children[0].lexeme}", ${interpreter.interpret(rule)})`).join("\n\t")}`;
+const program = node => `import Parser from "${url}";\nconst { sequence, options, some, rule, type, lexeme, many, maybe } = Parser.combinators;\n\nexport default new Parser()\n\t${node.children.map(rule => `.rule("${rule.children[0].lexeme}", ${stringify(rule)})`).join("\n\t")}`;
 
-const metarule = node => interpreter.interpret(node.children[2]);
+const metarule = node => stringify(node.children[2]);
 
 const chunks = node => {
 	const containsAlternatives = node.children.find(node => node.type === "alternative");
 
 	const body = node.children.map(node => (node.type !== "alternative")
-		? interpreter.interpret(node)
+		? stringify(node)
 		: node);
 
 	const parsed = splitArray(body, node => node.type === "alternative").map(items => (items.length > 1)
@@ -45,7 +44,7 @@ const chunk = node => {
 		? node.children[(label) ? 2 : 1]
 		: null;
 		
-	let builder = interpreter.interpret(body);
+	let builder = stringify(body);
 	if (label)
 		builder = `label("${label.children[0].lexeme}", ${builder})`;
 	if (quantifier)
@@ -63,13 +62,21 @@ const atom = node => {
 	else return `rule("${lexeme}")`;
 };
 
-const group = node => interpreter.interpret(node.children[1]);
+const group = node => stringify(node.children[1]);
 
-const interpreter = new Interpreter();
-export default interpreter
-	.rule("program",     program)
-	.rule("metarule",    metarule)
-	.rule("chunks",      chunks)
-	.rule("chunk",       chunk)
-	.rule("atom",        atom)
-	.rule("group",       group);
+const rules = new Map([
+	["program",  program],
+	["metarule", metarule],
+	["chunks",   chunks],
+	["chunk",    chunk],
+	["atom",     atom],
+	["group",    group]]);
+
+const stringify = ast => {
+	const handler = rules.get(ast.type);
+	if (!handler)
+		throw `No rule defined for nodes of type "${ast.type}".`;
+	return handler(ast);
+}
+
+export default stringify;
