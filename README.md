@@ -26,22 +26,24 @@ To use the Odd compiler (not finished), download it and run it through node:
 node -v
 # -> v13.12.0
 node --harmony ./odd/compiler.js metaodd.meta.odd
-# -> ✔️ Reading file DONE (222.30 μs)
-# -> ✔️ Generating lexer lexer DONE (135.30 μs)
-# -> ✔️ Parsing parser parser DONE (6.51 ms)
-# -> ✔️ Interpreting parser parser DONE (710.60 μs)
-# -> 
-# -> import Parser from "file:///C:/Git/Parser/Parser.js";
-# -> const { sequence, options, some, rule, type, lexeme, many, maybe } = Parser.combinators;
-# ->
-# -> export default new Parser()
-# ->     .rule("program", some(rule("metarule")))
-# ->     .rule("metarule", sequence(type("identifier"), lexeme("->"), rule("chunks"), options(type("end"), type("EOF"))))
-# ->     .rule("chunks", sequence(many(rule("chunk")), some(sequence(lexeme("|"), many(rule("chunk"))))))
-# ->     .rule("chunk", sequence(maybe(type("label")), options(rule("atom"), rule("group")), maybe(rule("quantifier"))))
-# ->     .rule("atom", options(type("type"), type("identifier"), type("lexeme"), type("self")))
-# ->     .rule("group", sequence(lexeme("("), rule("chunks"), lexeme(")")))
-# ->     .rule("quantifier", options(type("quantifier"), sequence(lexeme("{"), type("number"), maybe(sequence(lexeme(","), maybe(type("number")))), lexeme("}"))))
+# -> ✔️ Reading file DONE (311.40 μs)
+# -> ✔️ Generating lexer lexer DONE (164.30 μs)
+# -> ✔️ Parsing parser parser DONE (6.47 ms)
+# -> ✔️ Waiting a bit to build suspense DONE (2.00 s)
+# -> ✔️ Generating parser DONE (753.00 μs)
+# -> ✔️ Saving parser DONE (829.50 μs)
+# -> ✔️ Parsing original file with generated parser DONE (6.29 ms)
+# -> Tree {
+# ->   type: 'program',
+# ->   children: [
+# ->     Tree { type: 'metarule', children: [Array] },
+# ->     Tree { type: 'metarule', children: [Array] },
+# ->     Tree { type: 'metarule', children: [Array] },
+# ->     Tree { type: 'metarule', children: [Array] },
+# ->     Tree { type: 'metarule', children: [Array] },
+# ->     Tree { type: 'metarule', children: [Array] },
+# ->     Tree { type: 'metarule', children: [Array] } ] }
+# -> ✔️ Cleanup DONE (303.70 μs)
 ```
 Should work with some older versions of Node, but Odd is being developed with the newest versions of node to guarantee best performance and the newest javascript features.
 
