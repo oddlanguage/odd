@@ -44,7 +44,7 @@ node --harmony ./odd/compiler.js metaodd.meta.odd
 # ->     Tree { type: 'metarule', children: [Array] } ] }
 # -> ✔️ Cleanup DONE (303.70 μs)
 ```
-Should work with some older versions of Node, but Odd is being developed with the newest versions of node to guarantee best performance and the newest javascript features.
+Should work with some older versions of Node, but Odd is being developed with the newest versions of node to guarantee best performance and the newest javascript features for the developers' sake.
 
 When Odd is finished, it will be a standalone executable requiring no separate Node installation.
 
@@ -64,6 +64,7 @@ Some work has yet to be done for odd to release as v1.0. The following is a list
 - [ ] **0.9**: Type Validation of `.odd` files
 - [ ] **0.10**: At least one working compilation/transpilation target (probably javascript first)
 - [ ] **0.11**: Decoupling of compiler compiler and Odd's implementation to respective separate repos.
+- [ ] **0.12**: Create an executable binary.
 
 <br/>
 <br/>
