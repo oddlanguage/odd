@@ -76,5 +76,5 @@ Conceptualised and authored by [@maanlamp](https://github.com/maanlamp). Feel fr
 <br/>
 
 ## © License
-Copyright 2020 Maanlamp.
+Copyright 2018-2020 Maanlamp.
 [This project is licensed under MIT](./LICENSE.txt).
