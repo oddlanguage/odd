@@ -1,14 +1,15 @@
 "use strict";
 
 import Util from "util";
-import { overwrite, capitalise } from "../util.js";
+import { overwrite, capitalise, wait } from "../util.js";
 import Path from "path";
-import Pipeline from "./Pipeline/Pipeline.js";
-import File from "../File.js";
+import Pipeline from "../Pipeline/Pipeline.js";
+import File from "../File/File.js";
 import Url from 'url';
 import metalexer from "./metalexer.js";
 import metaparser from "./metaparser.js";
-import interpreter from "./interpreter.js";
+import stringify from "./stringify.js";
+import fs from "fs";
 
 const hyphenLike = /^[-–]/; // Some terminals/hosts replace hyphens with en/em-dashes... wtf???
 const files = process.argv
@@ -20,21 +21,36 @@ if (!files.length) {
 	process.exit(1);
 }
 
+const pathFromHere = url =>
+	"file://"
+	+ Path.resolve(
+			Path.dirname(
+				Url.fileURLToPath(import.meta.url)),
+		url);
+
 const pipes = [
 	new Pipeline()
 		.stage("reading file",
-			() => File.readStream(
-				"file:"
-				+ Path.resolve(
-						Path.dirname(
-							Url.fileURLToPath(import.meta.url)),
-					files[0])))
+			() => File.readStream(pathFromHere(files[0])))
 		.stage("generating lexer lexer",
 			stream => metalexer.lex(stream))
 		.stage("parsing parser parser",
 			tokens => metaparser.parse(tokens))
-		.stage("interpreting parser parser",
-			result => interpreter.interpret(result.AST()))
+		.stage("waiting a bit to build suspense",
+			x => wait(2000, x))
+		.stage("generating parser",
+			result => stringify(result.AST()))
+		.stage("saving parser",
+			data => File.writeStream(pathFromHere("../TEST.js"), data))
+		.stage("parsing original file with generated parser",
+			async () => {
+				const parser = (await import(pathFromHere("../TEST.js"))).default;
+				const tokens = metalexer.lex(File.readStream(pathFromHere(files[0])));
+				const program = await parser.parse(tokens);
+				console.log(program.AST());
+			})
+		.stage("cleanup",
+			async () => await fs.promises.unlink(Url.fileURLToPath(pathFromHere("../TEST.js"))))
 ];
 
 Object.assign(Util.inspect.styles, {
@@ -54,6 +70,6 @@ const inspect = result => console.log(Util.inspect(result, false, Infinity, true
 pipes.map(
 	pipe => pipe
 		.process()
-		.then(result => console.log("\n"+result+"\n"))
+		.then(result => inspect(result))
 		.catch(error => overwrite(
 			`❌ ${capitalise(error.name || "Internal")} ERROR: ${(error?.message?.stack) ? error.message.stack.split("\n").filter(ln => !(/internal\//.test(ln))).join("\n") : error.message || error}`)));
