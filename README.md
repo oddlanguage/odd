@@ -29,7 +29,6 @@ node --harmony ./odd/compiler.js metaodd.meta.odd
 # -> ✔️ Reading file DONE (311.40 μs)
 # -> ✔️ Generating lexer lexer DONE (164.30 μs)
 # -> ✔️ Parsing parser parser DONE (6.47 ms)
-# -> ✔️ Waiting a bit to build suspense DONE (2.00 s)
 # -> ✔️ Generating parser DONE (753.00 μs)
 # -> ✔️ Saving parser DONE (829.50 μs)
 # -> ✔️ Parsing original file with generated parser DONE (6.29 ms)
