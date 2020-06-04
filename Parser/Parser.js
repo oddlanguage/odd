@@ -34,8 +34,6 @@ export default class Parser {
 	// TODO: parse binary format (requires binary lexing first)?
 
 	async parse (stream) {
-		// TODO: 
-
 		for await (const token of stream) {
 			this.#tokens.push(token);
 		}
