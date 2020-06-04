@@ -2,7 +2,6 @@
 
 import URL from "url";
 import fs from "fs";
-import { promises } from "dns";
 
 export default class File {
 
@@ -39,7 +38,13 @@ export default class File {
 	}
 
 	// TODO: Actually make async writestream
+	// TODO: Replicate the return value(s) of Node internal readstream
 	static writeStream (path, data) {
+		if (!path.startsWith("file:"))
+			throw new Error(`Cannot work with non-file protocol urls (yet?).`);
+		
+		path = URL.fileURLToPath(path);
+
 		let resolve;
 		let reject;
 		const promise = new Promise((res, rej) => {
@@ -49,7 +54,7 @@ export default class File {
 		fs.writeFile(path, data, err => {
 			return (err)
 				? reject(err)
-				: resolve(data);
+				: resolve();
 		});
 		return promise;
 	}
