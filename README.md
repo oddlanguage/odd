@@ -56,13 +56,15 @@ When Odd is finished, it will be a standalone executable requiring no separate N
 Some work has yet to be done for odd to release as v1.0. The following is a list of compiler stages to get to **v1.0**:
 - [x] **0.1**: Lexical Analysis of `.meta.odd` files ([Read about the lexer generator](./Lexer/README.md) or [look at the metalexer](odd/metalexer.js)).
 - [x] **0.2**: Parsing of `.meta.odd` files  ([Read about the parser generator](./Parser/README.md) or [look at the metaparser](odd/metaparser.js)).
-- [x] **0.3**: Building a parser from the parsed metalanguage AST (\<docs pending...\>).
-- [ ] **0.4**: Lexical Analysis of `.odd` files
-- [ ] **0.5**: Parsing of `.odd` files
-- [ ] **0.6**: Semantic Analysis of `.odd` files
-- [ ] **0.7**: Type Validation of `.odd` files
-- [ ] **0.8**: At least one working compilation/transpilation target (probably javascript first)
-- [ ] **0.9**: Decoupling of compiler compiler and Odd's implementation to respective separate repos.
+- [x] **0.3**: Building a parser from the parsed metalanguage AST ([Look at the stringifier](./odd/stringify.js)).
+- [ ] **0.4**: Integrate the definition of a lexer into a meta.odd file.
+- [ ] **0.4**: Integrate the means of code generation into a meta.odd file.
+- [ ] **0.6**: Lexical Analysis of `.odd` files
+- [ ] **0.7**: Parsing of `.odd` files
+- [ ] **0.8**: Semantic Analysis of `.odd` files
+- [ ] **0.9**: Type Validation of `.odd` files
+- [ ] **0.10**: At least one working compilation/transpilation target (probably javascript first)
+- [ ] **0.11**: Decoupling of compiler compiler and Odd's implementation to respective separate repos.
 
 <br/>
 <br/>
