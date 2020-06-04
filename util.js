@@ -62,8 +62,8 @@ export const overwrite = input => {
 	write(input);
 };
 
-export const wait = ms =>
-	new Promise(res => setTimeout(res, ms));
+export const wait = (ms, value) =>
+	new Promise(res => setTimeout(res.bind(null, value), ms));
 
 export const enumerable = target => {
 	const obj = {};
