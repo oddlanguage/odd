@@ -2,7 +2,7 @@ program -> metarule*
 
 metarule -> .identifier "->" chunks (.end | .EOF)
 
-chunks -> chunk+ ("|" chunk+)*
+chunks -> chunk+ (.alternative chunk+)*
 
 chunk -> .label? value quantifier?
 
