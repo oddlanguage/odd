@@ -8,8 +8,7 @@ import Location from "./Location.js";
 
 export default class Lexer {
 
-	// TODO: Use next js #private fields instead
-	//	of underscored this._fields.
+	#rules = new Map();
 
 	// TODO: Move EOF functionality out of the
 	//	parser combinators into the lexer,
@@ -21,29 +20,25 @@ export default class Lexer {
 
 	// TODO: Lex binary format?
 
-	constructor () {
-		this._rules = new Map();
-	}
-
 	define (name, pattern) {
-		this._rules.set(name, Rule.compile(name, pattern, Rule.types.define, this._rules));
+		this.#rules.set(name, Rule.compile(name, pattern, Rule.types.define, this.#rules));
 		return this;
 	}
 
 	ignore (name, pattern) {
-		this._rules.set(name, Rule.compile(name, pattern, Rule.types.ignore, this._rules));
+		this.#rules.set(name, Rule.compile(name, pattern, Rule.types.ignore, this.#rules));
 		return this;
 	}
 
 	rule (name, pattern) {
-		this._rules.set(name, Rule.compile(name, pattern, Rule.types.rule, this._rules));
+		this.#rules.set(name, Rule.compile(name, pattern, Rule.types.rule, this.#rules));
 		return this;
 	}
 
 	async *lex (input) {
 		let line = 1;
 		let char = 1;
-		const rules = [...this._rules].filter(entry => entry[1].type !== Rule.types.define);
+		const rules = [...this.#rules].filter(entry => entry[1].type !== Rule.types.define);
 		const stream = (typeof input === "string")
 			? [input]
 			: input;

@@ -6,14 +6,14 @@ import fs from "fs";
 export default class File {
 
 	static async *readStream (url, chunksize = 64 * 1024) {
-		const _url = URL.parse(url);
+		const parsedUrl = URL.parse(url);
 
-		if (!_url.protocol)
+		if (!parsedUrl.protocol)
 			throw new Error(`No/invalid protocol in "${url}".`);
 		
-		switch (_url.protocol) {
+		switch (parsedUrl.protocol) {
 			case "file:": {
-				const stream = fs.createReadStream(_url.pathname, {
+				const stream = fs.createReadStream(parsedUrl.pathname, {
 					encoding: "utf8",
 					highWaterMark: chunksize
 				});
@@ -33,7 +33,7 @@ export default class File {
 					yield buffer;
 				break;
 			}
-			default: throw new Error(`Unsupported protocol "${_url.protocol}".`);
+			default: throw new Error(`Unsupported protocol "${parsedUrl.protocol}".`);
 		}
 	}
 

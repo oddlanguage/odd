@@ -5,28 +5,27 @@ import StageError from "./StageError.js";
 
 export default class Pipeline {
 
-	constructor () {
-		this._stages = new Map();
-	}
+	#stages = new Map();
 
 	stage (name, handler) {
-		if (this._stages.has(name))
+		if (this.#stages.has(name))
 			throw new Error(`Cannot save rule "${name}" muiltple times.`);
 
-		this._stages.set(name, new Stage(name, handler));
+		this.#stages.set(name, new Stage(name, handler));
 		return this;
 	}
 
 	async process (input) {
-		let _name;
+		let name;
 		try {
-			for (const [name, stage] of this._stages) {
-				_name = name;
+			for (const [stageName, stage] of this.#stages) {
+				name = stageName;
 				input = await stage.handler(input);
 			}
 			return input;
 		} catch (message) {
-			throw new StageError(_name, message);
+			// TODO: you shouldn't really thow strings, so we shouldn't enforce it like this
+			throw new StageError(name, message);
 		}
 	}
 
