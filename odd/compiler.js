@@ -36,8 +36,6 @@ const pipes = [
 			stream => metalexer.lex(stream))
 		.stage("parsing parser parser",
 			tokens => metaparser.parse(tokens))
-		.stage("waiting to create suspense",
-			x => wait(2000, x))
 		.stage("generating parser",
 			result => stringify(result.AST()))
 		.stage("saving parser",
