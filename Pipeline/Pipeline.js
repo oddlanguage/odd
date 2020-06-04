@@ -1,20 +1,7 @@
 "use strict";
 
-import { write, overwrite, formatTime, sum } from "../util.js";
-import { performance } from "perf_hooks";
-
-// BUG: Clocks are displayed as ??.
-// 	Pretty sure that microsoft terminal doesn't
-// 	properly display the clocks, but maybe
-// 	I'm screwing up here?
-
-const showTicker = (interval = 16) => {
-	const clocks = ["🕐","🕑","🕒","🕓","🕔","🕕","🕖","🕗","🕘","🕙","🕚","🕛"];
-	let i = 0;
-	return setInterval(
-		write.bind(null, clocks[i++ % clocks.length] + " "),
-		interval);
-};
+import Stage from "./Stage.js";
+import StageError from "./StageError.js";
 
 export default class Pipeline {
 
@@ -24,35 +11,22 @@ export default class Pipeline {
 		if (this.#stages.has(name))
 			throw new Error(`Cannot save rule "${name}" multiple times.`);
 
-		this.#stages.set(name, handler);
+		this.#stages.set(name, new Stage(name, handler));
 		return this;
 	}
 
-	// TODO: Maybe hijack the stdout so that
-	// 	stages can properly log stuff without
-	// 	screwing up the rest of the stages' output?
 	async process (input) {
-		const times = new Map();
-		const ticker = showTicker(100);
-
+		let name;
 		try {
-			for (const [name, handler] of this.#stages) {
-				overwrite(`🕛 ${name}... `);
-				const before = performance.now();
-				input = await handler(input);
-				const elapsed = performance.now() - before;
-				times.set(name, elapsed);
-				overwrite(`✔️ ${name} DONE (${formatTime(elapsed)})\n`);
+			for (const [stageName, stage] of this.#stages) {
+				name = stageName;
+				input = await stage.handler(input);
 			}
+			return input;
 		} catch (message) {
-			// TODO: Message should be an error object, not a string
-			console.log(`❌ ${message.toString()}`);
-		} finally {
-			clearInterval(ticker);
+			// TODO: you shouldn't really thow strings, so we shouldn't enforce it like this
+			throw new StageError(name, message);
 		}
-
-		console.log(`Pipeline processed in ${formatTime(sum([...times.values()]))}.`)
-		return input;
 	}
 
 };

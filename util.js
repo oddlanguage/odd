@@ -96,5 +96,3 @@ export const splitArray = (target, separator) => {
 
 	return chunks;
 }
-
-export const sum = arr => arr.reduce((x, y) => x + y, 0);

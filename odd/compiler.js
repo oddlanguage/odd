@@ -36,14 +36,17 @@ const pipes = [
 			stream => metalexer.lex(stream))
 		.stage("parsing parser parser",
 			tokens => metaparser.parse(tokens))
-		.stage("waiting to create suspense",
-			x => wait(2000, x))
 		.stage("generating parser",
 			result => stringify(result.AST()))
 		.stage("saving parser",
 			data => File.writeStream(pathFromHere("../TEST.js"), data))
 		.stage("parsing original file with generated parser",
-			async () => (await import(pathFromHere("../TEST.js"))).default.parse(metalexer.lex(File.readStream(pathFromHere(files[0])))))
+			async () => {
+				const parser = (await import(pathFromHere("../TEST.js"))).default;
+				const tokens = metalexer.lex(File.readStream(pathFromHere(files[0])));
+				const program = await parser.parse(tokens);
+				console.log(program.AST());
+			})
 		.stage("cleanup",
 			async () => await fs.promises.unlink(Url.fileURLToPath(pathFromHere("../TEST.js"))))
 ];
@@ -65,5 +68,6 @@ const inspect = result => console.log(Util.inspect(result, false, Infinity, true
 pipes.map(
 	pipe => pipe
 		.process()
-		.catch(error => console.error(error))
-		.then(result => inspect(result)));
+		.then(result => inspect(result))
+		.catch(error => overwrite(
+			`❌ ${capitalise(error.name || "Internal")} ERROR: ${(error?.message?.stack) ? error.message.stack.split("\n").filter(ln => !(/internal\//.test(ln))).join("\n") : error.message || error}`)));
