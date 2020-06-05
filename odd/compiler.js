@@ -9,6 +9,7 @@ import metalexer from "./metalexer.js";
 import metaparser from "./metaparser.js";
 import stringify from "./stringify.js";
 import fs from "fs";
+import { countSuffix } from "../util.js";
 
 const hyphenLike = /^[-–]/; // Some terminals/hosts replace hyphens with en/em-dashes... wtf???
 const files = process.argv
@@ -61,8 +62,10 @@ Object.assign(Util.inspect.styles, {
 
 const inspect = result => console.log(Util.inspect(result, false, Infinity, true));
 
-pipes.map(
-	pipe => pipe
-		.process()
-		.catch(error => console.error(error))
-		.then(result => inspect(result)));
+Promise.all(
+	pipes.map(
+		pipe => pipe
+			.process()
+			.then(result => inspect(result))))
+	.then(results => console.log(`\nCompilation done; processed ${pipes.length} ${countSuffix("pipe", pipes.length)}.`))
+	.catch(error => console.error(error));
