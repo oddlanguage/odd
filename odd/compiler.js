@@ -1,7 +1,6 @@
 "use strict";
 
 import Util from "util";
-import { overwrite, capitalise, wait } from "../util.js";
 import Path from "path";
 import Pipeline from "../Pipeline/Pipeline.js";
 import File from "../File/File.js";
@@ -34,9 +33,9 @@ const pipes = [
 	new Pipeline()
 		.stage("reading file",
 			() => File.readStream(pathFromHere(files[0])))
-		.stage("generating lexer lexer",
+		.stage("generating lexer",
 			stream => metalexer.lex(stream))
-		.stage("parsing parser parser",
+		.stage("parsing parser",
 			tokens => metaparser.parse(tokens))
 		.stage("generating parser",
 			result => stringify(result.AST()))
@@ -45,7 +44,7 @@ const pipes = [
 		.stage("parsing original file with generated parser",
 			async () => (await import(temporaryParser)).default.parse(metalexer.lex(File.readStream(pathFromHere(files[0])))))
 		.stage("cleanup",
-			async () => await fs.promises.unlink(Url.fileURLToPath(temporaryParser)))
+			() => fs.promises.unlink(Url.fileURLToPath(temporaryParser)))
 ];
 
 Object.assign(Util.inspect.styles, {
