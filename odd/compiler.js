@@ -21,19 +21,22 @@ if (!files.length) {
 	process.exit(1);
 }
 
-const pathFromHere = url =>
+const pathFromRoot = url =>
 	"file://"
 	+ Path.resolve(
 			Path.dirname(
 				Url.fileURLToPath(import.meta.url)),
+		"../",
 		url);
+
+const pathFromHere = url => pathFromRoot(Path.resolve("odd/", url));
 
 const temporaryParser = pathFromHere("./TEST.js");
 
 const pipes = [
 	new Pipeline()
-		.stage("reading file",
-			() => File.readStream(pathFromHere(files[0])))
+		.stage(`reading ${files[0]}`,
+			() => File.readStream(pathFromRoot(files[0])))
 		.stage("generating lexer",
 			stream => metalexer.lex(stream))
 		.stage("parsing parser",
@@ -43,7 +46,7 @@ const pipes = [
 		.stage("saving parser",
 			data => File.writeStream(temporaryParser, data))
 		.stage("parsing original file with generated parser",
-			async () => (await import(temporaryParser)).default.parse(metalexer.lex(File.readStream(pathFromHere(files[0])))))
+			async () => (await import(temporaryParser)).default.parse(metalexer.lex(File.readStream(pathFromRoot(files[0])))))
 		.stage("cleanup",
 			() => fs.promises.unlink(Url.fileURLToPath(temporaryParser)))
 ];

@@ -45,7 +45,7 @@ export default class Pipeline {
 				times.set(name, elapsed);
 				overwrite(`✔️ ${capitalised} DONE (${formatTime(elapsed)})\n`);
 			}
-			console.log(`Pipeline processed in ${formatTime(sum([...times.values()]))}.`);
+			console.log(`🏁 Pipeline processed in ${formatTime(sum([...times.values()]))}.`);
 			return input;
 		} catch (message) {
 			// TODO: Message should be an error object, not a string

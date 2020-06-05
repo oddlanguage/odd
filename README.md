@@ -25,24 +25,18 @@ To use the Odd compiler (not finished), download it and run it through node:
 ```shell
 node -v
 # -> v13.12.0
-node --harmony ./odd/compiler.js metaodd.meta.odd
-# -> ✔️ Reading file DONE (311.40 μs)
-# -> ✔️ Generating lexer lexer DONE (164.30 μs)
-# -> ✔️ Parsing parser parser DONE (6.47 ms)
-# -> ✔️ Generating parser DONE (753.00 μs)
-# -> ✔️ Saving parser DONE (829.50 μs)
-# -> ✔️ Parsing original file with generated parser DONE (6.29 ms)
-# -> Tree {
-# ->   type: 'program',
-# ->   children: [
-# ->     Tree { type: 'metarule', children: [Array] },
-# ->     Tree { type: 'metarule', children: [Array] },
-# ->     Tree { type: 'metarule', children: [Array] },
-# ->     Tree { type: 'metarule', children: [Array] },
-# ->     Tree { type: 'metarule', children: [Array] },
-# ->     Tree { type: 'metarule', children: [Array] },
-# ->     Tree { type: 'metarule', children: [Array] } ] }
-# -> ✔️ Cleanup DONE (303.70 μs)
+node --harmony ./odd/compiler.js ./odd/metaodd.meta.odd
+# -> ✔️ Reading ./odd/metaodd.meta.odd DONE (165.90 μs)
+# -> ✔️ Generating lexer DONE (142.50 μs)
+# -> ✔️ Parsing parser DONE (6.52 ms)
+# -> ✔️ Generating parser DONE (1.11 ms)
+# -> ✔️ Saving parser DONE (1.04 ms)
+# -> ✔️ Parsing original file with generated parser DONE (3.79 ms)
+# -> ✔️ Cleanup DONE (275.70 μs)
+# -> 🏁 Pipeline processed in 13.04 ms.
+# -> undefined
+# -> 
+# -> Compilation done; processed 1 pipe.
 ```
 Should work with some older versions of Node, but Odd is being developed with the newest versions of node to guarantee best performance and the newest javascript features for the developers' sake.
 
