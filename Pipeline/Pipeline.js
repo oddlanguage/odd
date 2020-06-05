@@ -1,6 +1,6 @@
 "use strict";
 
-import { write, overwrite, formatTime, sum } from "../util.js";
+import { write, overwrite, formatTime, sum, capitalise } from "../util.js";
 import { performance } from "perf_hooks";
 
 // BUG: Clocks are displayed as ??.
@@ -37,22 +37,22 @@ export default class Pipeline {
 
 		try {
 			for (const [name, handler] of this.#stages) {
-				overwrite(`🕛 ${name}... `);
+				const capitalised = capitalise(name);
+				overwrite(`🕛 ${capitalised}... `);
 				const before = performance.now();
 				input = await handler(input);
 				const elapsed = performance.now() - before;
 				times.set(name, elapsed);
-				overwrite(`✔️ ${name} DONE (${formatTime(elapsed)})\n`);
+				overwrite(`✔️ ${capitalised} DONE (${formatTime(elapsed)})\n`);
 			}
+			console.log(`Pipeline processed in ${formatTime(sum([...times.values()]))}.`);
+			return input;
 		} catch (message) {
 			// TODO: Message should be an error object, not a string
-			console.log(`❌ ${message.toString()}`);
+			overwrite(`❌ ${message.toString()}\n`);
 		} finally {
 			clearInterval(ticker);
 		}
-
-		console.log(`Pipeline processed in ${formatTime(sum([...times.values()]))}.`)
-		return input;
 	}
 
 };

@@ -28,6 +28,8 @@ const pathFromHere = url =>
 				Url.fileURLToPath(import.meta.url)),
 		url);
 
+const temporaryParser = pathFromHere("./TEST.js");
+
 const pipes = [
 	new Pipeline()
 		.stage("reading file",
@@ -39,11 +41,11 @@ const pipes = [
 		.stage("generating parser",
 			result => stringify(result.AST()))
 		.stage("saving parser",
-			data => File.writeStream(pathFromHere("../TEST.js"), data))
+			data => File.writeStream(temporaryParser, data))
 		.stage("parsing original file with generated parser",
-			async () => (await import(pathFromHere("../TEST.js"))).default.parse(metalexer.lex(File.readStream(pathFromHere(files[0])))))
+			async () => (await import(temporaryParser)).default.parse(metalexer.lex(File.readStream(pathFromHere(files[0])))))
 		.stage("cleanup",
-			async () => await fs.promises.unlink(Url.fileURLToPath(pathFromHere("../TEST.js"))))
+			async () => await fs.promises.unlink(Url.fileURLToPath(temporaryParser)))
 ];
 
 Object.assign(Util.inspect.styles, {

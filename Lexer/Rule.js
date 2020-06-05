@@ -11,6 +11,9 @@ export default class Rule {
 	};
 
 	// TODO: What if a pattern references a ceapture group? ['""].+?(\1)
+	// TODO: BUG: passing just a string instead of a regex doesn't work.
+	// 	Why do we .replace(/./g, char => `\\${char}`)??? Seems to be the
+	// 	bug's cause and unnecessary...
 	static compile (name, pattern, type, rules) {
 		if (typeof pattern === "string")
 			pattern = new RegExp(pattern.replace(/./g, char => `\\${char}`));
