@@ -55,7 +55,7 @@ export default class Lexer {
 					matches.push(match);
 				}
 
-				if (!matches[0]) {
+				if (!matches.length) {
 					throw new Error(`Unknown lexeme "${escapeString(String.fromCodePoint(chunk.codePointAt(index)))}" at line ${line}, char ${char}.`);
 				}
 				

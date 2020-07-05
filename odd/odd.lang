@@ -1,0 +1,33 @@
+// TODO: Come up with a lexer ignoration/definition syntax (currently, # is ignore)
+
+language odd
+	lexer
+		whitespace       # /[ \f\v\t]+/
+		comment          # /\/\/.*(\n+|$)/
+		end              = /(?:\r*\n){2,}/
+		newline          # /(?:\r*\n)+/
+		lexeme           = /".*?(?<!\\)"/
+		identifier       = /[a-z-A-Z][a-z-A-Z-]*/
+		label            = /{identifier}:/
+		type             = /\.{identifier}/
+		arrow            = /->/
+		alternative      = /\s*\|/
+		quantifier       = /[\*\+\?]/
+		quantifier-start = /{/
+		number           = /\d+/
+		comma            = /,/
+		quantifier-end   = /}/
+		invert           = /!/
+		group-start      = /(/
+		group-end        = /)/
+		self             = /$/
+
+	parser
+		program    = metarule*
+		metarule   = .identifier .arrow chunks end
+		chunks     = chunk+ (.alternative chunk+)*
+		chunk      = .label? value quantifier?
+		value      = group | .type | .identifier | .lexeme | .self
+		group      = .group-start chunks .group-end
+		quantifier = .quantifier | .quantifier-start .number (.comma .number?)? .quantifier-end
+		end        = .end | .EOF

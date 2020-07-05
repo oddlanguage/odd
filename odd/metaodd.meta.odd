@@ -1,6 +1,6 @@
 program -> metarule*
 
-metarule -> .identifier "->" chunks (.end | .EOF)
+metarule -> .identifier .arrow chunks end
 
 chunks -> chunk+ (.alternative chunk+)*
 
@@ -12,6 +12,8 @@ value -> group
 	| .lexeme
 	| .self
 
-group -> "(" chunks ")"
+group -> .group-start chunks .group-end
 
-quantifier -> .quantifier | "{" .number ("," .number?)? "}"
+quantifier -> .quantifier | .quantifier-start .number (.comma .number?)? .quantifier-end
+
+end -> .end | .EOF

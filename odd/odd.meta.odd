@@ -1,0 +1,20 @@
+program -> statement*
+
+statement -> expression ";"
+
+expression -> assignment
+	| lambda
+	| application
+	| atom
+	| "(" expression ")"
+
+assignment -> .identifier "=" expression
+
+lambda -> .identifier "->" expression
+
+application -> .identifier expression
+
+atom -> .identifier
+	| .number
+	| .string
+	| .literal

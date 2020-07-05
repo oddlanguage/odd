@@ -4,41 +4,58 @@ import Result from "./Result.js";
 import Token from "../Lexer/Token.js";
 import { enumerable } from "../util.js";
 
+// TODO: Update parsers to work with a better model,
+// take inspitation from this article:
+// https://medium.com/@JosephJnk/building-a-functional-parsing-library-in-javascript-and-flow-7d738088237f
+
 const types = enumerable({
 	token: Symbol("token"),
 	sequence: Symbol("sequence"),
 	some: Symbol("some"),
+	many: Symbol("many"),
 	maybe: Symbol("maybe")
 });
 
 const prependArticle = object =>
-	((/^[aeoui]/.test(object))
+	((/^[aeoui]/i.test(object))
 		? "an"
 		: "a")
 		+ " "
 		+ object;
 
+// TODO: Peek shouldn't be in here.
 const peek = (state, rules, tokens) =>
 	tokens[state.index] || Token.EOF;
 
 // TODO: For every parser that could allow it, let their arguments
 //	be either functions or strings, where a string X signifies lexeme(X)
 
+const fail = (expected, node) =>
+	Result.fail(`Expected ${prependArticle(expected)} at ${node.location}`);
+
+const success = (type, values, state) =>
+	(state.advance(), Result.success(type, values));
+
+const satisfy = (got, transformer, expected, state) =>
+	(transformer(got) === expected)
+		? success(types.token, [got], state)
+		: fail(expected, got);
+
 export const type = expected =>
-	(state, rules, tokens) => {
-		const node = peek(state, rules, tokens);
-		return (node.type !== expected)
-			? Result.fail(`Expected ${prependArticle(expected)} at ${node.location}`)
-			: (state.advance(), Result.success(types.token, [node]));
-	};
+	(state, rules, tokens) =>
+		satisfy(
+			peek(state, rules, tokens),
+			node => node.type,
+			expected,
+			state);
 
 export const lexeme = expected =>
-	(state, rules, tokens) => {
-		const node = peek(state, rules, tokens);
-		return (node.lexeme !== expected)
-			? Result.fail(`Expected "${expected}" at ${node.location}`)
-			: (state.advance(), Result.success(types.token, [node]));
-	};
+	(state, rules, tokens) =>
+		satisfy(
+			peek(state, rules, tokens),
+			node => node.lexeme,
+			expected,
+			state);
 
 export const options = (...parsers) =>
 	(state, rules, tokens) => {
@@ -105,11 +122,12 @@ export const many = parser =>
 		const last = state.save();
 
 		const result = some(parser)(state, rules, tokens);
-		if (result.children.length == 0) {
+		if (result.children.length === 0) {
 			state.restore(last);
 			result.ok = false;
 		}
 
+		result.type = types.many;
 		return result;
 	};
 
