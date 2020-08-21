@@ -230,16 +230,21 @@ MetaOdd defined in terms of itself:
 ```
 program -> metarule*
 
-metarule -> .identifier "->" chunks (end | EOF)
+metarule -> .identifier "->" chunks end
 
-chunks -> chunk ("|" chunk)*
+chunks -> chunk+ ("|" chunk+)*
 
-chunk -> ((.label? atom)+ | "(" chunks ")") quantifier?
+chunk -> .label? value quantifier?
 
-atom -> .type
+value -> group
+	| .type
 	| .identifier
 	| .lexeme
-	| .self
+	| "$"
+
+group -> "(" chunks ")"
 
 quantifier -> .quantifier | "{" .number ("," .number?)? "}"
+
+end -> .end | .EOF
 ```
