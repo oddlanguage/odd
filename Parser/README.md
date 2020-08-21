@@ -237,10 +237,10 @@ chunks -> chunk+ ("|" chunk+)*
 chunk -> .label? value quantifier?
 
 value -> group
-	| .type
-	| .identifier
-	| .lexeme
-	| "$"
+  | .type
+  | .identifier
+  | .lexeme
+  | "$"
 
 group -> "(" chunks ")"
 
