@@ -195,7 +195,7 @@ const program = some(
 const sentence = sequence(
   many(
     type("word")),
-    lexeme("."));
+  lexeme("."));
 
 export new Parser()
   .rule("program", program)
