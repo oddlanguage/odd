@@ -1,3 +1,0 @@
-a -> b -> c -> d -> e -> f -> 3;
-
-a (b c); // is the same as a b c;
