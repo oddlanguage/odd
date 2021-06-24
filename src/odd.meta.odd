@@ -1,0 +1,30 @@
+program = statements ";"?;
+
+statements = (type-declaration | expression) (";" statement)*;
+
+type-declaration = .identifier type-parameter* "::" type;
+
+type-parameter =
+	.identifier
+	| "(" type .identifier ")";
+
+type =
+	type "->" type
+	| type "|" type
+	| type "&" type
+	| "{" type-field* "}"
+	| "[" type* "]"
+	| literal
+	| type type
+	| "(" type ")";
+
+literal =
+	.identifier
+	| .constant
+	| .string
+	| .number
+	| .operator;
+
+type-field = type-key "::" type;
+
+type-key = literal+;

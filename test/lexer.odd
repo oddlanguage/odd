@@ -1,0 +1,70 @@
+Location :: {
+	line :: Number,
+	char :: Number
+};
+
+Token :: {
+	type :: String,
+	lexeme :: String,
+	location :: Location
+};
+
+State :: {
+	ok :: Boolean,
+	location :: Location,
+	patterns :: List Pattern,
+	lexed :: List Token,
+	rest :: String
+};
+
+BasePattern :: {
+	type :: String,
+	ignore :: Maybe Boolean
+};
+
+StringPattern :: {
+	pattern :: String
+};
+
+RegexPattern :: {
+	pattern :: Regex;
+};
+
+RecursivePattern :: {
+	start :: String | Regex,
+	patterns :: Maybe List Pattern,
+	end :: Maybe (String | Regex)
+};
+
+Pattern :: BasePattern & (StringPattern | RegexPattern | RecursivePattern);
+
+eat :: String -> Pattern -> State -> State;
+eat lexeme { type, ignore } state =
+	{ ...state, ok = true, line, char, rest = drop (size lexeme) state.rest, lexed = state.lexed .. { type, lexeme, location = { line, char } } } where
+		newlines = ((match r`\n\{asd}`g lexeme) @ 0) ?? 0,
+		line = state.line + newlines,
+		char = if newlines == 0 then state.char + size lexeme else 1;
+
+fail :: State -> State;
+fail state = { ...state, ok = false };
+
+match' :: Pattern -> State -> State;
+match' (StringPattern pattern) state = if starts-with pattern.pattern state.rest
+	then eat (take (size pattern.pattern)) pattern state
+	else fail state;
+
+match' (RegexPattern pattern) state = if starts-with pattern.pattern state.rest
+	then eat (match-at 0 pattern.pattern state.rest) pattern state
+	else fail state;
+
+match' (RecursivePattern pattern) state = throw `Not implemented.`;
+
+lexer :: List Pattern -> String -> List Token;
+export lexer patterns input = lex { ...state, rest: input } where
+	matchers = map match' patterns;
+	state = { position: { line: 1, char: 1 }, patterns, ok: false, lexed: [] },
+	lex (Maybe state) = if exists state
+		then if (size state.rest) == 0
+			then state.lexed
+			else lex (find (.ok) (map (f -> f state) matchers))
+		else [];
