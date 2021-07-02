@@ -1,7 +1,20 @@
 import { inspect } from "node:util";
 import lexer from "./lexer.js";
 import parser, { delimited, either, ignore, lexeme, node, oneOf, oneOrMore, optional, pair, rule, sequence, type, zeroOrMore } from "./parser.js";
-import { expect } from "./tests.js";
+import { compare } from "./tests.js";
+inspect.styles = {
+    string: "yellow",
+    number: "magenta",
+    bigint: "magenta",
+    boolean: "magenta",
+    symbol: "blue",
+    undefined: "magenta",
+    special: "blue",
+    null: "magenta",
+    date: "underline",
+    regexp: "yellow",
+    module: "underline"
+};
 export const print = (x, options) => (console.log((typeof x === "string") ? x : inspect(x, { colors: true, depth: options?.depth ?? Infinity, maxArrayLength: options?.max ?? Infinity })), x);
 export const pipe = (...fs) => (x) => fs.reduce((y, f) => f(y), x);
 const lex = lexer([
@@ -28,97 +41,94 @@ const parse = parser({
     "type-parameter": node("type-parameter")(either(type("identifier"), sequence([
         ignore(lexeme("(")),
         rule("type"),
+        type("identifier"),
         ignore(lexeme(")"))
     ]))),
-    "type": oneOf([
-        pair(node("type-plain")(either(type("identifier"), rule("literal"))), optional(rule("type-tail"))),
-        pair(node("type-map")(sequence([
-            ignore(lexeme("{")),
-            delimited(ignore(lexeme(",")))(rule("type-map-field")),
-            ignore(lexeme("}"))
-        ])), optional(rule("type-tail"))),
-        pair(node("type-list")(sequence([
-            ignore(lexeme("[")),
-            rule("type"),
-            ignore(lexeme("]"))
-        ])), optional(rule("type-tail"))),
+    "type": rule("type-function"),
+    "type-function": node("type-function")(sequence([
+        rule("type-union"),
+        optional(sequence([
+            ignore(lexeme("->")),
+            rule("type-function")
+        ]))
+    ])),
+    "type-union": node("type-union")(sequence([
+        rule("type-intersection"),
+        optional(sequence([
+            ignore(lexeme("|")),
+            rule("type-union")
+        ]))
+    ])),
+    "type-intersection": node("type-intersection")(sequence([
+        rule("type-application"),
+        optional(sequence([
+            ignore(lexeme("&")),
+            rule("type-intersection")
+        ]))
+    ])),
+    "type-application": node("type-application")(sequence([
+        rule("type-literal"),
+        optional(rule("type-application"))
+    ])),
+    "type-literal": oneOf([
+        rule("literal"),
+        rule("type-map"),
+        rule("type-list"),
         sequence([
             ignore(lexeme("(")),
             rule("type"),
-            ignore(lexeme(")")),
-            optional(rule("type-tail"))
+            ignore(lexeme(")"))
         ])
     ]),
     "literal": oneOf([
+        type("identifier"),
         type("constant"),
         type("string"),
         type("number")
+    ]),
+    "type-map": sequence([
+        ignore(lexeme("{")),
+        zeroOrMore(rule("type-map-field")),
+        ignore(lexeme("}"))
     ]),
     "type-map-field": node("type-map-field")(sequence([
         rule("type-map-key"),
         ignore(lexeme("::")),
         rule("type")
     ])),
-    "type-map-key": oneOrMore(type("identifier")),
-    "type-tail": oneOf([
-        pair(ignore(lexeme("->")), node("type-function")(rule("type"))),
-        pair(ignore(lexeme("|")), node("type-union")(rule("type"))),
-        pair(ignore(lexeme("&")), node("type-intersection")(rule("type"))),
-        node("type-application")(rule("type"))
+    "type-map-key": oneOrMore(rule("literal")),
+    "type-list": sequence([
+        ignore(lexeme("[")),
+        zeroOrMore(rule("type")),
+        ignore(lexeme("]"))
     ])
 });
-export const isToken = (leaf) => !!leaf.lexeme;
-const normalise = (node) => {
-    if (isToken(node))
-        return node;
-    for (const type of ["type-application", "type-function", "type-union", "type-intersection"]) {
-        for (let i = 0; i < node.children.length; i++) {
-            const next = node.children[i + 1];
-            if (next?.type !== type)
-                continue;
-            next.children.unshift(node.children[i]);
-            node.children.splice(i, 2, next);
-        }
-    }
-    for (const child of node.children)
-        normalise(child);
-    return node;
-};
 const first = (array) => array[0];
-const test = expect("Correct parse tree")({ type: "program", children: [
-        { type: "statement", children: [
-                { type: "type-declaration", children: [
-                        { type: "identifier", lexeme: "List" },
-                        { type: "type-map", children: [
-                                { type: "type-map-field", children: [
-                                        { type: "identifier", lexeme: "add" },
-                                        { type: "type-function", children: [
-                                                { type: "type-plain", children: [{ type: "identifier", lexeme: "a" }] },
-                                                { type: "type-function", children: [
-                                                        { type: "type-application", children: [
-                                                                { type: "type-plain", children: [{ type: "identifier", lexeme: "List" }] },
-                                                                { type: "type-plain", children: [{ type: "identifier", lexeme: "b" }] },
-                                                            ] },
-                                                        { type: "type-application", children: [
-                                                                { type: "type-plain", children: [{ type: "identifier", lexeme: "List" }] },
-                                                                { type: "type-union", children: [
-                                                                        { type: "type-plain", children: [{ type: "identifier", lexeme: "a" }] },
-                                                                        { type: "type-plain", children: [{ type: "identifier", lexeme: "b" }] }
-                                                                    ] }
-                                                            ] }
-                                                    ] }
-                                            ] }
-                                    ] }
-                            ] }
-                    ] }
-            ] }
-    ] });
-const interpreter = {
-    context: "internal",
-    run: pipe(lex, parse, first, print, normalise, x => { print(x); test(x); })
+const run = (context) => (...stages) => pipe(...stages);
+const isNode = (leaf) => !!leaf.children;
+const isToken = (leaf) => !leaf.children;
+const traverse = (f) => {
+    const traverse = (tree) => {
+        if (isToken(tree))
+            return;
+        for (const child of tree.children.filter(isNode))
+            traverse(child);
+        f(tree);
+    };
+    return (tree) => (traverse(tree), tree);
 };
-interpreter.run(`
-List :: {
-	add :: a -> (List b) -> List (a | b)
-};
+const flatten = traverse(tree => {
+    if (tree.children.length === 1 && isNode(tree.children[0])) {
+        tree.children.splice(0, 1, ...tree.children[0].children);
+    }
+});
+const ignoreLocation = traverse(tree => {
+    tree.children.filter(isToken).forEach((token) => {
+        token.location = { line: 0, char: 0 };
+    });
+});
+const interpret = run("internal")(lex, parse, first, flatten, ignoreLocation, print, ({ children }) => print(children.slice(1).every(child => compare(child, first(children)))));
+interpret(`
+a :: 1 2 & 3 | 4 -> 5 | 6 & 7 8 -> 9;
+a :: ((((1 2) & 3) | 4) -> ((5 | (6 & (7 8))) -> (9)));
 `);

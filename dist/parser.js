@@ -1,4 +1,5 @@
 import { performance } from "node:perf_hooks";
+import { stringifyToken } from "./lexer.js";
 import { print } from "./odd.js";
 const parser = (grammar) => (input) => {
     const result = grammar.program({
@@ -9,9 +10,8 @@ const parser = (grammar) => (input) => {
     if (!result.ok)
         throw result.reason;
     if (result.input.length) {
-        const peeked = peek(result);
         print(result.stack);
-        throw `Unexpected ${peeked?.type} "${peeked?.lexeme}".`;
+        throw `Unexpected ${stringifyToken(peek(result))}.`;
     }
     return result.stack;
 };
@@ -19,7 +19,7 @@ export default parser;
 export const peek = (state) => state.input[0];
 export const rule = (name) => (state) => {
     if (!state.grammar[name])
-        throw `Unkown grammar rule "${name}".`;
+        throw `Unknown grammar rule "${name}".`;
     return state.grammar[name](state);
 };
 export const succeed = (stack) => (input) => (state) => ({ ...state, ok: true, stack, input });
@@ -29,14 +29,14 @@ export const lexeme = (lexeme) => (state) => {
     const peeked = peek(state);
     return (peeked?.lexeme === lexeme)
         ? eat(1)(state)
-        : fail(`Expected "${lexeme}" but got "${peeked?.lexeme ?? "EOF"}".`)(state);
+        : fail(`Expected "${lexeme}" but got "${stringifyToken(peeked)}".`)(state);
 };
 const prefixIndefiniteArticle = (thing) => thing && `${/^[aeuioy]/.test(thing) ? "an" : "a"} ${thing}`;
 export const type = (type) => (state) => {
     const peeked = peek(state);
     return (peeked?.type === type)
         ? eat(1)(state)
-        : fail(`Expected ${prefixIndefiniteArticle(type)} but got ${prefixIndefiniteArticle(peeked?.type) ?? "EOF"}.`)(state);
+        : fail(`Expected ${prefixIndefiniteArticle(type)} but got ${stringifyToken(peeked)}.`)(state);
 };
 export const pair = (a, b) => (state) => {
     const result = a(state);

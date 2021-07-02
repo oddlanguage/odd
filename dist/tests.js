@@ -1,11 +1,9 @@
-import { isToken, print } from "./odd.js";
-const compare = (a, b) => Object.is(a, b) || (JSON.stringify(a) === JSON.stringify(b));
-export const stringify = (tree) => `(${(isToken(tree))
-    ? `"${tree.lexeme}"`
-    : `${tree.type} ${tree.children.map(stringify).join(" ")}`})`;
+import { isDeepStrictEqual } from "node:util";
+import { print } from "./odd.js";
+export const compare = (a, b) => isDeepStrictEqual(a, b);
 export const expect = (description) => (expected) => (got) => {
     if (!compare(expected, got))
-        throw `${description} FAIL:\nEXPECTED:\n${stringify(expected)}\nGOT:\n${stringify(got)}`;
+        throw `${description} FAIL:\nEXPECTED:\n${JSON.stringify(expected, null, 2)}\nGOT:\n${JSON.stringify(got, null, 2)}`;
     print(`${description} PASS`);
     return got;
 };

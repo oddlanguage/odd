@@ -1,3 +1,6 @@
+export const stringifyToken = (token) => (token)
+    ? `${token.type} "${token.lexeme}" at ${Object.entries(token.location).map(entry => entry.join(" ")).join(", ")}`
+    : "EOF";
 const didMatch = (match) => !!match;
 const apply = (...args) => (f) => f(...args);
 const compare = (a, b) => (a > b) ? 1 : (a === b) ? 0 : -1;
@@ -17,6 +20,8 @@ const lexer = (rules) => {
         if (lexeme)
             return { type, lexeme, ignore };
     });
+    let line = 1;
+    let char = 1;
     const lex = (input) => {
         if (input.length === 0)
             return [];
@@ -27,7 +32,17 @@ const lexer = (rules) => {
         if (longest.lexeme.length === 0)
             throw `Unknown character "${input.charAt(0)}".`;
         const { ignore, type, lexeme } = longest;
-        return (ignore ? [] : [{ type, lexeme }]).concat(lex(input.slice(lexeme.length)));
+        const location = { line, char };
+        for (let i = 0; i < lexeme.length; i++) {
+            const codepoint = lexeme.charAt(i);
+            if (/^[^\r\n]/.test(codepoint))
+                char++;
+            if (/^\r*\n/.test(codepoint)) {
+                char = 1;
+                line++;
+            }
+        }
+        return (ignore ? [] : [{ type, lexeme, location }]).concat(lex(input.slice(lexeme.length)));
     };
     return lex;
 };

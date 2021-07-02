@@ -8,15 +8,25 @@ type-parameter =
 	.identifier
 	| "(" type .identifier ")";
 
-type =
-	type "->" type
-	| type "|" type
-	| type "&" type
-	| "{" type-field* "}"
+type = type-function;
+
+type-function = type-union ("->" type-function)?;
+
+type-union = type-intersection ("|" type-union)?;
+
+type-intersection = type-application ("&" type-intersection)?;
+
+type-application = type-literal type-application?;
+
+type-literal =
+	"{" type-field* "}"
 	| "[" type* "]"
-	| literal
-	| type type
-	| "(" type ")";
+	| "(" type ")"
+	| literal;
+
+type-field = type-key "::" type;
+
+type-key = literal+;
 
 literal =
 	.identifier
@@ -24,7 +34,3 @@ literal =
 	| .string
 	| .number
 	| .operator;
-
-type-field = type-key "::" type;
-
-type-key = literal+;

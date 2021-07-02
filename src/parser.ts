@@ -1,5 +1,5 @@
 import { performance } from "node:perf_hooks";
-import { Token } from "./lexer.js";
+import { stringifyToken, Token } from "./lexer.js";
 import { print } from "./odd.js";
 
 export type Leaf = Node | Token;
@@ -9,6 +9,8 @@ export type Node = Readonly<{
 	children: Leaf[];
 }>;
 
+// TODO: packrat memoisation
+// https://blog.jcoglan.com/2017/07/30/packrat-parsing-a-top-down-performance-improvement/
 type State = Readonly<{
 	grammar: Grammar;
 	input: Token[];
@@ -45,10 +47,8 @@ const parser = (grammar: Grammar) => (input: Token[]) => {
 		throw result.reason;
 
 	if (result.input.length) {
-		const peeked = peek(result);
-		// DEBUG:
 		print(result.stack);
-		throw `Unexpected ${peeked?.type} "${peeked?.lexeme}".`;
+		throw `Unexpected ${stringifyToken(peek(result))}.`;
 	}
 
 	return result.stack;
@@ -62,7 +62,7 @@ export const peek = (state: State): Token | undefined => state.input[0];
 
 export const rule = (name: string) => (state: State) => {
 	if (!state.grammar[name])
-		throw `Unkown grammar rule "${name}".`;
+		throw `Unknown grammar rule "${name}".`;
 
 	return state.grammar[name](state);
 };
@@ -80,7 +80,7 @@ export const lexeme = (lexeme: string) => (state: State) => {
 	const peeked = peek(state);
 	return (peeked?.lexeme === lexeme)
 		? eat(1)(state)
-		: fail(`Expected "${lexeme}" but got "${peeked?.lexeme ?? "EOF"}".`)(state);
+		: fail(`Expected "${lexeme}" but got "${stringifyToken(peeked)}".`)(state);
 };
 
 const prefixIndefiniteArticle = (thing?: string) => thing && `${/^[aeuioy]/.test(thing) ? "an" : "a"} ${thing}`;
@@ -89,7 +89,7 @@ export const type = (type: string) => (state: State) => {
 	const peeked = peek(state);
 	return (peeked?.type === type)
 		? eat(1)(state)
-		: fail(`Expected ${prefixIndefiniteArticle(type)} but got ${prefixIndefiniteArticle(peeked?.type) ?? "EOF"}.`)(state);
+		: fail(`Expected ${prefixIndefiniteArticle(type)} but got ${stringifyToken(peeked)}.`)(state);
 };
 
 export const pair = (a: Parser, b: Parser) => (state: State) => {
@@ -173,7 +173,7 @@ export const optional = (parser: Parser) => (state: State): Success => {
 
 /* TODO:
 These combinators are LL(1). They cannot handle left-recursion.
-A user can change their grammar to remove left recusrion as follows:
+A user can change their grammar to remove left recursion as follows:
 
 add = exp "+" exp;
 sub = exp "-" exp;
@@ -215,4 +215,12 @@ should be transformed back to
 		.number
 	]
 }
+
+Furthermore, it is very common for a parser to
+handle operator precedence.
+We should decide wether a user should just use the
+grammar constructs to implement precedence climbing,
+or wether we should provide a mechanism for declaring
+operator fixity and precendence and construct a
+pratt algorithm for it.
 */

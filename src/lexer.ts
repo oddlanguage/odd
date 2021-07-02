@@ -1,6 +1,18 @@
+
 export type Token = Readonly<{
 	type: string;
 	lexeme: string;
+	location: Location;
+}>;
+
+export const stringifyToken = (token?: Token) =>
+	(token)
+		? `${token.type} "${token.lexeme}" at ${Object.entries(token.location).map(entry => entry.join(" ")).join(", ")}`
+		: "EOF";
+
+export type Location = Readonly<{
+	line: number;
+	char: number;
 }>;
 
 type RuleBase = Readonly<{
@@ -24,7 +36,7 @@ type Rule = SimpleRule | ComplexRule;
 
 type Rules = Rule[];
 
-type Result = Token & Pick<Rule, "ignore">;
+type Result = Omit<Token, "location"> & Pick<Rule, "ignore">;
 
 const didMatch = (match: Result | false | undefined): match is Result =>
 	!!match;
@@ -62,6 +74,9 @@ const lexer = (rules: Rules) => {
 			return { type, lexeme, ignore };
 	});
 
+	let line = 1;
+	let char = 1;
+
 	const lex = (input: string): Token[] => {
 		if (input.length === 0)
 			return [];
@@ -77,7 +92,21 @@ const lexer = (rules: Rules) => {
 			throw `Unknown character "${input.charAt(0)}".`;
 
 		const { ignore, type, lexeme } = longest;
-		return (ignore ? [] : [ { type, lexeme } ]).concat(lex(input.slice(lexeme.length)));
+		const location = { line, char };
+
+		for (let i = 0; i < lexeme.length; i++) {
+			const codepoint = lexeme.charAt(i);
+
+			if (/^[^\r\n]/.test(codepoint))
+				char++;
+
+			if (/^\r*\n/.test(codepoint)) {
+				char = 1;
+				line++;
+			}
+		}
+
+		return (ignore ? [] : [ { type, lexeme, location } ]).concat(lex(input.slice(lexeme.length)));
 	};
 
 	return lex;
