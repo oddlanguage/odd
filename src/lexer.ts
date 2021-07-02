@@ -89,7 +89,7 @@ const lexer = (rules: Rules) => {
 				{ type: "", lexeme: "" });
 
 		if (longest.lexeme.length === 0)
-			throw `Unknown character "${input.charAt(0)}".`;
+			throw `Unknown character "${String.fromCodePoint(input.codePointAt(0)!)}".`;
 
 		const { ignore, type, lexeme } = longest;
 		const location = { line, char };
