@@ -1,7 +1,6 @@
 import { inspect } from "node:util";
 import lexer, { Token } from "./lexer.js";
 import parser, { delimited, either, ignore, Leaf, lexeme, Node, node, oneOf, oneOrMore, optional, pair, rule, sequence, type, zeroOrMore } from "./parser.js";
-import { compare } from "./tests.js";
 
 inspect.styles = {
 	string: "yellow",
@@ -61,24 +60,36 @@ const parse = parser({
 				type("identifier"),
 				ignore(lexeme(")"))]))),
 	"type": rule("type-function"),
-	"type-function": node("type-function")(sequence([
-		rule("type-union"),
-		optional(sequence([
-			ignore(lexeme("->")),
-			rule("type-function")]))])),
-	"type-union": node("type-union")(sequence([
-		rule("type-intersection"),
-		optional(sequence([
-			ignore(lexeme("|")),
-			rule("type-union")]))])),
-	"type-intersection": node("type-intersection")(sequence([
-		rule("type-application"),
-		optional(sequence([
-			ignore(lexeme("&")),
-			rule("type-intersection")]))])),
-	"type-application": node("type-application")(sequence([
-		rule("type-literal"),
-		optional(rule("type-application"))])),
+	"type-function": either(
+		node("type-function")(
+			sequence([
+				rule("type-union"),
+				sequence([
+					ignore(lexeme("->")),
+					rule("type-function")])])),
+		rule("type-union")),
+	"type-union": either(
+		node("type-union")(
+			sequence([
+				rule("type-intersection"),
+				sequence([
+					ignore(lexeme("|")),
+					rule("type-union")])])),
+		rule("type-intersection")),
+	"type-intersection": either(
+		node("type-intersection")(
+			sequence([
+				rule("type-application"),
+				sequence([
+					ignore(lexeme("&")),
+					rule("type-intersection")])])),
+		rule("type-application")),
+	"type-application": either(
+		node("type-application")(
+			sequence([
+				rule("type-literal"),
+				rule("type-application")])),
+		rule("type-literal")),
 	"type-literal": oneOf([
 		rule("literal"),
 		rule("type-map"),
@@ -94,7 +105,7 @@ const parse = parser({
 		type("number")]),
 	"type-map": sequence([
 		ignore(lexeme("{")),
-		zeroOrMore(rule("type-map-field")),
+		optional(delimited(ignore(lexeme(",")))(rule("type-map-field"))),
 		ignore(lexeme("}"))]),
 	"type-map-field": node("type-map-field")(
 		sequence([
@@ -104,55 +115,53 @@ const parse = parser({
 	"type-map-key": oneOrMore(rule("literal")),
 	"type-list": sequence([
 		ignore(lexeme("[")),
-		zeroOrMore(rule("type")),
+		optional(delimited(ignore(lexeme(",")))(rule("type"))),
 		ignore(lexeme("]"))])
 });
 
-const first = <T extends any[]>(array: T): T =>
+const first = <T>(array: T[]): T | undefined =>
 	array[0];
 
+// TODO: Make a context type that can be linked against
+// when an error occurs or smth.
 const run = (context: string) => (...stages: ((...args: any[]) => any)[]) =>
 	pipe(...stages);
 
 // TODO: Write a select function like tree-sitter's API to work with trees.
 
-const isNode = (leaf: Leaf): leaf is Node =>
+const isNode = (leaf?: Leaf): leaf is Node =>
 	!!(leaf as any).children;
 
-const isToken = (leaf: Leaf): leaf is Token =>
+const isToken = (leaf?: Leaf): leaf is Token =>
 	!(leaf as any).children;
 
-const traverse = (f: (tree: Node) => void) => {
+const traverse = (visit: (tree: Node) => void) => {
 	const traverse = (tree: Leaf) => {
 		if (isToken(tree)) return;
 	
 		for (const child of tree.children.filter(isNode))
 			traverse(child);
 	
-		f(tree);
+		visit(tree);
 	};
 	return (tree: Leaf) => (traverse(tree), tree);
 };
 
-const flatten = traverse(tree => {
-	if (tree.children.length === 1 && isNode(tree.children[0])) {
-		tree.children.splice(0, 1, ...tree.children[0].children);
-	}
-});
-
-type Mutable<T> = { -readonly [K in keyof T]: T[K] };
-
-const ignoreLocation = traverse(tree => {
-	tree.children.filter(isToken).forEach((token: Mutable<Token>) => {
-		token.location = { line: 0, char: 0 };
-	});
-});
-
 const interpret = run
 	("internal")
-	(lex, parse, first, flatten, ignoreLocation, print, ({ children }: Node) => print(children.slice(1).every(child => compare(child, first(children)))));
+	(print, lex, parse, first, print);
 
 interpret(`
-a :: 1 2 & 3 | 4 -> 5 | 6 & 7 8 -> 9;
-a :: ((((1 2) & 3) | 4) -> ((5 | (6 & (7 8))) -> (9)));
+Rules :: List {
+	type :: String,
+	pattern :: String | Regex
+};
+
+Token :: {
+	type :: String,
+	lexeme :: String,
+	location :: [ Number, Number ]
+};
+
+Lexer :: Rules -> String -> List Token;
 `);

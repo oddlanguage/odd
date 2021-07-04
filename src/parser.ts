@@ -36,6 +36,8 @@ type Grammar = Readonly<{
 	[key: string]: Parser;
 }>;
 
+// TODO: Implement memoisation to prevent exponential parse times
+// and to yield a slick 'n fast parser 😎
 const parser = (grammar: Grammar) => (input: Token[]) => {
 	const result = grammar.program({
 		input,
@@ -159,7 +161,7 @@ export const debug = (parser: Parser, options?: Readonly<{ label?: string; }>) =
 	const result = parser(state);
 	const elapsed = performance.now() - before;
 
-	print({ before: state.stack, after: result.stack, elapsed });
+	print({ elapsed, before: state.stack, after: result.stack });
 
 	return result;
 };
