@@ -47,12 +47,12 @@ Some work has yet to be done for odd to release as v1.0. The following is a list
 <br/>
 <br/>
 
-## 🤸 Author
-Conceptualised and authored by Wouter Lem ([@maanlamp](https://github.com/maanlamp)). Feel free to contribute: [Create an issue](https://github.com/oddlanguage/odd/issues/new) or get in contact otherwise.
+## 🤸 Contribute
+Conceptualised and authored by Wouter Lem ([@maanlamp](https://github.com/maanlamp)). Feel free to contribute: [create an issue](https://github.com/oddlanguage/odd/issues/new) or [a pull request](https://github.com/oddlanguage/odd/pulls).
 
 <br/>
 <br/>
 
 ## © License
-Copyright 2018-2021 Wouter Lem ([@maanlamp](https://github.com/maanlamp)).
+Copyright 2021 Wouter Lem ([@maanlamp](https://github.com/maanlamp)).
 [This project is licensed under MIT](./LICENSE.txt).
