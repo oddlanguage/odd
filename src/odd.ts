@@ -1,7 +1,7 @@
 import { inspect } from "node:util";
-import interpreter from "./interpreter.js";
-import lexer from "./lexer.js";
-import parser, { delimited, either, ignore, lexeme, node, oneOf, oneOrMore, optional, pair, rule, sequence, type, zeroOrMore } from "./parser.js";
+import lexer, { Token } from "./lexer.js";
+import parser, { delimited, either, ignore, lexeme, Node, node, oneOf, oneOrMore, optional, pair, rule, sequence, type, zeroOrMore } from "./parser.js";
+import { mapper } from "./tree.js";
 
 inspect.styles = {
 	string: "yellow",
@@ -104,20 +104,19 @@ const parse = parser({
 		type("constant"),
 		type("string"),
 		type("number")]),
-	"type-map": sequence([
+	"type-map": node("type-map")(sequence([
 		ignore(lexeme("{")),
 		optional(delimited(ignore(lexeme(",")))(rule("type-map-field"))),
-		ignore(lexeme("}"))]),
-	"type-map-field": node("type-map-field")(
-		sequence([
-			rule("type-map-key"),
-			ignore(lexeme("::")),
-			rule("type")])),
+		ignore(lexeme("}"))])),
+	"type-map-field": node("type-map-field")(sequence([
+		rule("type-map-key"),
+		ignore(lexeme("::")),
+		rule("type")])),
 	"type-map-key": oneOrMore(rule("literal")),
-	"type-list": sequence([
+	"type-list": node("type-list")(sequence([
 		ignore(lexeme("[")),
 		optional(delimited(ignore(lexeme(",")))(rule("type"))),
-		ignore(lexeme("]"))])
+		ignore(lexeme("]"))]))
 });
 
 const first = <T>(array: T[]): T | undefined =>
@@ -128,18 +127,45 @@ const first = <T>(array: T[]): T | undefined =>
 const run = (context: string) => (...stages: ((...args: any[]) => any)[]) =>
 	pipe(...stages);
 
-const interpret = interpreter({
-	"type-function": print
+const translations: Record<string, string> = {
+	"List": "Array",
+	"String": "string",
+	"Number": "number",
+	"Regex": "RegExp",
+	"Boolean": "boolean",
+	"nothing": "undefined",
+};
+
+const kebabToCamel = (identifier: string) =>
+	identifier.replace(/-\w/g, ([_, x]) => x.toUpperCase());
+
+const toTypescript = mapper({
+	"program": (node: Node) => node.children.map(toTypescript).join("\n\n"),
+	"statement": (node: Node) => `${toTypescript(node.children[0])};`,
+	"type-declaration": (node: Node) => `type ${toTypescript(node.children[0])} = ${toTypescript(node.children[1])}`,
+	"type-application": (node: Node) => `${toTypescript(node.children[0])}<${toTypescript(node.children[1])}>`,
+	"type-union": (node: Node) => `(${toTypescript(node.children[0])} | ${toTypescript(node.children[1])})`,
+	"type-intersection": (node: Node) => `(${toTypescript(node.children[0])} & ${toTypescript(node.children[1])})`,
+	"type-map": (node: Node) => `{\n  ${node.children.map(toTypescript).join(";\n  ")};\n}`,
+	"type-list": (node: Node) => `[ ${node.children.map(toTypescript).join(", ")} ]`,
+	"type-function": (node: Node) => `((_: ${toTypescript(node.children[0])}) => ${toTypescript(node.children[1])})`,
+	// TODO: function fields begin with `n` children
+	"type-map-field": (node: Node) => `${toTypescript(node.children[0])}: ${toTypescript(node.children[1])}`,
+	"identifier": (token: Token) => translations[token.lexeme] ?? kebabToCamel(token.lexeme),
+	"constant": (token: Token) => translations[token.lexeme] ?? token.lexeme,
+	"operator": (token: Token) => token.lexeme,
+	"string": (token: Token) => `"${token.lexeme.slice(1, -1)}"`,
 });
 
 const odd = run
 	("internal")
-	(print, lex, parse, first, interpret);
+	(lex, parse, first, toTypescript, print);
 
 odd(`
 Rules :: List {
 	type :: String,
-	pattern :: String | Regex
+	pattern :: String | Regex,
+	ignore :: boolean | nothing
 };
 
 Token :: {
@@ -149,4 +175,30 @@ Token :: {
 };
 
 Lexer :: Rules -> String -> List Token;
+
+Leaf :: Node | Token;
+
+Node :: {
+	type :: String,
+	children :: List Leaf
+};
+
+State :: {
+	grammar :: Grammar,
+	input :: List Token,
+	stack :: List Leaf
+};
+
+Success :: State & {
+	ok :: true
+};
+
+Failure :: State & {
+	ok :: false,
+	reason :: String
+};
+
+Result :: Success | Failure;
+
+Parser :: State -> Result;
 `);

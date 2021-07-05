@@ -9,8 +9,6 @@ export type Node = Readonly<{
 	children: Leaf[];
 }>;
 
-// TODO: packrat memoisation
-// https://blog.jcoglan.com/2017/07/30/packrat-parsing-a-top-down-performance-improvement/
 type State = Readonly<{
 	grammar: Grammar;
 	input: Token[];
@@ -38,6 +36,7 @@ type Grammar = Readonly<{
 
 // TODO: Implement memoisation to prevent exponential parse times
 // and to yield a slick 'n fast parser 😎
+// https://blog.jcoglan.com/2017/07/30/packrat-parsing-a-top-down-performance-improvement/
 const parser = (grammar: Grammar) => (input: Token[]) => {
 	const result = grammar.program({
 		input,
@@ -48,10 +47,8 @@ const parser = (grammar: Grammar) => (input: Token[]) => {
 	if (!result.ok)
 		throw result.reason;
 
-	if (result.input.length) {
-		print(result.stack);
+	if (result.input.length)
 		throw `Unexpected ${stringifyToken(peek(result))}.`;
-	}
 
 	return result.stack;
 };
