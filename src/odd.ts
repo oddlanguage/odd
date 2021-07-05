@@ -1,6 +1,7 @@
 import { inspect } from "node:util";
-import lexer, { Token } from "./lexer.js";
-import parser, { delimited, either, ignore, Leaf, lexeme, Node, node, oneOf, oneOrMore, optional, pair, rule, sequence, type, zeroOrMore } from "./parser.js";
+import interpreter from "./interpreter.js";
+import lexer from "./lexer.js";
+import parser, { delimited, either, ignore, lexeme, node, oneOf, oneOrMore, optional, pair, rule, sequence, type, zeroOrMore } from "./parser.js";
 
 inspect.styles = {
 	string: "yellow",
@@ -127,31 +128,15 @@ const first = <T>(array: T[]): T | undefined =>
 const run = (context: string) => (...stages: ((...args: any[]) => any)[]) =>
 	pipe(...stages);
 
-// TODO: Write a select function like tree-sitter's API to work with trees.
+const interpret = interpreter({
+	"type-function": print
+});
 
-const isNode = (leaf?: Leaf): leaf is Node =>
-	!!(leaf as any).children;
-
-const isToken = (leaf?: Leaf): leaf is Token =>
-	!(leaf as any).children;
-
-const traverse = (visit: (tree: Node) => void) => {
-	const traverse = (tree: Leaf) => {
-		if (isToken(tree)) return;
-	
-		for (const child of tree.children.filter(isNode))
-			traverse(child);
-	
-		visit(tree);
-	};
-	return (tree: Leaf) => (traverse(tree), tree);
-};
-
-const interpret = run
+const odd = run
 	("internal")
-	(print, lex, parse, first, print);
+	(print, lex, parse, first, interpret);
 
-interpret(`
+odd(`
 Rules :: List {
 	type :: String,
 	pattern :: String | Regex
