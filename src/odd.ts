@@ -42,10 +42,18 @@ const parse = parser({
 	"statements": 
 		delimited(
 			ignore(lexeme(";")))(
-			node("statement")(
-				oneOf([
-					rule("type-declaration"),
-					/*rule("expression")*/]))),
+			rule("statement")),
+	"statement": node("statement")(
+		oneOf([
+			rule("export"),
+			rule("statement-body")])),
+	"export": node("export")(
+		sequence([
+			ignore(lexeme("export")),
+			rule("statement-body")])),
+	"statement-body": oneOf([
+		rule("type-declaration"),
+		/*rule("expression")*/]),
 	"type-declaration": node("type-declaration")(
 		sequence([
 			type("identifier"),
@@ -139,14 +147,16 @@ const translations: Record<string, string> = {
 const kebabToCamel = (identifier: string) =>
 	identifier.replace(/-\w/g, ([_, x]) => x.toUpperCase());
 
+let depth = 0;
 const toTypescript = mapper({
 	"program": (node: Node) => node.children.map(toTypescript).join("\n\n"),
 	"statement": (node: Node) => `${toTypescript(node.children[0])};`,
+	"export": (node: Node) => `export ${toTypescript(node.children[0])}`,
 	"type-declaration": (node: Node) => `type ${toTypescript(node.children[0])} = ${toTypescript(node.children[1])}`,
 	"type-application": (node: Node) => `${toTypescript(node.children[0])}<${toTypescript(node.children[1])}>`,
 	"type-union": (node: Node) => `(${toTypescript(node.children[0])} | ${toTypescript(node.children[1])})`,
 	"type-intersection": (node: Node) => `(${toTypescript(node.children[0])} & ${toTypescript(node.children[1])})`,
-	"type-map": (node: Node) => `{\n  ${node.children.map(toTypescript).join(";\n  ")};\n}`,
+	"type-map": (node: Node) => `{\n${"  ".repeat(++depth)}${node.children.map(toTypescript).join(`;\n${"  ".repeat(depth)}`)};\n${"  ".repeat(--depth)}}`,
 	"type-list": (node: Node) => `[ ${node.children.map(toTypescript).join(", ")} ]`,
 	"type-function": (node: Node) => `((_: ${toTypescript(node.children[0])}) => ${toTypescript(node.children[1])})`,
 	// TODO: function fields begin with `n` children
@@ -164,8 +174,8 @@ const odd = run
 odd(`
 Rules :: List {
 	type :: String,
-	pattern :: String | Regex,
-	ignore :: boolean | nothing
+	pattern :: String | Regex | {a::{b::{c::d}}}, ;; this is slow af
+	ignore :: Boolean | nothing
 };
 
 Token :: {
@@ -174,7 +184,7 @@ Token :: {
 	location :: [ Number, Number ]
 };
 
-Lexer :: Rules -> String -> List Token;
+export Lexer :: Rules -> String -> List Token;
 
 Leaf :: Node | Token;
 
@@ -200,5 +210,5 @@ Failure :: State & {
 
 Result :: Success | Failure;
 
-Parser :: State -> Result;
+export Parser :: State -> Result;
 `);
