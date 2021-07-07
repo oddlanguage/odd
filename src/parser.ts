@@ -9,10 +9,13 @@ export type Node = Readonly<{
 	children: Leaf[];
 }>;
 
+type CacheKey = `${string},${number},${number}`;
+
 type State = Readonly<{
 	grammar: Grammar;
 	input: Token[];
 	stack: Leaf[];
+	cache: Record<CacheKey, Result>;
 }>;
 
 type Success = State & Readonly<{
@@ -34,14 +37,12 @@ type Grammar = Readonly<{
 	[key: string]: Parser;
 }>;
 
-// TODO: Implement memoisation to prevent exponential parse times
-// and to yield a slick 'n fast parser 😎
-// https://blog.jcoglan.com/2017/07/30/packrat-parsing-a-top-down-performance-improvement/
 const parser = (grammar: Grammar) => (input: Token[]) => {
 	const result = grammar.program({
 		input,
 		grammar,
-		stack: []
+		stack: [],
+		cache: {}
 	});
 
 	if (!result.ok)
@@ -63,7 +64,9 @@ export const rule = (name: string) => (state: State) => {
 	if (!state.grammar[name])
 		throw `Unknown grammar rule "${name}".`;
 
-	return state.grammar[name](state);
+	const location = peek(state)?.location ?? { line: -1, char: -1 };
+	// @ts-ignore TODO: remove this comment after ts 4.4.0
+	return state.cache[`${name},${location.line},${location.char}` as const] ??= state.grammar[name](state);
 };
 
 export const succeed = (stack: Leaf[]) => (input: Token[]) => (state: State): Success =>
@@ -150,24 +153,38 @@ export const ignore = (parser: Parser) => (state: State) => {
 	return { ...result, stack: state.stack };
 };
 
-export const debug = (parser: Parser, options?: Readonly<{ label?: string; }>) => (state: State) => {
-	if (options?.label)
-		print(`Trying "${options?.label}":`);
-
-	const before = performance.now();
-	const result = parser(state);
-	const elapsed = performance.now() - before;
-
-	print({ elapsed, before: state.stack, after: result.stack });
-
-	return result;
-};
-
 export const optional = (parser: Parser) => (state: State): Success => {
 	const result = parser(state);
 	return (result.ok)
 		? result	
 		: { ...state, ok: true };
+};
+
+type BenchmarkOptions = Readonly<{
+	label: string;
+	elapsed: boolean;
+	stack: boolean;
+}>;
+
+export const benchmark = (parser: Parser, options?: Partial<BenchmarkOptions>) => (state: State) => {
+	const before = performance.now();
+	const result = parser(state);
+	const elapsed = performance.now() - before;
+
+	const info: Record<string, any> = {};
+
+	if (options?.label)
+		info.label = options.label;
+
+	if (options?.elapsed ?? true)
+		info.elapsed = elapsed;
+
+	if (options?.stack)
+		info.stack = result.stack;
+
+	print(info);
+
+	return result;
 };
 
 /* TODO:
