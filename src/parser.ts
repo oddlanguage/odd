@@ -164,9 +164,10 @@ type BenchmarkOptions = Readonly<{
 	label: string;
 	elapsed: boolean;
 	stack: boolean;
+	cache: boolean;
 }>;
 
-export const benchmark = (parser: Parser, options?: Partial<BenchmarkOptions>) => (state: State) => {
+export const debug = (parser: Parser, options?: Partial<BenchmarkOptions>) => (state: State) => {
 	const before = performance.now();
 	const result = parser(state);
 	const elapsed = performance.now() - before;
@@ -181,6 +182,9 @@ export const benchmark = (parser: Parser, options?: Partial<BenchmarkOptions>) =
 
 	if (options?.stack)
 		info.stack = result.stack;
+
+	if (options?.cache)
+		info.cache = result.cache;
 
 	print(info);
 

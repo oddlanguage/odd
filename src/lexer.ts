@@ -61,7 +61,7 @@ const isComplex = (rule: any): rule is ComplexRule =>
 const lexer = (rules: Rules) => {
 	const patterns = rules.map((rule) => (input: string): Result | false | undefined => {
 		if (isComplex(rule)) {
-			throw "No implemented.";
+			throw "Not implemented.";
 		}
 
 		const { type, pattern, ignore } = rule;

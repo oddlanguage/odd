@@ -1,3 +1,4 @@
+import { readFileSync } from "node:fs";
 import { inspect } from "node:util";
 import lexer, { Token } from "./lexer.js";
 import parser, { delimited, either, ignore, lexeme, Node, node, oneOf, oneOrMore, optional, pair, rule, sequence, type, zeroOrMore } from "./parser.js";
@@ -171,44 +172,4 @@ const odd = run
 	("internal")
 	(lex, parse, first, toTypescript, print);
 
-odd(`
-Rules :: List {
-	type :: String,
-	pattern :: String | Regex | {a::{b::{c::d}}}, ;; this is slow af
-	ignore :: Boolean | nothing
-};
-
-Token :: {
-	type :: String,
-	lexeme :: String,
-	location :: [ Number, Number ]
-};
-
-export Lexer :: Rules -> String -> List Token;
-
-Leaf :: Node | Token;
-
-Node :: {
-	type :: String,
-	children :: List Leaf
-};
-
-State :: {
-	grammar :: Grammar,
-	input :: List Token,
-	stack :: List Leaf
-};
-
-Success :: State & {
-	ok :: true
-};
-
-Failure :: State & {
-	ok :: false,
-	reason :: String
-};
-
-Result :: Success | Failure;
-
-export Parser :: State -> Result;
-`);
+odd(readFileSync("./test/idk.odd", { encoding: "utf8" }));

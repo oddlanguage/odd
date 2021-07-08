@@ -1,6 +1,15 @@
 program = statements ";"?;
 
-statements = (type-declaration | expression) (";" statement)*;
+statements = statement (";" statement)*;
+
+statement = export | statement-body;
+
+export = "export" statement;
+
+statement-body =
+	type-declaration
+	| declaration
+	| expression;
 
 type-declaration = .identifier type-parameter* "::" type;
 
@@ -16,9 +25,9 @@ type-union = type-intersection ("|" type-union)?;
 
 type-intersection = type-application ("&" type-intersection)?;
 
-type-application = type-literal type-application?;
+type-application = type-value type-application?;
 
-type-literal =
+type-value =
 	"{" type-field* "}"
 	| "[" type* "]"
 	| "(" type ")"
@@ -34,3 +43,27 @@ literal =
 	| .string
 	| .number
 	| .operator;
+
+declaration =
+	value-declaration
+	| operator-declaration;
+
+value-declaration = .identifier parameter* "=" expression;
+
+operator-declaration = parameter .operator parameter "=" expression;
+
+expression = operation where-clause?;
+
+TODO: match-expression, if-expression
+
+operation = application (.operator operation)?;
+
+application = value application?;
+
+value =
+	map
+	| list
+	| "(" expression ")"
+	| literal;
+
+where-clause = "where" declaration ("," declaration)*
