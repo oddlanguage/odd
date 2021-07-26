@@ -68,7 +68,6 @@ export const rule = (name: RuleName) => (state: State) => {
 	if (!state.grammar[name])
 		throw `Unknown grammar rule "${name}".`;
 
-	print(`Trying "${name}"`);
 	return (state.cache[state.offset] ??= {})[name] ??= state.grammar[name](state);
 };
 
@@ -76,7 +75,7 @@ export const succeed = (consumed: number) => (state: State): Success =>
 	({
 		...state,
 		ok: true,
-		stack: state.stack.concat(print(state.input.slice(0, consumed))),
+		stack: state.stack.concat(state.input.slice(0, consumed)),
 		input: state.input.slice(consumed),
 		offset: state.offset + consumed
 	});
@@ -130,7 +129,9 @@ export const node = (type: string) => (parser: Parser) => (state: State): Result
 		return result;
 
 	const diff = state.stack.length - result.stack.length;
-	return { ...result, stack: result.stack.slice(0, diff).concat({ type, children: result.stack.slice(diff) }) }
+	return (diff === 0)
+		? { ...result, stack: result.stack.concat({ type, children: [] }) }
+		: { ...result, stack: result.stack.slice(0, diff).concat({ type, children: result.stack.slice(diff) }) };
 };
 
 export const zeroOrMore = (parser: Parser) => (state: State): Success => {
