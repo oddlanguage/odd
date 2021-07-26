@@ -25,7 +25,9 @@ type-union = type-intersection ("|" type-union)?;
 
 type-intersection = type-application ("&" type-intersection)?;
 
-type-application = type-value type-application?;
+type-application = type-access type-application?;
+
+type-access = type-value ("." type-access)*;
 
 type-value =
 	"{" type-field* "}"
@@ -52,13 +54,23 @@ value-declaration = .identifier parameter* "=" expression;
 
 operator-declaration = parameter .operator parameter "=" expression;
 
-expression = operation where-clause?;
+parameter = literal | "(" type literal ")";
 
-TODO: match-expression, if-expression
+expression = (match-expression | if-expression | lambda | operation) where-clause?;
+
+match-expression = "match" expression match+;
+
+match = type "=>" expression;
+
+if-expression = "if" expression "then" expression ("else" expression)?;
+
+lambda = parameter "->" expression;
 
 operation = application (.operator operation)?;
 
-application = value application?;
+application = access application?;
+
+access = value ("." value)*
 
 value =
 	map
@@ -67,3 +79,17 @@ value =
 	| literal;
 
 where-clause = "where" declaration ("," declaration)*
+
+map = "{" (field ("," field)*)? "}";
+
+field = key "=" expression;
+
+list = "[" (expression ("," expression)*)? "]";
+
+;; TODO: Think of a good way to describe
+;; rules that should yield nodes.
+;; Something like rule1 = label: rule2
+;; and labeled-rule := rule.
+;; TODO: Think of a way to indicate when a
+;; matched rule shouldn't yield any value.
+;; Something like !rule or (?:rule) or -rule?

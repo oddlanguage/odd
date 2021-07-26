@@ -9,13 +9,16 @@ export type Node = Readonly<{
 	children: Leaf[];
 }>;
 
-type CacheKey = `${string},${number},${number}`;
+type RuleName = string;
+
+type Offset = number;
 
 type State = Readonly<{
 	grammar: Grammar;
 	input: Token[];
 	stack: Leaf[];
-	cache: Record<CacheKey, Result>;
+	cache: Record<Offset, Record<RuleName, Result>>;
+	offset: Offset;
 }>;
 
 type Success = State & Readonly<{
@@ -42,7 +45,8 @@ const parser = (grammar: Grammar) => (input: Token[]) => {
 		input,
 		grammar,
 		stack: [],
-		cache: {}
+		cache: {},
+		offset: 0
 	});
 
 	if (!result.ok)
@@ -60,38 +64,43 @@ export default parser;
 
 export const peek = (state: State): Token | undefined => state.input[0];
 
-export const rule = (name: string) => (state: State) => {
+export const rule = (name: RuleName) => (state: State) => {
 	if (!state.grammar[name])
 		throw `Unknown grammar rule "${name}".`;
 
-	const location = peek(state)?.location ?? { line: -1, char: -1 };
-	// @ts-ignore TODO: remove this comment after ts 4.4.0
-	return state.cache[`${name},${location.line},${location.char}` as const] ??= state.grammar[name](state);
+	print(`Trying "${name}"`);
+	return (state.cache[state.offset] ??= {})[name] ??= state.grammar[name](state);
 };
 
-export const succeed = (stack: Leaf[]) => (input: Token[]) => (state: State): Success =>
-	({ ...state, ok: true, stack, input });
-
-export const eat = (n: number) => (state: State) =>
-	succeed(state.stack.concat(state.input.slice(0, n)))(state.input.slice(n))(state);
+export const succeed = (consumed: number) => (state: State): Success =>
+	({
+		...state,
+		ok: true,
+		stack: state.stack.concat(print(state.input.slice(0, consumed))),
+		input: state.input.slice(consumed),
+		offset: state.offset + consumed
+	});
 
 export const fail = (reason: string) => (state: State): Failure =>
 	({ ...state, ok: false, reason });
 
 export const lexeme = (lexeme: string) => (state: State) => {
 	const peeked = peek(state);
-	return (peeked?.lexeme === lexeme)
-		? eat(1)(state)
-		: fail(`Expected "${lexeme}" but got "${stringifyToken(peeked)}".`)(state);
+	return ((peeked?.lexeme === lexeme)
+		? succeed(1)
+		: fail(`Expected "${lexeme}" but got ${stringifyToken(peeked)}.`))
+		(state);
 };
 
-const prefixIndefiniteArticle = (thing?: string) => thing && `${/^[aeuioy]/.test(thing) ? "an" : "a"} ${thing}`;
+const prefixIndefiniteArticle = (thing?: string) =>
+	thing && `${/^[aeuioy]/.test(thing) ? "an" : "a"} ${thing}`;
 
 export const type = (type: string) => (state: State) => {
 	const peeked = peek(state);
-	return (peeked?.type === type)
-		? eat(1)(state)
-		: fail(`Expected ${prefixIndefiniteArticle(type)} but got ${stringifyToken(peeked)}.`)(state);
+	return ((peeked?.type === type)
+		? succeed(1)
+		: fail(`Expected ${prefixIndefiniteArticle(type)} but got ${stringifyToken(peeked)}.`))
+		(state);
 };
 
 export const pair = (a: Parser, b: Parser) => (state: State) => {
@@ -160,6 +169,12 @@ export const optional = (parser: Parser) => (state: State): Success => {
 		: { ...state, ok: true };
 };
 
+export const benchmark = (parser: Parser) => (state: State) => {
+	const before = performance.now();
+	const result = parser(state);
+	return [ performance.now() - before, result ] as const;
+};
+
 type BenchmarkOptions = Readonly<{
 	label: string;
 	elapsed: boolean;
@@ -168,9 +183,7 @@ type BenchmarkOptions = Readonly<{
 }>;
 
 export const debug = (parser: Parser, options?: Partial<BenchmarkOptions>) => (state: State) => {
-	const before = performance.now();
-	const result = parser(state);
-	const elapsed = performance.now() - before;
+	const [ elapsed, result ] = benchmark(parser)(state);
 
 	const info: Record<string, any> = {};
 
