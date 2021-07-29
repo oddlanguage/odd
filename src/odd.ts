@@ -1,28 +1,8 @@
 import { readFileSync } from "node:fs";
-import { inspect } from "node:util";
 import lexer, { Token } from "./lexer.js";
-import parser, { debug, delimited, either, ignore, Leaf, lexeme, Node, node, oneOf, oneOrMore, optional, pair, rule, sequence, type, zeroOrMore } from "./parser.js";
+import parser, { debug, delimited, foldSeqL, ignore, Leaf, lexeme, Node, node, nOrMore, oneOf, oneOrMore, optional, rule, sequence, type } from "./parser.js";
 import { mapper } from "./tree.js";
-
-inspect.styles = {
-	string: "yellow",
-	number: "magenta",
-	bigint: "magenta",
-	boolean: "magenta",
-	symbol: "blue",
-	undefined: "magenta",
-	special: "blue",
-	null: "magenta",
-	date: "underline",
-	regexp: "yellow",
-	module: "underline"
-};
-
-export const print = <T>(x: T, options?: Readonly<{ max?: number; depth?: number; }>) =>
-	(console.log((typeof x === "string") ? x : inspect(x, { colors: true, depth: options?.depth ?? Infinity, maxArrayLength: options?.max ?? Infinity })), x);
-
-export const pipe = (...fs: ((...args: any[]) => any)[]) => (x: any) =>
-	fs.reduce((y, f) => f(y), x);
+import { capitalise, first, kebabToCamel, pipe } from "./utils.js";
 
 const lex = lexer([
 	{ type: "comment", pattern: /;;[^\n]+/, ignore: true },
@@ -37,228 +17,99 @@ const lex = lexer([
 ]);
 
 const parse = parser({
-	program: debug(node("program")(
-		pair(
+	"program": debug(node("program")(
+		sequence([
 			rule("statements"),
-			optional(ignore(lexeme(";"))))), { stack: true }),
-	"statements": 
-		delimited(
-			ignore(lexeme(";")))(
-			rule("statement")),
+			optional(ignore(lexeme(";")))])), { stack: true }),
+	"statements": delimited(
+		lexeme(";"))
+		(rule("statement")),
 	"statement": node("statement")(
 		oneOf([
 			rule("export"),
 			rule("statement-body")])),
 	"export": node("export")(
 		sequence([
-			ignore(lexeme("export")),
+			lexeme("export"),
 			rule("statement-body")])),
 	"statement-body": oneOf([
-		rule("type-declaration"),
+		rule("type-declaration")/*,
 		rule("declaration"),
-		rule("expression")]),
+		rule("expression")*/]),
 	"type-declaration": node("type-declaration")(
 		sequence([
 			type("identifier"),
-			zeroOrMore(rule("type-parameter")),
+			optional(rule("type-parameters")),
 			ignore(lexeme("::")),
 			rule("type")])),
-	"type-parameter": node("type-parameter")(
-		either(
-			type("identifier"),
-			sequence([
-				ignore(lexeme("(")),
-				rule("type"),
-				type("identifier"),
-				ignore(lexeme(")"))]))),
+	"type-parameters": node("type-parameters")(
+		oneOrMore(type("identifier"))),
 	"type": rule("type-function"),
-	"type-function": either(
+	"type-function": oneOf([
 		node("type-function")(
 			sequence([
 				rule("type-union"),
-				sequence([
-					ignore(lexeme("->")),
-					rule("type-function")])])),
-		rule("type-union")),
-	"type-union": either(
+				ignore(lexeme("->")),
+				rule("type-function")])),
+		rule("type-union")]),
+	"type-union": oneOf([
 		node("type-union")(
 			sequence([
 				rule("type-intersection"),
-				sequence([
-					ignore(lexeme("|")),
-					rule("type-union")])])),
-		rule("type-intersection")),
-	"type-intersection": either(
+				ignore(lexeme("|")),
+				rule("type-union")])),
+		rule("type-intersection")]),
+	"type-intersection": oneOf([
 		node("type-intersection")(
 			sequence([
 				rule("type-application"),
-				sequence([
-					ignore(lexeme("&")),
-					rule("type-intersection")])])),
-		rule("type-application")),
-	"type-application": either(
-		node("type-application")(
-			sequence([
-				rule("type-access"),
+				ignore(lexeme("&")),
 				rule("type-application")])),
-		rule("type-access")),
-	"type-access": either(
+		rule("type-application")]),
+	"type-application": oneOf([
+		foldSeqL("type-application")(nOrMore(2)(rule("type-access"))),
+		rule("type-access")]),
+	"type-access": oneOf([
 		node("type-access")(
 			sequence([
-				rule("type-literal"),
-				sequence([
-					ignore(lexeme(".")),
+				rule("type-value"),
+				ignore(lexeme(".")),
+				rule("type-access")])),
+		rule("type-value")]),
+	"type-value": oneOf([
+		node("type-map")(
+			sequence([
+				ignore(lexeme("{")),
+				optional(
 					delimited(
-						ignore(lexeme(".")))(
-						rule("type-literal"))])])),
-		rule("type-literal")),
-	"type-literal": oneOf([
-		rule("literal"),
-		rule("type-map"),
-		rule("type-list"),
+						ignore(lexeme(",")))(
+						rule("type-field"))),
+				ignore(lexeme("}"))])),
+		node("type-list")(
+			sequence([
+				ignore(lexeme("[")),
+				optional(
+					delimited(
+						ignore(lexeme(",")))(
+						rule("type"))),
+				ignore(lexeme("]"))])),
 		sequence([
 			ignore(lexeme("(")),
 			rule("type"),
-			ignore(lexeme(")"))])]),
+			ignore(lexeme(")"))]),
+		rule("literal")]),
+	"type-field": node("type-field")(
+		sequence([
+			oneOrMore(rule("literal")),
+			ignore(lexeme("::")),
+			rule("type")])),
 	"literal": oneOf([
 		type("identifier"),
 		type("constant"),
 		type("string"),
-		type("number")]),
-	"type-map": node("type-map")(sequence([
-		ignore(lexeme("{")),
-		optional(delimited(ignore(lexeme(",")))(rule("type-map-field"))),
-		ignore(lexeme("}"))])),
-	"type-map-field": node("type-map-field")(sequence([
-		rule("type-map-key"),
-		ignore(lexeme("::")),
-		rule("type")])),
-	"type-map-key": oneOrMore(rule("literal")),
-	"type-list": node("type-list")(sequence([
-		ignore(lexeme("[")),
-		optional(delimited(ignore(lexeme(",")))(rule("type"))),
-		ignore(lexeme("]"))])),
-	"declaration": either(
-		rule("value-declaration"),
-		rule("operator-declaration")),
-	"value-declaration": node("value-declaration")(
-		sequence([
-			type("identifier"),
-			zeroOrMore(rule("parameter")),
-			ignore(lexeme("=")),
-			rule("expression")])),
-	"operator-declaration": node("operator-declaration")(
-		sequence([
-			rule("parameter"),
-			type("operator"),
-			rule("parameter"),
-			ignore(lexeme("=")),
-			type("expression")])),
-	"parameter": node("parameter")(
-		either(
-			rule("literal"),
-			sequence([
-				ignore(lexeme("(")),
-				rule("type"),
-				rule("literal"),
-				ignore(lexeme(")"))]))),
-	"expression": node("expression")(
-		sequence([
-			oneOf([
-				rule("match-expression"),
-				rule("if-expression"),
-				// TODO: "lambda" can cause false "type-application" positives through "parameter",
-				// which seems to be caused by incorrect cache matching
-				rule("lambda"),
-				rule("operation")]),
-			optional(rule("where-clause"))])),
-	"match-expression": node("match-expression")(
-		sequence([
-			ignore(lexeme("match")),
-			rule("expression"),
-			oneOrMore(rule("match"))])),
-	"match": node("match")(
-		sequence([
-			rule("type"),
-			ignore(lexeme("=>")),
-			rule("expression")])),
-	"if-expression": node("if-expression")(
-		sequence([
-			ignore(lexeme("if")),
-			rule("expression"),
-			ignore(lexeme("then")),
-			rule("expression"),
-			optional(
-				sequence([
-					ignore(lexeme("else")),
-					rule("expression")]))])),
-	"lambda": node("lambda")(
-		sequence([
-			rule("parameter"),
-			ignore(lexeme("->")),
-			rule("expression")])),
-	"operation": either(
-		node("operation")(
-			sequence([
-				rule("application"),
-				type("operator"),
-				rule("operation")])),
-		rule("application")),
-	"application": either(
-		node("application")(
-			sequence([
-				rule("value"),
-				rule("application")])),
-		rule("access")),
-	"access": either(
-		node("access")(
-			sequence([
-				rule("value"),
-				ignore(lexeme(".")),
-				delimited(
-					ignore(lexeme(".")))(
-					rule("value"))])),
-		rule("value")),
-	"value": oneOf([
-		rule("map"),
-		rule("list"),
-		sequence([
-			ignore(lexeme("(")),
-			rule("expression"),
-			ignore(lexeme(")"))]),
-		rule("literal")]),
-	"where-clause": node("where-clause")(
-		sequence([
-			ignore(lexeme("where")),
-			delimited(
-				ignore(lexeme(",")))(
-				rule("declaration"))])),
-	"map": node("map")(
-		sequence([
-			ignore(lexeme("{")),
-			optional(
-				delimited(
-					ignore(lexeme(",")))(
-					rule("field"))),
-			ignore(lexeme("}"))])),
-	"field": node("field")(
-		sequence([
-			rule("key"),
-			ignore(lexeme("=")),
-			rule("expression")])),
-	"key": node("key")(oneOrMore(rule("literal"))),
-	"list": node("list")(
-		sequence([
-			ignore(lexeme("[")),
-			optional(
-				delimited(
-					ignore(lexeme(",")))(
-					rule("expression"))),
-			ignore(lexeme("]"))]))
+		type("number"),
+		type("operator")])
 });
-
-const first = <T>(array: T[]): T | undefined =>
-	array[0];
 
 // TODO: Make a context type that can be linked against
 // when an error occurs or smth.
@@ -280,8 +131,6 @@ const operationTranslations: Record<string, (node: Node) => string> = {
 	"==": node => [toTypescript(node.children[0]), "===", toTypescript(node.children[2])].join(" ")
 };
 
-const kebabToCamel = (identifier: string) =>
-	identifier.replace(/-\w/g, ([_, x]) => x.toUpperCase());
 
 const prelude = `
 type _Object<T extends [ { toString(): string }, any ]> = Record<string, T[1]>;
@@ -297,8 +146,6 @@ const size = (x: { length: number; }) => x.length;
 const filter = <T>(f: (_: T) => boolean, xs: T[]) => xs.filter(f);
 `.trim();
 
-const capitalise = (x: string) =>
-	String.fromCodePoint(x.codePointAt(0)!).toLocaleUpperCase() + x.slice(1);
 
 let depth = 0;
 const toTypescript = mapper({

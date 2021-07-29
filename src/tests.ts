@@ -1,6 +1,6 @@
 import { isDeepStrictEqual } from "node:util";
-import { print } from "./odd.js";
 import { Leaf } from "./parser.js";
+import { print } from "./utils.js";
 
 export const compare = <A extends Record<string, any>, B extends Record<string, any>>(a: A, b: B) =>
 	isDeepStrictEqual(a, b);

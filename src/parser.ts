@@ -1,6 +1,6 @@
 import { performance } from "node:perf_hooks";
 import { stringifyToken, Token } from "./lexer.js";
-import { print } from "./odd.js";
+import { constant, prefixIndefiniteArticle, print, range } from "./utils.js";
 
 export type Leaf = Node | Token;
 
@@ -32,14 +32,25 @@ type Failure = State & Readonly<{
 
 type Result = Success | Failure;
 
+// TODO: Make generically typed
 type Parser = (state: State) => Result;
 
+// TODO: require values to be a function with a single argument
+// that is the instance of the grammar itself? How would we
+// meaningfully type that?
 type Grammar = Readonly<{
-	program: <T extends State>(initalState: T) => Result;
-} & {
+	program: (initalState: State) => Result;
 	[key: string]: Parser;
 }>;
 
+/** TODO: Short explanation
+ * 
+ * Example:
+ * 
+ * ```ts
+ * // code showing a simple usage
+ * ```
+*/
 const parser = (grammar: Grammar) => (input: Token[]) => {
 	const result = grammar.program({
 		input,
@@ -62,8 +73,24 @@ export default parser;
 
 // ==== COMBINATORS ==============================
 
+/** TODO: Short explanation
+ * 
+ * Example:
+ * 
+ * ```ts
+ * // code showing a simple usage
+ * ```
+*/
 export const peek = (state: State): Token | undefined => state.input[0];
 
+/** TODO: Short explanation
+ * 
+ * Example:
+ * 
+ * ```ts
+ * // code showing a simple usage
+ * ```
+*/
 export const rule = (name: RuleName) => (state: State) => {
 	if (!state.grammar[name])
 		throw `Unknown grammar rule "${name}".`;
@@ -71,6 +98,14 @@ export const rule = (name: RuleName) => (state: State) => {
 	return (state.cache[state.offset] ??= {})[name] ??= state.grammar[name](state);
 };
 
+/** TODO: Short explanation
+ * 
+ * Example:
+ * 
+ * ```ts
+ * // code showing a simple usage
+ * ```
+*/
 export const succeed = (consumed: number) => (state: State): Success =>
 	({
 		...state,
@@ -80,9 +115,25 @@ export const succeed = (consumed: number) => (state: State): Success =>
 		offset: state.offset + consumed
 	});
 
+/** TODO: Short explanation
+ * 
+ * Example:
+ * 
+ * ```ts
+ * // code showing a simple usage
+ * ```
+*/
 export const fail = (reason: string) => (state: State): Failure =>
 	({ ...state, ok: false, reason });
 
+/** TODO: Short explanation
+ * 
+ * Example:
+ * 
+ * ```ts
+ * // code showing a simple usage
+ * ```
+*/
 export const lexeme = (lexeme: string) => (state: State) => {
 	const peeked = peek(state);
 	return ((peeked?.lexeme === lexeme)
@@ -91,9 +142,14 @@ export const lexeme = (lexeme: string) => (state: State) => {
 		(state);
 };
 
-const prefixIndefiniteArticle = (thing?: string) =>
-	thing && `${/^[aeuioy]/.test(thing) ? "an" : "a"} ${thing}`;
-
+/** TODO: Short explanation
+ * 
+ * Example:
+ * 
+ * ```ts
+ * // code showing a simple usage
+ * ```
+*/
 export const type = (type: string) => (state: State) => {
 	const peeked = peek(state);
 	return ((peeked?.type === type)
@@ -102,6 +158,14 @@ export const type = (type: string) => (state: State) => {
 		(state);
 };
 
+/** TODO: Short explanation
+ * 
+ * Example:
+ * 
+ * ```ts
+ * // code showing a simple usage
+ * ```
+*/
 export const pair = (a: Parser, b: Parser) => (state: State) => {
 	const result = a(state);
 	return (result.ok)
@@ -109,9 +173,25 @@ export const pair = (a: Parser, b: Parser) => (state: State) => {
 		: result;
 };
 
+/** TODO: Short explanation
+ * 
+ * Example:
+ * 
+ * ```ts
+ * // code showing a simple usage
+ * ```
+*/
 export const sequence = (parsers: Parser[]) =>
 	parsers.reduce(pair);
 
+/** TODO: Short explanation
+ * 
+ * Example:
+ * 
+ * ```ts
+ * // code showing a simple usage
+ * ```
+*/
 export const either = (a: Parser, b: Parser) => (state: State) => {
 	const result = a(state);
 	return (result.ok)
@@ -119,9 +199,25 @@ export const either = (a: Parser, b: Parser) => (state: State) => {
 		: b(state);
 };
 
+/** TODO: Short explanation
+ * 
+ * Example:
+ * 
+ * ```ts
+ * // code showing a simple usage
+ * ```
+*/
 export const oneOf = (parsers: Parser[]) =>
 	parsers.reduce(either);
 
+/** TODO: Short explanation
+ * 
+ * Example:
+ * 
+ * ```ts
+ * // code showing a simple usage
+ * ```
+*/
 export const node = (type: string) => (parser: Parser) => (state: State): Result => {
 	const result = parser(state);
 
@@ -134,6 +230,14 @@ export const node = (type: string) => (parser: Parser) => (state: State): Result
 		: { ...result, stack: result.stack.slice(0, diff).concat({ type, children: result.stack.slice(diff) }) };
 };
 
+/** TODO: Short explanation
+ * 
+ * Example:
+ * 
+ * ```ts
+ * // code showing a simple usage
+ * ```
+*/
 export const zeroOrMore = (parser: Parser) => (state: State): Success => {
 	let result = parser(state);
 
@@ -148,12 +252,46 @@ export const zeroOrMore = (parser: Parser) => (state: State): Success => {
 	return previous;
 };
 
-export const oneOrMore = (parser: Parser) =>
-	pair(parser, zeroOrMore(parser));
+/** TODO: Short explanation
+ * 
+ * Example:
+ * 
+ * ```ts
+ * // code showing a simple usage
+ * ```
+*/
+export const nOrMore = (n: number) => (parser: Parser) =>
+	sequence(range(n).map(constant(parser)).concat(zeroOrMore(parser)));
 
+/** TODO: Short explanation
+ * 
+ * Example:
+ * 
+ * ```ts
+ * // code showing a simple usage
+ * ```
+*/
+export const oneOrMore = nOrMore(1);
+
+/** TODO: Short explanation
+ * 
+ * Example:
+ * 
+ * ```ts
+ * // code showing a simple usage
+ * ```
+*/
 export const delimited = (delimiter: Parser) => (parser: Parser) =>
 	pair(parser, zeroOrMore(pair(delimiter, parser)));
 
+/** TODO: Short explanation
+ * 
+ * Example:
+ * 
+ * ```ts
+ * // code showing a simple usage
+ * ```
+*/
 export const ignore = (parser: Parser) => (state: State) => {
 	const result = parser(state);
 
@@ -163,6 +301,14 @@ export const ignore = (parser: Parser) => (state: State) => {
 	return { ...result, stack: state.stack };
 };
 
+/** TODO: Short explanation
+ * 
+ * Example:
+ * 
+ * ```ts
+ * // code showing a simple usage
+ * ```
+*/
 export const optional = (parser: Parser) => (state: State): Success => {
 	const result = parser(state);
 	return (result.ok)
@@ -170,20 +316,36 @@ export const optional = (parser: Parser) => (state: State): Success => {
 		: { ...state, ok: true };
 };
 
+/** TODO: Short explanation
+ * 
+ * Example:
+ * 
+ * ```ts
+ * // code showing a simple usage
+ * ```
+*/
 export const benchmark = (parser: Parser) => (state: State) => {
 	const before = performance.now();
 	const result = parser(state);
 	return [ performance.now() - before, result ] as const;
 };
 
-type BenchmarkOptions = Readonly<{
+type DebugOptions = Readonly<{
 	label: string;
 	elapsed: boolean;
 	stack: boolean;
 	cache: boolean;
 }>;
 
-export const debug = (parser: Parser, options?: Partial<BenchmarkOptions>) => (state: State) => {
+/** TODO: Short explanation
+ * 
+ * Example:
+ * 
+ * ```ts
+ * // code showing a simple usage
+ * ```
+*/
+export const debug = (parser: Parser, options?: Partial<DebugOptions>) => (state: State) => {
 	const [ elapsed, result ] = benchmark(parser)(state);
 
 	const info: Record<string, any> = {};
@@ -204,6 +366,109 @@ export const debug = (parser: Parser, options?: Partial<BenchmarkOptions>) => (s
 
 	return result;
 };
+
+/** TODO: Short explanation
+ * 
+ * Example:
+ * 
+ * ```ts
+ * // code showing a simple usage
+ * ```
+*/
+export const nothing = (state: State): Result => {
+	const peeked = peek(state);
+
+	return (!peeked)
+		? { ...state, ok: true }
+		: { ...state, ok: false, reason: `Expected nothing but got ${stringifyToken(peeked)}.` };
+}
+
+/** TODO: Short explanation
+ * 
+ * Example:
+ * 
+ * ```ts
+ * // code showing a simple usage
+ * ```
+*/
+export const anything = (state: State): Result => {
+	const peeked = peek(state);
+
+	return (peeked)
+		? { ...state, ok: true }
+		: { ...state, ok: false, reason: `Expected anything but got nothing.` };
+}
+
+/** TODO: Short explanation
+ * 
+ * Example:
+ * 
+ * ```ts
+ * // code showing a simple usage
+ * ```
+*/
+export const wrap = (start: Parser, end: Parser) => (parser: Parser) =>
+	sequence([start, parser, end]);
+
+/** TODO: Short explanation
+ * 
+ * Example:
+ * 
+ * ```ts
+ * // code showing a simple usage
+ * ```
+*/
+export const describe = (description: string) => (parser: Parser) => (state: State): Result => {
+	const result = parser(state);
+	return (result.ok)
+		? result
+		: { ...result, reason: `Expected ${description} but got ${stringifyToken(peek(state))}.` };
+};
+
+/** TODO: Short explanation
+ * 
+ * Example:
+ * 
+ * ```ts
+ * // code showing a simple usage
+ * ```
+*/
+export const map = (f: (stack: State["stack"]) => State["stack"]) => (parser: Parser) => (state: State) => {
+	const result = parser(state);
+	const diff = state.stack.length - result.stack.length;
+	return (diff === 0)
+		? { ...result, stack: result.stack.concat(f([])) }
+		: { ...result, stack: result.stack.slice(0, diff).concat(f(result.stack.slice(diff))) };
+};
+
+/** Fold a sequence of parsed leaves into a single node of type `type` repeatedly, from the left.
+ * 
+ * Can be used to recognise left-associative rules.
+ * 
+ * Example:
+ * 
+ * ```ts
+ * const lex = lexer([
+ *   { type: "id", pattern: /\w+/ },
+ *   { type: "ws", pattern: /\s+/, ignore: true }
+ * ])
+ * 
+ * const parse = parser({
+ *   program: foldSeqL("app")(nOrMore(2)(type("id")))
+ * });
+ * 
+ * console.log(parse(lex("curried(argA)(argB)")));
+ * // [ { type: 'app',
+ * //     children:
+ * //      [ { type: 'app',
+ * //          children:
+ * //           [ { type: 'id', lexeme: 'a', location: { line: 1, char: 1 } },
+ * //             { type: 'id', lexeme: 'b', location: { line: 1, char: 3 } } ] },
+ * //        { type: 'id', lexeme: 'c', location: { line: 1, char: 5 } } ] } ]
+ * ```
+*/
+export const foldSeqL = (type: string) =>
+	map(parsed => parsed.slice(0, -1).reduce(stack => [{ type, children: stack.slice(0, 2) }, ...stack.slice(2)], parsed));
 
 /* TODO:
 These combinators are LL(1). They cannot handle left-recursion.

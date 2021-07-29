@@ -4,40 +4,47 @@ statements = statement (";" statement)*;
 
 statement = export | statement-body;
 
-export = "export" statement;
+export = "export" statement-body;
 
 statement-body =
 	type-declaration
 	| declaration
 	| expression;
 
-type-declaration = .identifier type-parameter* "::" type;
+type-declaration = .identifier type-parameters? "::" type;
 
-type-parameter =
-	.identifier
-	| "(" type .identifier ")";
+type-parameters = .identifier+
 
 type = type-function;
 
-type-function = type-union ("->" type-function)?;
+type-function =
+	type-union "->" type-function
+	| type-union;
 
-type-union = type-intersection ("|" type-union)?;
+type-union =
+	type-intersection "|" type-union
+	| type-intersection;
 
-type-intersection = type-application ("&" type-intersection)?;
+type-intersection =
+	type-application "&" type-intersection
+	| type-application;
 
-type-application = type-access type-application?;
+;; TODO: Make left-associative
+type-application =
+	type-access+
+	| type-access;
 
-type-access = type-value ("." type-access)*;
+type-access =
+	type-value "." type-access
+	| type-value;
 
 type-value =
-	"{" type-field* "}"
-	| "[" type* "]"
+	"{" (type-field ("," type-field)*)? "}"
+	| "[" (type ("," type)*)? "]"
 	| "(" type ")"
 	| literal;
 
-type-field = type-key "::" type;
-
-type-key = literal+;
+type-field = literal+ "::" type;
 
 literal =
 	.identifier
@@ -47,14 +54,15 @@ literal =
 	| .operator;
 
 declaration =
-	value-declaration
+	function-declaration
+	| value-declaration
 	| operator-declaration;
 
-value-declaration = .identifier parameter* "=" expression;
+function-declaration = .identifier expression "=" expression;
+
+value-declaration = .identifier "=" expression;
 
 operator-declaration = parameter .operator parameter "=" expression;
-
-parameter = literal | "(" type literal ")";
 
 expression = (match-expression | if-expression | lambda | operation) where-clause?;
 
@@ -86,10 +94,5 @@ field = key "=" expression;
 
 list = "[" (expression ("," expression)*)? "]";
 
-;; TODO: Think of a good way to describe
-;; rules that should yield nodes.
-;; Something like rule1 = label: rule2
-;; and labeled-rule := rule.
-;; TODO: Think of a way to indicate when a
-;; matched rule shouldn't yield any value.
-;; Something like !rule or (?:rule) or -rule?
+;; TODO: (referencable) capture groups syntax
+;; TODO: ignored groups syntax
