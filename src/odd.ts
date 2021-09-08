@@ -1,8 +1,11 @@
-import { readFileSync } from "node:fs";
-import lexer, { Token } from "./lexer.js";
-import parser, { debug, delimited, foldSeqL, ignore, Leaf, lexeme, Node, node, nOrMore, oneOf, oneOrMore, optional, rule, sequence, type } from "./parser.js";
-import { mapper } from "./tree.js";
-import { capitalise, first, kebabToCamel, pipe } from "./utils.js";
+import read, { File, makeError } from "./file.js";
+import lexer from "./lexer.js";
+import parser, { debug, delimited, fail, ignore, lexeme, node, nodeLeft, nOrMore, oneOf, oneOrMore, optional, rule, sequence, type } from "./parser.js";
+import { pipe } from "./utils.js";
+
+const modes = {
+	String: Symbol("string")
+};
 
 const lex = lexer([
 	{ type: "comment", pattern: /;;[^\n]+/, ignore: true },
@@ -11,16 +14,17 @@ const lex = lexer([
 	{ type: "operator", pattern: /[!@#$%^&*\-=+\\|:<>/?\.]+/ },
 	{ type: "punctuation", pattern: /[,\[\]\{\}\(\);]/ },
 	{ type: "number", pattern: /-?(?:\d+(?:,\d+)*(?:\.\d+(?:e\d+)?)?|(?:\.\d+(?:e\d+)?))/i },
-	{ type: "string", pattern: /`[^`]*`/i },
 	{ type: "constant", pattern: /true|false|nothing|infinity/ },
 	{ type: "identifier", pattern: /[a-z]\w*(?:-\w+)*'*/i }
 ]);
 
 const parse = parser({
-	"program": debug(node("program")(
-		sequence([
-			rule("statements"),
-			optional(ignore(lexeme(";")))])), { stack: true }),
+	"program": debug(
+		node("program")(
+			sequence([
+				rule("statements"),
+				optional(ignore(lexeme(";")))])),
+		{ stack: true }),
 	"statements": delimited(
 		lexeme(";"))
 		(rule("statement")),
@@ -33,9 +37,9 @@ const parse = parser({
 			lexeme("export"),
 			rule("statement-body")])),
 	"statement-body": oneOf([
-		rule("type-declaration")/*,
+		rule("type-declaration"),
 		rule("declaration"),
-		rule("expression")*/]),
+		rule("expression")]),
 	"type-declaration": node("type-declaration")(
 		sequence([
 			type("identifier"),
@@ -67,14 +71,15 @@ const parse = parser({
 				rule("type-application")])),
 		rule("type-application")]),
 	"type-application": oneOf([
-		foldSeqL("type-application")(nOrMore(2)(rule("type-access"))),
+		nodeLeft("type-application")(nOrMore(2)(rule("type-access"))),
 		rule("type-access")]),
 	"type-access": oneOf([
-		node("type-access")(
+		nodeLeft("type-access")(
 			sequence([
 				rule("type-value"),
-				ignore(lexeme(".")),
-				rule("type-access")])),
+				oneOrMore(sequence([
+					ignore(lexeme(".")),
+					rule("type-value")]))])),
 		rule("type-value")]),
 	"type-value": oneOf([
 		node("type-map")(
@@ -108,108 +113,84 @@ const parse = parser({
 		type("constant"),
 		type("string"),
 		type("number"),
-		type("operator")])
+		type("operator")]),
+	"declaration": node("declaration")(
+		oneOf([
+			rule("function-declaration"),
+			rule("value-declaration"),
+			rule("operator-declaration")])),
+	"function-declaration": node("function-declaration")(
+		fail("Not implemented.")),
+	"value-declaration": node("value-declaration")(
+		sequence([
+			type("identifier"),
+			ignore(lexeme("=")),
+			rule("expression")])),
+	"operator-declaration": node("operator-declaration")(
+		fail("Not implemented.")),
+	"expression": node("expression")(
+		sequence([
+			oneOf([
+				rule("match-expression"),
+				rule("if-expression"),
+				rule("lambda"),
+				rule("operation")]),
+			optional(rule("where-clause"))
+		])),
+	"match-expression": node("match-expression")(
+		fail("Not implemented.")),
+	"if-expression": node("if-expression")(
+		fail("Not implemented.")),
+	"lambda": node("lambda")(
+		fail("Not implemented.")),
+	"operation": oneOf([
+		node("operation")(
+			sequence([
+				rule("application"),
+				type("operator"),
+				rule("operation")])),
+		rule("application")]),
+	"application": oneOf([
+		nodeLeft("application")(nOrMore(2)(rule("access"))),
+		rule("access")]),
+	"access": oneOf([
+		node("access")(
+			sequence([
+				rule("value"),
+				ignore(lexeme(".")),
+				rule("access")])),
+		rule("value")]),
+	"value": oneOf([
+		rule("map"),
+		rule("list"),
+		sequence([
+			ignore(lexeme("(")),
+			rule("expression"),
+			ignore(lexeme(")"))]),
+		rule("literal")]),
+	"map": node("map")(
+		fail("Not implemented.")),
+	"list": node("list")(
+		fail("Not implemented.")),
+	"where-clause": node("where-clause")(
+		sequence([
+			ignore(lexeme("where")),
+			delimited(ignore(lexeme(",")))(rule("declaration"))]))
 });
 
-// TODO: Make a context type that can be linked against
-// when an error occurs or smth.
-const run = (context: string) => (...stages: ((...args: any[]) => any)[]) =>
-	pipe(...stages);
+const file = read("./test/odd.odd");
 
-const literalTranslations: Record<string, string> = {
-	"List": "Array",
-	"String": "string",
-	"Number": "number",
-	"Regex": "RegExp",
-	"Boolean": "boolean",
-	"nothing": "undefined",
-	"Object": "_Object",
+// TODO: Remove this immediately when error types become a thing
+const wrap = (context: File, options?: Parameters<typeof makeError>[2]) => <T extends (...args: any[]) => any>(f: T) => (...args: Parameters<T>) =>  {
+	try {
+		return f(...args) as ReturnType<T>;
+	} catch (error) {
+		throw makeError(error as string | { message: string; offset: number; }, context, options);
+	}
 };
 
-const operationTranslations: Record<string, (node: Node) => string> = {
-	"|>": node => `map(${toTypescript(node.children[0])}, ${toTypescript(node.children[2])})`,
-	"==": node => [toTypescript(node.children[0]), "===", toTypescript(node.children[2])].join(" ")
-};
+const contextualise = wrap(file);
 
+const odd = pipe(contextualise(lex), contextualise(parse) /*, first, print*/);
 
-const prelude = `
-type _Object<T extends [ { toString(): string }, any ]> = Record<string, T[1]>;
-
-const map = <A, B>(f: (_: A) => B, xs: A[]) => xs.map(f);
-
-const apply = <A>(x: A) => <B>(f: (_: A) => B) => f(x);
-
-const fold = <T>(f: (_: T, __: T, ___: number, ____: T[]) => T, y: T) => (xs: T[]) => xs.reduce(f, y);
-
-const size = (x: { length: number; }) => x.length;
-
-const filter = <T>(f: (_: T) => boolean, xs: T[]) => xs.filter(f);
-`.trim();
-
-
-let depth = 0;
-const toTypescript = mapper({
-	"program": (node: Node) => `${prelude}\n\n${node.children.map(toTypescript).join("\n\n")}`,
-	"statement": (node: Node) => `${toTypescript(node.children[0])};`,
-	"export": (node: Node) => `export ${toTypescript(node.children[0])}`,
-	"type-declaration": (node: Node) => `type ${toTypescript(node.children[0])} = ${toTypescript(node.children[1])}`,
-	"type-application": (node: Node) => `${toTypescript(node.children[0])}<${toTypescript(node.children[1])}>`,
-	"type-union": (node: Node) => `(${toTypescript(node.children[0])} | ${toTypescript(node.children[1])})`,
-	"type-intersection": (node: Node) => `(${toTypescript(node.children[0])} & ${toTypescript(node.children[1])})`,
-	"type-map": (node: Node) => `{\n${"  ".repeat(++depth)}${node.children.map(toTypescript).join(`;\n${"  ".repeat(depth)}`)};\n${"  ".repeat(--depth)}}`,
-	"type-list": (node: Node) => `[ ${node.children.map(toTypescript).join(", ")} ]`,
-	"type-function": (node: Node) => `((_: ${capitalise(toTypescript(node.children[0]))}) => ${capitalise(toTypescript(node.children[1]))})`,
-	// TODO: function fields begin with `n` children
-	"type-map-field": (node: Node) => `${toTypescript(node.children[0])}: ${toTypescript(node.children[1])}`,
-	// TODO: store al declarations before finbally emitting
-	// so that multiple declarations can be merged into a
-	// signle function so typescript accepts it
-	"value-declaration": (node: Node) => {
-		const name = node.children[0];
-		const parameters = node.children.slice(1, -1);
-		const value = node.children.slice(-1)[0];
-
-		return `const ${toTypescript(name)} = ` + ((parameters.length)
-			? `(${parameters.map(toTypescript).join(") => (")}) => ${toTypescript(value)}`
-			: toTypescript(value));
-	},
-	"parameter": (node: Node) =>
-		(node.children.length > 1)
-			? `${toTypescript(node.children[1])}: ${toTypescript(node.children[0])}`
-			: toTypescript(node.children[0]),
-	"expression": (node: Node) => {
-		const [ body, whereClause ] = node.children as [ Leaf, Node ];
-
-		if (!whereClause)
-			return `(${toTypescript(body)})`;
-
-		const declarations = whereClause.children.map(toTypescript);
-		return `(() => {\n${"  ".repeat(++depth)}/* where-clause */\n${"  ".repeat(depth)}${declarations.join(`;\n${"  ".repeat(depth)}`)};\n${"  ".repeat(depth)}return ${toTypescript(body)};\n${"  ".repeat(--depth)}})()`;
-	},
-	"if-expression": (node: Node) => {
-		const [ condition, consequence, alternative ] = node.children;
-		return `${toTypescript(condition)}\n${"  ".repeat(++depth)}? ${toTypescript(consequence)}\n${"  ".repeat(depth--)}: ${alternative ? toTypescript(alternative) : undefined}`;
-	},
-	"access": (node: Node) => `${toTypescript(node.children[0])}${node.children.slice(1).map(child => `["${toTypescript(child)}"]`).join("")}`,
-	"operation": (node: Node) => {
-		const [ _, op ] = node.children as [ Node, Token, Node ];
-
-		return operationTranslations[op.lexeme]?.(node) ?? node.children.map(toTypescript).join(" ");
-	},
-	"application": (node: Node) => `${toTypescript(node.children[0])}(${toTypescript(node.children[1])})`,
-	"list": (node: Node) => `[ ${node.children.map(toTypescript).join(", ")} ]`,
-	"map": (node: Node) => `{ ${node.children.map(toTypescript).join(", ")} }`,
-	"type-access": (node: Node) => `${toTypescript(node.children[0])}${node.children.slice(1).map(child => `["${toTypescript(child)}"]`).join("")}`,
-	"identifier": (token: Token) => literalTranslations[token.lexeme] ?? kebabToCamel(token.lexeme),
-	"constant": (token: Token) => literalTranslations[token.lexeme] ?? token.lexeme,
-	"operator": (token: Token) => token.lexeme,
-	"string": (token: Token) => `"${token.lexeme.slice(1, -1)}"`,
-	"number": (token: Token) => token.lexeme,
-	"lambda": (node: Node) => `(${toTypescript(node.children[0])}) => ${toTypescript(node.children[1])}`
-});
-
-const odd = run
-	("internal")
-	(lex, parse, first, /* toTypescript, print */);
-
-odd(readFileSync("./test/odd.odd", { encoding: "utf8" }));
+odd(file.contents);

@@ -1,5 +1,5 @@
 import { performance } from "node:perf_hooks";
-import { stringifyToken, Token } from "./lexer.js";
+import { stringify, Token } from "./lexer.js";
 import { constant, prefixIndefiniteArticle, print, range } from "./utils.js";
 
 export type Leaf = Node | Token;
@@ -63,8 +63,13 @@ const parser = (grammar: Grammar) => (input: Token[]) => {
 	if (!result.ok)
 		throw result.reason;
 
-	if (result.input.length)
-		throw `Unexpected ${stringifyToken(peek(result))}.`;
+	if (result.input.length) {
+		const peeked = peek(result);
+		throw {
+			offset: peeked?.offset,
+			message: `Unexpected ${peeked?.type} "${peeked?.lexeme}"`
+		};
+	};
 
 	return result.stack;
 };
@@ -138,7 +143,7 @@ export const lexeme = (lexeme: string) => (state: State) => {
 	const peeked = peek(state);
 	return ((peeked?.lexeme === lexeme)
 		? succeed(1)
-		: fail(`Expected "${lexeme}" but got ${stringifyToken(peeked)}.`))
+		: fail(`Expected "${lexeme}" but got ${stringify(peeked)}.`))
 		(state);
 };
 
@@ -154,7 +159,7 @@ export const type = (type: string) => (state: State) => {
 	const peeked = peek(state);
 	return ((peeked?.type === type)
 		? succeed(1)
-		: fail(`Expected ${prefixIndefiniteArticle(type)} but got ${stringifyToken(peeked)}.`))
+		: fail(`Expected ${prefixIndefiniteArticle(type)} but got ${stringify(peeked)}.`))
 		(state);
 };
 
@@ -380,7 +385,7 @@ export const nothing = (state: State): Result => {
 
 	return (!peeked)
 		? { ...state, ok: true }
-		: { ...state, ok: false, reason: `Expected nothing but got ${stringifyToken(peeked)}.` };
+		: { ...state, ok: false, reason: `Expected nothing but got ${stringify(peeked)}.` };
 }
 
 /** TODO: Short explanation
@@ -422,7 +427,7 @@ export const describe = (description: string) => (parser: Parser) => (state: Sta
 	const result = parser(state);
 	return (result.ok)
 		? result
-		: { ...result, reason: `Expected ${description} but got ${stringifyToken(peek(state))}.` };
+		: { ...result, reason: `Expected ${description} but got ${stringify(peek(state))}.` };
 };
 
 /** TODO: Short explanation
@@ -441,9 +446,9 @@ export const map = (f: (stack: State["stack"]) => State["stack"]) => (parser: Pa
 		: { ...result, stack: result.stack.slice(0, diff).concat(f(result.stack.slice(diff))) };
 };
 
-/** Fold a sequence of parsed leaves into a single node of type `type` repeatedly, from the left.
+/** Fold a sequence of parsed leaves into a single `node` of type `type` repeatedly, from the left.
  * 
- * Can be used to recognise left-associative rules.
+ * Can be used to format flat lists of matches into nodes as if they were left-associative.
  * 
  * Example:
  * 
@@ -454,7 +459,7 @@ export const map = (f: (stack: State["stack"]) => State["stack"]) => (parser: Pa
  * ])
  * 
  * const parse = parser({
- *   program: foldSeqL("app")(nOrMore(2)(type("id")))
+ *   program: nodeLeft("app")(nOrMore(2)(type("id")))
  * });
  * 
  * console.log(parse(lex("curried(argA)(argB)")));
@@ -467,7 +472,7 @@ export const map = (f: (stack: State["stack"]) => State["stack"]) => (parser: Pa
  * //        { type: 'id', lexeme: 'c', location: { line: 1, char: 5 } } ] } ]
  * ```
 */
-export const foldSeqL = (type: string) =>
+export const nodeLeft = (type: string) =>
 	map(parsed => parsed.slice(0, -1).reduce(stack => [{ type, children: stack.slice(0, 2) }, ...stack.slice(2)], parsed));
 
 /* TODO:

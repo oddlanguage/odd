@@ -29,9 +29,11 @@ type-intersection =
 	type-application "&" type-intersection
 	| type-application;
 
-;; TODO: Make left-associative
+;; TODO: Allow direct left-recursion
+;; and treat it as a
+;; (left-associative) sequence?
 type-application =
-	type-access+
+	type-application type-application
 	| type-access;
 
 type-access =
@@ -94,5 +96,6 @@ field = key "=" expression;
 
 list = "[" (expression ("," expression)*)? "]";
 
-;; TODO: (referencable) capture groups syntax
+;; TODO: (referencable) capture
+;; groups syntax
 ;; TODO: ignored groups syntax

@@ -1,112 +1,78 @@
-
-export type Token = Readonly<{
+type Match = Readonly<{
 	type: string;
 	lexeme: string;
-	location: Location;
 }>;
 
-export const stringifyToken = (token?: Token) =>
-	(token)
-		? `${token.type} "${token.lexeme}" at ${Object.entries(token.location).map(entry => entry.join(" ")).join(", ")}`
-		: "EOF";
-
-export type Location = Readonly<{
-	line: number;
-	char: number;
+export type Token = Match & Readonly<{
+	offset: number;
 }>;
 
-type RuleBase = Readonly<{
+type Pattern = string | RegExp;
+
+type Rule = Readonly<{
 	type: string;
 	ignore?: boolean;
-	when?: string;
-	then?: string;
+	pattern: Pattern;
 }>;
 
-type SimpleRule = RuleBase & Readonly<{
-	pattern: string | RegExp;
-}>;
+type Result = Match & Pick<Rule, "ignore">;
 
-type ComplexRule = RuleBase & Readonly<{
-	start: string | RegExp;
-	patterns?: string | RegExp;
-	end?: string | RegExp;
-}>;
+type Falsy<T> = T | false | 0 | "" | null | undefined;
 
-type Rule = SimpleRule | ComplexRule;
+const ensureRegex = (pattern: Pattern) =>
+	(typeof pattern === "string")
+		? new RegExp(`^(?:${pattern})`)
+		: new RegExp(`^(?:${pattern.source})`, pattern.flags);
 
-type Rules = Rule[];
+// TODO: Should we allow {pattern} substitution in regexes?
+const compile = (rule: Rule) => (input: string): Falsy<Result> => {
+	const match = input.match(ensureRegex(rule.pattern))?.[0];
+	return match && { type: rule.type, lexeme: match, ignore: rule.ignore };
+};
 
-type Result = Omit<Token, "location"> & Pick<Rule, "ignore">;
+const applyTo = <T>(x: T) => <U>(f: (x: T) => U) =>
+	f(x);
 
-const didMatch = (match: Result | false | undefined): match is Result =>
-	!!match;
+const didMatch = (result: Falsy<Result>): result is Result =>
+	!!result;
 
-const apply = <T extends (...args: any[]) => any>(...args: Parameters<T>) => (f: T) =>
-	f(...args);
+const biggestBy = <T>(f: (x: T) => number) => (a: T, b: T) =>
+	f(a) >= f(b) ? a : b;
 
-type Comparator<T> = (a: T, b: T) => -1 | 0 | 1;
+export const stringify = (token: Falsy<Token>) =>
+	token && `${token.type} "${token.lexeme}"`;
 
-const compare = <T>(a: T, b: T) =>
-	(a > b) ? 1 : (a === b) ? 0 : -1;
-
-const compareBy = <T>(f: (item: T) => number) => (a: T, b: T) =>
-	compare(f(a), f(b));
-
-const largest = <T>(comparator: Comparator<T>) => (a: T, b: T) =>
-	(comparator(a, b) >= 0) ? a : b;
-
-const isComplex = (rule: any): rule is ComplexRule =>
-	rule.start !== undefined;
-
-const lexer = (rules: Rules) => {
-	const patterns = rules.map((rule) => (input: string): Result | false | undefined => {
-		if (isComplex(rule)) {
-			throw "Not implemented.";
-		}
-
-		const { type, pattern, ignore } = rule;
-		if (typeof pattern === "string")
-			return input.startsWith(pattern) && { type, lexeme: pattern, ignore };
-
-		const regex = new RegExp(`^(?:${pattern.source})`, pattern.flags.replace(/[gmys]/, ""));
-		const lexeme = input.match(regex)?.[0];
-		if (lexeme)
-			return { type, lexeme, ignore };
-	});
-
-	let line = 1;
-	let char = 1;
+const lexer = (rules: Rule[]) => {
+	const matchers = rules.map(compile);
 
 	const lex = (input: string): Token[] => {
-		if (input.length === 0)
-			return [];
+		const tokens: Token[] = [];
+		let offset =  0;
+		let eaten = 0;
 
-		const longest = patterns
-			.map(apply(input))
-			.filter(didMatch)
-			.reduce(
-				largest(compareBy(item => item.lexeme.length)),
-				{ type: "", lexeme: "" });
+		while ((input = input.slice(eaten)).length) {
+			const matches = matchers
+				.map(applyTo(input))
+				.filter(didMatch);
 
-		if (longest.lexeme.length === 0)
-			throw `Unexpected character "${String.fromCodePoint(input.codePointAt(0)!)}" at line ${line}, char ${char}.`;
+			if (matches.length === 0)
+				throw { offset, message: `Unknown lexeme "${input.charAt(0)}"` };
 
-		const { ignore, type, lexeme } = longest;
-		const location = { line, char };
+			const longest = matches.reduce(biggestBy(match => match.lexeme.length));
 
-		for (let i = 0; i < lexeme.length; i++) {
-			const codepoint = lexeme.charAt(i);
-
-			if (/^[^\r\n]/.test(codepoint))
-				char++;
-
-			if (/^\r*\n/.test(codepoint)) {
-				char = 1;
-				line++;
+			if (!longest.ignore) {
+				tokens.push({
+					type: longest.type,
+					lexeme: longest.lexeme,
+					offset
+				});
 			}
+
+			eaten = longest.lexeme.length;
+			offset += eaten;
 		}
 
-		return (ignore ? [] : [ { type, lexeme, location } ]).concat(lex(input.slice(lexeme.length)));
+		return tokens;
 	};
 
 	return lex;

@@ -50,3 +50,6 @@ export const kebabToCamel = (identifier: string) =>
 
 export const capitalise = (x: string) =>
 	String.fromCodePoint(x.codePointAt(0)!).toLocaleUpperCase() + x.slice(1);
+
+export const last = <T>(target: T[]): T | undefined =>
+	target[target.length - 1];

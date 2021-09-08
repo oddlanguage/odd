@@ -1,1 +1,20 @@
-apply x y z :: a b c d e f;
+Match :: {
+	type :: String,
+	lexeme :: String
+};
+
+export Token :: Match & {
+	offset :: Number
+};
+
+Pattern :: String | Regex;
+
+Rule :: {
+	type :: String,
+	ignore :: Maybe Boolean,
+	pattern :: Pattern
+};
+
+Result :: Match & Pick `ignore` Rule;
+
+`test \string \(bingaling)`;
