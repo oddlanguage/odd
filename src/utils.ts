@@ -42,7 +42,7 @@ export const print = <T>(x: T, options?: PrintOptions) => {
 export const pipe = (...fs: ((...args: any[]) => any)[]) => (x: any) =>
 	fs.reduce((y, f) => f(y), x);
 
-export const first = <T>(array: T[]): T | undefined =>
+export const first = <T>(array: T[]): Maybe<T> =>
 	array[0];
 
 export const kebabToCamel = (identifier: string) =>
@@ -51,5 +51,10 @@ export const kebabToCamel = (identifier: string) =>
 export const capitalise = (x: string) =>
 	String.fromCodePoint(x.codePointAt(0)!).toLocaleUpperCase() + x.slice(1);
 
-export const last = <T>(target: T[]): T | undefined =>
+export const last = <T>(target: T[]): Maybe<T> =>
 	target[target.length - 1];
+
+export type Maybe<T> = T | null | undefined;
+
+export const zip = <T>(xs: T[]) => (ys: T[]) =>
+	xs.map((x, i) => [ x, ys[i] ] as const);

@@ -1,11 +1,12 @@
 import read, { File, makeError } from "./file.js";
 import lexer from "./lexer.js";
-import parser, { debug, delimited, fail, ignore, lexeme, node, nodeLeft, nOrMore, oneOf, oneOrMore, optional, rule, sequence, type } from "./parser.js";
-import { pipe } from "./utils.js";
+import parser, { delimited, fail, ignore, lexeme, node, nodeLeft, nOrMore, oneOf, oneOrMore, optional, rule, sequence, type, zeroOrMore } from "./parser.js";
+import { infer, unify } from "./typechecker.js";
+import { first, pipe, print } from "./utils.js";
 
-const modes = {
-	String: Symbol("string")
-};
+const filename = process.argv[2];
+if (!filename)
+	throw "Please specify a file to run.";
 
 const lex = lexer([
 	{ type: "comment", pattern: /;;[^\n]+/, ignore: true },
@@ -15,18 +16,18 @@ const lex = lexer([
 	{ type: "punctuation", pattern: /[,\[\]\{\}\(\);]/ },
 	{ type: "number", pattern: /-?(?:\d+(?:,\d+)*(?:\.\d+(?:e\d+)?)?|(?:\.\d+(?:e\d+)?))/i },
 	{ type: "constant", pattern: /true|false|nothing|infinity/ },
-	{ type: "identifier", pattern: /[a-z]\w*(?:-\w+)*'*/i }
+	{ type: "identifier", pattern: /[a-z]\w*(?:-\w+)*'*/i },
+	{ type: "string", pattern: /`[^`]+(?<!\\)`/ }
+	// TODO: Allow lexer to recognise (recursive?) string interpolation
 ]);
 
 const parse = parser({
-	"program": debug(
-		node("program")(
-			sequence([
-				rule("statements"),
-				optional(ignore(lexeme(";")))])),
-		{ stack: true }),
+	"program": node("program")(
+		sequence([
+			rule("statements"),
+			optional(ignore(lexeme(";")))])),
 	"statements": delimited(
-		lexeme(";"))
+		ignore(lexeme(";")))
 		(rule("statement")),
 	"statement": node("statement")(
 		oneOf([
@@ -113,17 +114,18 @@ const parse = parser({
 		type("constant"),
 		type("string"),
 		type("number"),
-		type("operator")]),
+		sequence([
+			ignore(lexeme("(")),
+			type("operator"),
+			ignore(lexeme(")"))])]),
 	"declaration": node("declaration")(
 		oneOf([
-			rule("function-declaration"),
 			rule("value-declaration"),
 			rule("operator-declaration")])),
-	"function-declaration": node("function-declaration")(
-		fail("Not implemented.")),
 	"value-declaration": node("value-declaration")(
 		sequence([
 			type("identifier"),
+			zeroOrMore(rule("parameter")),
 			ignore(lexeme("=")),
 			rule("expression")])),
 	"operator-declaration": node("operator-declaration")(
@@ -133,16 +135,20 @@ const parse = parser({
 			oneOf([
 				rule("match-expression"),
 				rule("if-expression"),
-				rule("lambda"),
-				rule("operation")]),
+				rule("lambda")]),
 			optional(rule("where-clause"))
 		])),
 	"match-expression": node("match-expression")(
 		fail("Not implemented.")),
 	"if-expression": node("if-expression")(
 		fail("Not implemented.")),
-	"lambda": node("lambda")(
-		fail("Not implemented.")),
+	"lambda": oneOf([
+		node("lambda")(
+			sequence([
+				rule("parameter"),
+				ignore(lexeme("->")),
+				rule("expression")])),
+		rule("operation")]),
 	"operation": oneOf([
 		node("operation")(
 			sequence([
@@ -163,34 +169,61 @@ const parse = parser({
 	"value": oneOf([
 		rule("map"),
 		rule("list"),
+		rule("literal"),
 		sequence([
 			ignore(lexeme("(")),
 			rule("expression"),
-			ignore(lexeme(")"))]),
-		rule("literal")]),
+			ignore(lexeme(")"))])]),
 	"map": node("map")(
-		fail("Not implemented.")),
+		sequence([
+			ignore(lexeme("{")),
+			optional(
+				delimited(
+					ignore(lexeme(",")))(
+					rule("value-declaration"))),
+			ignore(lexeme("}"))])),
 	"list": node("list")(
-		fail("Not implemented.")),
+		sequence([
+			ignore(lexeme("[")),
+			optional(
+				delimited(
+					ignore(lexeme(",")))(
+					rule("expression"))),
+			ignore(lexeme("]"))])),
 	"where-clause": node("where-clause")(
 		sequence([
 			ignore(lexeme("where")),
-			delimited(ignore(lexeme(",")))(rule("declaration"))]))
+			delimited(
+				ignore(lexeme(",")))(
+				rule("declaration"))])),
+	"parameter": node("parameter")(
+		type("identifier"))
 });
 
-const file = read("./test/odd.odd");
+const file = read(filename);
 
 // TODO: Remove this immediately when error types become a thing
 const wrap = (context: File, options?: Parameters<typeof makeError>[2]) => <T extends (...args: any[]) => any>(f: T) => (...args: Parameters<T>) =>  {
 	try {
 		return f(...args) as ReturnType<T>;
-	} catch (error) {
-		throw makeError(error as string | { message: string; offset: number; }, context, options);
+	} catch (error: any) {
+		throw makeError(error, context, options);
 	}
 };
 
 const contextualise = wrap(file);
 
-const odd = pipe(contextualise(lex), contextualise(parse) /*, first, print*/);
+const odd = pipe(
+	contextualise(lex),
+	contextualise(parse),
+	first,
+	print);
 
-odd(file.contents);
+// odd(file.contents);
+
+print(unify(
+	[
+		{ name: "A", parameters: [ 1, 2, 3 ] },
+		0
+	],
+	infer({type: "number",children:[]})));

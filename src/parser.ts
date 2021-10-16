@@ -1,6 +1,6 @@
 import { performance } from "node:perf_hooks";
 import { stringify, Token } from "./lexer.js";
-import { constant, prefixIndefiniteArticle, print, range } from "./utils.js";
+import { constant, Maybe, prefixIndefiniteArticle, print, range } from "./utils.js";
 
 export type Leaf = Node | Token;
 
@@ -86,7 +86,7 @@ export default parser;
  * // code showing a simple usage
  * ```
 */
-export const peek = (state: State): Token | undefined => state.input[0];
+export const peek = (state: State): Maybe<Token> => state.input[0];
 
 /** TODO: Short explanation
  * 

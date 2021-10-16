@@ -43,8 +43,8 @@ type-access =
 type-value =
 	"{" (type-field ("," type-field)*)? "}"
 	| "[" (type ("," type)*)? "]"
-	| "(" type ")"
-	| literal;
+	| literal
+	| "(" type ")";
 
 type-field = literal+ "::" type;
 
@@ -85,8 +85,8 @@ access = value ("." value)*
 value =
 	map
 	| list
-	| "(" expression ")"
-	| literal;
+	| literal
+	| "(" expression ")";
 
 where-clause = "where" declaration ("," declaration)*
 

@@ -14,6 +14,7 @@ export type File = Readonly<{
 // we can't allow the parser to make it's own
 // error when it must throw a token as well.
 // This is hideous and should be fixed asap.
+// TODO: This goes wrong on line 1, char 1. Not sure why.
 export const makeError = (error: string | { message: string; offset: number; }, file: File, options?: { linesAround?: number; }) => {
 	if (typeof error === "string")
 		return `${error}\n  in "${file.path}".`;

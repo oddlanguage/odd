@@ -1,0 +1,5 @@
+mul a b = a * b;
+add a b = a + b;
+sub a b = a - b;
+div a b = a / b;
+exp a b = a ^ b;

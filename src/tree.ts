@@ -1,27 +1,48 @@
-import { Token } from "./lexer.js";
 import { Leaf, Node } from "./parser.js";
+import { Maybe } from "./utils.js";
 
-// TODO: Write a select function like tree-sitter's API to work with trees.
+type Selector = (leaf: Leaf, index: number) => boolean;
 
-const isToken = (leaf: Leaf): leaf is Token =>
-	!!(leaf as any).lexeme;
+export const isNode = (leaf: Leaf): leaf is Node =>
+	!!(leaf as Node).children;
 
-export const flatten = (tree: Node): Leaf[] => {
-	const internal: any = (tree: Leaf) => {
-		if (isToken(tree)) return tree;
-		return [tree, ...tree.children.map(internal)];
-	};
+export const select = (selector: Selector) => (node: Node) => {
+	const matches: Leaf[] = [];
 
-	return internal(tree).flat(Infinity);
+	for (const i of node.children.keys()) {
+		const child = node.children[i];
+
+		if (selector(child, i)) {
+			matches.push(child);
+		}
+
+		if (isNode(child)) {
+			matches.push(...select(selector)(child));
+		}
+	}
+
+	return matches;
 };
 
-// TODO: Fix types lol
-export const mapper = (rules: Record<string, (node: any) => string>) => {
-	const visit = (node: Leaf) => {
-		const rule = rules[node.type];
-		if (!rule) throw `No handler for nodes of type "${node.type}".`
-		return rule(node);
-	};
+type Mapper = (node: Node, index: number) => Node;
 
-	return visit;
+export const map = (mapper: Mapper) => (node: Node) => {
+	const root = mapper(node, 0);
+
+	for (const i of root.children.keys()) {
+		const child = root.children[i];
+
+		if (isNode(child)) {
+			root.children[i] = map(mapper)(child);
+		}
+	}
+
+	return root;
 };
+
+export const nthChild = (n: number) => (node: Node): Maybe<Leaf> =>
+	node.children[n < 0 ? node.children.length + n : n];
+
+export const firstChild = nthChild(0);
+
+export const lastChild = nthChild(-1);
