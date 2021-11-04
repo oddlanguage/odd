@@ -1,79 +1,119 @@
 import { Node } from "./parser.js";
-import { Maybe, zip } from "./utils.js";
+import { isNode } from "./tree.js";
 
-const MAX_RECURSION = 50;
+type Type =
+	| TypeVariable
+	| MonomorphicType
+	| PolymorphicType;
 
-type TypeApplication = Readonly<{
+type TypeVariable = number;
+
+type MonomorphicType = SimpleType | ParametricType;
+
+type SimpleType = Readonly<{
 	name: string;
-	parameters?: Type[];
 }>;
 
-type Type = TypeApplication | number;
+type ParametricType = SimpleType &
+	Readonly<{
+		params: readonly Type[];
+	}>;
 
-type Constraints = Record<number | string, Type>;
+type PolymorphicType = Readonly<{
+	type: MonomorphicType;
+	vars: readonly TypeVariable[];
+}>;
 
-const isUnknown = (type: Type): type is number =>
-	typeof type === "number";
+const isVariable = (
+	type: Type
+): type is TypeVariable => typeof type === "number";
 
-const constrain = (a: number, b: Type, cons: Constraints, depth: number): Maybe<Constraints> => {
-	if (depth > MAX_RECURSION)
-		throw "Too much recursion!";
+const isParametric = (
+	type: Type
+): type is ParametricType =>
+	!!(type as ParametricType).params;
 
-	if (cons[a])
-		return unify([cons[a], b], cons, depth + 1);
+const isPolymorphic = (
+	type: Type
+): type is PolymorphicType =>
+	!!(type as PolymorphicType).vars;
 
-	if (isUnknown(b) && cons[b])
-		return unify([a, cons[b]], cons, depth + 1);
+const alphabet = "αβγδεζηθικλμνξοπρστυφχψω";
+const varToGreek = (n: TypeVariable) =>
+	alphabet[n] ?? `t${n}`;
 
-	if (occurs(a, b, cons))
-		return null;
+const showType = (type: Type): string => {
+	if (isPolymorphic(type))
+		return `∀ ${type.vars
+			.map(showType)
+			.join(" ")} . ${showType(type.type)}`;
 
-	return { ...cons, [a]: b };
-};
+	if (isVariable(type)) return varToGreek(type);
 
-export const unify = ([ a, b ]: readonly [ Type, Type ], cons?: Maybe<Constraints>, depth: number = 0): Maybe<Constraints> => {
-	if (depth > MAX_RECURSION)
-		throw "Too much recursion!";
-
-	if (!cons || a === b)
-		return cons;
-	
-	if (!isUnknown(a) && !isUnknown(b)) {
-		if (a.name !== b.name)
-			return null;
-		
-		if (!a.parameters || !b.parameters)
-			return cons;
-		
-		if (a.parameters.length !== b.parameters.length)
-			return null;
-
-		zip(a.parameters)(b.parameters).forEach(pair => cons = unify(pair, cons, depth + 1));
-		return cons;
+	if (isParametric(type)) {
+		switch (type.name) {
+			case "Function":
+				return `${showType(
+					type.params[0]
+				)} -> ${showType(type.params[1])}`;
+			case "Union":
+				return `${showType(
+					type.params[0]
+				)} | ${showType(type.params[1])}`;
+			case "Intersection":
+				return `${showType(
+					type.params[0]
+				)} & ${showType(type.params[1])}`;
+			default:
+				return `${type.name} ${type.params
+					.map(showType)
+					.join(" ")}`;
+		}
 	}
 
-	if (isUnknown(a))
-		return constrain(a, b, cons, depth + 1);
-
-	if (isUnknown(b))
-		return constrain(b, a, cons, depth + 1);
-
-	return null;
+	return type.name;
 };
 
-const occurs = (a: number, b: Type, cons: Constraints): boolean => {
-	if (a === b)
-		return true;
-	
-	if (isUnknown(b) && cons[b])
-		return occurs(a, cons[b], cons);
-	
-	if (!isUnknown(b))
-		return b.parameters?.some(param => occurs(a, param, cons)) ?? false;
+type TypedNode = Node &
+	Readonly<{
+		datatype: Type;
+	}>;
 
-	return false;
+type Context = Record<
+	MonomorphicType["name"] | TypeVariable,
+	Type
+>;
+
+type Rule = (
+	node: TypedNode,
+	context: Context
+) => Context;
+
+type Rules = Readonly<Record<Node["type"], Rule>>;
+
+const infer = (rules: Rules) => {
+	let index: TypeVariable = 0;
+	const newVar = () => index++;
+
+	const infer =
+		(context: Context = {}) =>
+		(node: Node): TypedNode => {
+			const datatype = newVar();
+			const newContext = {
+				...context,
+				[datatype]: datatype
+			};
+
+			for (let i = 0; i < node.children.length; i++) {
+				const child = node.children[i];
+				if (!isNode(child)) continue;
+				node.children[i] = infer(newContext)(child);
+			}
+
+			return { datatype, ...node };
+		};
+
+	return infer;
 };
 
-export const infer = (node: Node, env: Record<string, TypeApplication> = {}): Constraints => {
-	throw "Not implemented.";
-};
+export default infer;

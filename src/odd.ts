@@ -1,7 +1,7 @@
 import read, { File, makeError } from "./file.js";
-import lexer from "./lexer.js";
+import lexer, { Token } from "./lexer.js";
 import parser, { delimited, fail, ignore, lexeme, node, nodeLeft, nOrMore, oneOf, oneOrMore, optional, rule, sequence, type, zeroOrMore } from "./parser.js";
-import { infer, unify } from "./typechecker.js";
+import infer from "./typechecker.js";
 import { first, pipe, print } from "./utils.js";
 
 const filename = process.argv[2];
@@ -9,7 +9,7 @@ if (!filename)
 	throw "Please specify a file to run.";
 
 const lex = lexer([
-	{ type: "comment", pattern: /;;[^\n]+/, ignore: true },
+	{ type: "comment", pattern: /;;[^\n]*/, ignore: true },
 	{ type: "whitespace", pattern: /\s+/, ignore: true },
 	{ type: "keyword", pattern: /if|then|else|match|where|\=|\=>|\&|::|\->|\.|\|/ },
 	{ type: "operator", pattern: /[!@#$%^&*\-=+\\|:<>/?\.]+/ },
@@ -20,7 +20,6 @@ const lex = lexer([
 	{ type: "string", pattern: /`[^`]+(?<!\\)`/ }
 	// TODO: Allow lexer to recognise (recursive?) string interpolation
 ]);
-
 const parse = parser({
 	"program": node("program")(
 		sequence([
@@ -29,10 +28,9 @@ const parse = parser({
 	"statements": delimited(
 		ignore(lexeme(";")))
 		(rule("statement")),
-	"statement": node("statement")(
-		oneOf([
-			rule("export"),
-			rule("statement-body")])),
+	"statement": oneOf([
+		rule("export"),
+		rule("statement-body")]),
 	"export": node("export")(
 		sequence([
 			lexeme("export"),
@@ -103,25 +101,25 @@ const parse = parser({
 			ignore(lexeme("(")),
 			rule("type"),
 			ignore(lexeme(")"))]),
-		rule("literal")]),
+		rule("value")]),
 	"type-field": node("type-field")(
 		sequence([
-			oneOrMore(rule("literal")),
+			oneOrMore(rule("value")),
 			ignore(lexeme("::")),
 			rule("type")])),
-	"literal": oneOf([
-		type("identifier"),
-		type("constant"),
-		type("string"),
-		type("number"),
-		sequence([
-			ignore(lexeme("(")),
-			type("operator"),
-			ignore(lexeme(")"))])]),
-	"declaration": node("declaration")(
+	"value": node("value")(
 		oneOf([
-			rule("value-declaration"),
-			rule("operator-declaration")])),
+			type("identifier"),
+			type("constant"),
+			type("string"),
+			type("number"),
+			sequence([
+				ignore(lexeme("(")),
+				type("operator"),
+				ignore(lexeme(")"))])])),
+	"declaration": oneOf([
+		rule("value-declaration"),
+		rule("operator-declaration")]),
 	"value-declaration": node("value-declaration")(
 		sequence([
 			type("identifier"),
@@ -136,8 +134,7 @@ const parse = parser({
 				rule("match-expression"),
 				rule("if-expression"),
 				rule("lambda")]),
-			optional(rule("where-clause"))
-		])),
+			optional(rule("where-clause"))])),
 	"match-expression": node("match-expression")(
 		fail("Not implemented.")),
 	"if-expression": node("if-expression")(
@@ -162,14 +159,14 @@ const parse = parser({
 	"access": oneOf([
 		node("access")(
 			sequence([
-				rule("value"),
+				rule("atom"),
 				ignore(lexeme(".")),
 				rule("access")])),
-		rule("value")]),
-	"value": oneOf([
+		rule("atom")]),
+	"atom": oneOf([
 		rule("map"),
 		rule("list"),
-		rule("literal"),
+		rule("value"),
 		sequence([
 			ignore(lexeme("(")),
 			rule("expression"),
@@ -217,13 +214,20 @@ const odd = pipe(
 	contextualise(lex),
 	contextualise(parse),
 	first,
+	infer({
+		value: (node, context) => {
+			const value = node.children[0] as Token;
+			if (value.type !== "identifier")
+				return context;
+			return { ...context, [value.lexeme]: node.datatype };
+		},
+		operation: (node, context) => {
+			// Check operand types
+			throw "Not implemented.";
+		}
+	})({
+		"+": { name: "Function", params: [ { name: "Number" }, { name: "Number" } ] }
+	}),
 	print);
 
-// odd(file.contents);
-
-print(unify(
-	[
-		{ name: "A", parameters: [ 1, 2, 3 ] },
-		0
-	],
-	infer({type: "number",children:[]})));
+odd(file.contents);
