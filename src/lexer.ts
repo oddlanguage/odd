@@ -12,7 +12,7 @@ type Pattern = string | RegExp;
 
 type Rule = Readonly<{
 	type: string;
-	ignore?: boolean;
+	ignore?: boolean | undefined;
 	pattern: Pattern;
 }>;
 

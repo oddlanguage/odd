@@ -46,7 +46,7 @@ export const print = <T>(
 					colors: true,
 					depth: options?.depth ?? Infinity,
 					maxArrayLength: options?.max ?? Infinity,
-					compact: options?.compact
+					compact: !!options?.compact
 			  })
 	);
 
@@ -63,7 +63,7 @@ export const first = <T>(array: T[]): Maybe<T> =>
 
 export const kebabToCamel = (identifier: string) =>
 	identifier.replace(/-\w/g, ([_, x]) =>
-		x.toUpperCase()
+		x!.toUpperCase()
 	);
 
 export const capitalise = (x: string) =>
@@ -80,3 +80,8 @@ export const zip =
 	<T>(xs: T[]) =>
 	(ys: T[]) =>
 		xs.map((x, i) => [x, ys[i]] as const);
+
+export const mapObject =
+	<T, U>(f: (entry: [string, any]) => [string, U]) =>
+	(x: T) =>
+		Object.fromEntries(Object.entries(x).map(f));

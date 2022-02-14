@@ -1,8 +1,7 @@
-import read, { File, makeError } from "./file.js";
-import lexer, { Token } from "./lexer.js";
-import parser, { delimited, fail, ignore, lexeme, node, nodeLeft, nOrMore, oneOf, oneOrMore, optional, rule, sequence, type, zeroOrMore } from "./parser.js";
-import infer from "./typechecker.js";
-import { first, pipe, print } from "./utils.js";
+import read, { makeError } from "./file.js";
+import lexer from "./lexer.js";
+import parser, { delimited, done, fail, ignore, lexeme, node, nodeLeft, nOrMore, oneOf, oneOrMore, optional, rule, sequence, type, zeroOrMore } from "./parser.js";
+import { pipe, print } from "./utils.js";
 
 const filename = process.argv[2];
 if (!filename)
@@ -11,7 +10,7 @@ if (!filename)
 const lex = lexer([
 	{ type: "comment", pattern: /;;[^\n]*/, ignore: true },
 	{ type: "whitespace", pattern: /\s+/, ignore: true },
-	{ type: "keyword", pattern: /if|then|else|match|where|\=|\=>|\&|::|\->|\.|\|/ },
+	{ type: "keyword", pattern: /if|then|else|match|where|with|\=|\=>|\&|:|\->|\.|\|/ },
 	{ type: "operator", pattern: /[!@#$%^&*\-=+\\|:<>/?\.]+/ },
 	{ type: "punctuation", pattern: /[,\[\]\{\}\(\);]/ },
 	{ type: "number", pattern: /-?(?:\d+(?:,\d+)*(?:\.\d+(?:e\d+)?)?|(?:\.\d+(?:e\d+)?))/i },
@@ -20,14 +19,14 @@ const lex = lexer([
 	{ type: "string", pattern: /`[^`]+(?<!\\)`/ }
 	// TODO: Allow lexer to recognise (recursive?) string interpolation
 ]);
+
 const parse = parser({
 	"program": node("program")(
 		sequence([
-			rule("statements"),
+			delimited(
+				ignore(lexeme(";")))
+				(rule("statement")),
 			optional(ignore(lexeme(";")))])),
-	"statements": delimited(
-		ignore(lexeme(";")))
-		(rule("statement")),
 	"statement": oneOf([
 		rule("export"),
 		rule("statement-body")]),
@@ -43,7 +42,7 @@ const parse = parser({
 		sequence([
 			type("identifier"),
 			optional(rule("type-parameters")),
-			ignore(lexeme("::")),
+			ignore(lexeme(":")),
 			rule("type")])),
 	"type-parameters": node("type-parameters")(
 		oneOrMore(type("identifier"))),
@@ -88,6 +87,7 @@ const parse = parser({
 					delimited(
 						ignore(lexeme(",")))(
 						rule("type-field"))),
+				optional(ignore(lexeme(","))),
 				ignore(lexeme("}"))])),
 		node("type-list")(
 			sequence([
@@ -96,6 +96,7 @@ const parse = parser({
 					delimited(
 						ignore(lexeme(",")))(
 						rule("type"))),
+				optional(ignore(lexeme(","))),
 				ignore(lexeme("]"))])),
 		sequence([
 			ignore(lexeme("(")),
@@ -105,7 +106,7 @@ const parse = parser({
 	"type-field": node("type-field")(
 		sequence([
 			oneOrMore(rule("value")),
-			ignore(lexeme("::")),
+			ignore(lexeme(":")),
 			rule("type")])),
 	"value": node("value")(
 		oneOf([
@@ -136,9 +137,31 @@ const parse = parser({
 				rule("lambda")]),
 			optional(rule("where-clause"))])),
 	"match-expression": node("match-expression")(
-		fail("Not implemented.")),
+		sequence([
+			ignore(lexeme("match")),
+			rule("expression"),
+			ignore(lexeme("with")),
+			delimited(
+				ignore(lexeme(",")))(
+				rule("case")),
+			optional(node("else")(
+				sequence([
+					ignore(lexeme(",")),
+					ignore(lexeme("else")),
+					rule("expression")])))])),
+	"case": node("case")(
+		sequence([
+			rule("expression"),
+			ignore(lexeme("=")),
+			rule("expression")])),
 	"if-expression": node("if-expression")(
-		fail("Not implemented.")),
+		sequence([
+			ignore(lexeme("if")),
+			rule("expression"),
+			ignore(lexeme("then")),
+			rule("expression"),
+			ignore(lexeme("else")),
+			rule("expression")])),
 	"lambda": oneOf([
 		node("lambda")(
 			sequence([
@@ -178,6 +201,7 @@ const parse = parser({
 				delimited(
 					ignore(lexeme(",")))(
 					rule("value-declaration"))),
+			optional(ignore(lexeme(","))),
 			ignore(lexeme("}"))])),
 	"list": node("list")(
 		sequence([
@@ -186,6 +210,7 @@ const parse = parser({
 				delimited(
 					ignore(lexeme(",")))(
 					rule("expression"))),
+			optional(ignore(lexeme(","))),
 			ignore(lexeme("]"))])),
 	"where-clause": node("where-clause")(
 		sequence([
@@ -199,35 +224,26 @@ const parse = parser({
 
 const file = read(filename);
 
-// TODO: Remove this immediately when error types become a thing
-const wrap = (context: File, options?: Parameters<typeof makeError>[2]) => <T extends (...args: any[]) => any>(f: T) => (...args: Parameters<T>) =>  {
-	try {
-		return f(...args) as ReturnType<T>;
-	} catch (error: any) {
-		throw makeError(error, context, options);
-	}
-};
-
-const contextualise = wrap(file);
-
 const odd = pipe(
-	contextualise(lex),
-	contextualise(parse),
-	first,
-	infer({
-		value: (node, context) => {
-			const value = node.children[0] as Token;
-			if (value.type !== "identifier")
-				return context;
-			return { ...context, [value.lexeme]: node.datatype };
-		},
-		operation: (node, context) => {
-			// Check operand types
-			throw "Not implemented.";
+	lex,
+	parse,
+	result => {
+		if (done(result)) {
+			return result.stack[0]
+		} else {
+			// TODO: Get an error like
+			// "Unexpected "," while trying to parse a map-field in a type-map"
+			const secondLastStateOffset = Object.keys(result.cache)
+				.sort((a, b) => Number(a) > Number(b) ? -1 : 1)
+				[1]!;
+			const error = Object.values<{
+				offset: number;
+				reason: string;
+			}>(result.cache[secondLastStateOffset])[0]!;
+
+			throw makeError(error, file);
 		}
-	})({
-		"+": { name: "Function", params: [ { name: "Number" }, { name: "Number" } ] }
-	}),
+	},
 	print);
 
 odd(file.contents);

@@ -11,7 +11,7 @@ export const select =
 		const matches: Leaf[] = [];
 
 		for (const i of node.children.keys()) {
-			const child = node.children[i];
+			const child = node.children[i]!;
 
 			if (selector(child, i)) {
 				matches.push(child);
@@ -36,7 +36,7 @@ export const map =
 		const root = mapper(node, 0);
 
 		for (const i of root.children.keys()) {
-			const child = root.children[i];
+			const child = root.children[i]!;
 
 			if (isNode(child)) {
 				root.children[i] = map(mapper)(child);

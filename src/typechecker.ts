@@ -10,9 +10,31 @@ type TypeVariable = number;
 
 type MonomorphicType = SimpleType | ParametricType;
 
-type SimpleType = Readonly<{
-	name: string;
+type FunctionType = Readonly<{
+	name: "Function";
+	params: readonly [Type, Type];
 }>;
+
+type UnionType = Readonly<{
+	name: "Union";
+	params: readonly [Type, Type];
+}>;
+
+type IntersectionType = Readonly<{
+	name: "Intersection";
+	params: readonly [Type, Type];
+}>;
+
+type PredefinedSimpleType =
+	| FunctionType
+	| UnionType
+	| IntersectionType;
+
+type SimpleType =
+	| PredefinedSimpleType
+	| Readonly<{
+			name: string;
+	  }>;
 
 type ParametricType = SimpleType &
 	Readonly<{
@@ -105,7 +127,7 @@ const infer = (rules: Rules) => {
 			};
 
 			for (let i = 0; i < node.children.length; i++) {
-				const child = node.children[i];
+				const child = node.children[i]!;
 				if (!isNode(child)) continue;
 				node.children[i] = infer(newContext)(child);
 			}

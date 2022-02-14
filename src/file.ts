@@ -10,12 +10,8 @@ export type File = Readonly<{
 
 // TODO: In the future, we definitely shouldn't
 // have entire files in memory
-// TODO: Because typescript can't type errors,
-// we can't allow the parser to make it's own
-// error when it must throw a token as well.
-// This is hideous and should be fixed asap.
 export const makeError = (
-	error: string | { message: string; offset: number },
+	error: string | { reason: string; offset: number },
 	file: File,
 	options?: { linesAround?: number }
 ) => {
@@ -55,7 +51,7 @@ export const makeError = (
 				char + offset + 2
 			)}\u001b[31m^\u001b[0m\n`;
 	}
-	return `${error.message}\n\tin "${file.path}"\n\tat line ${line}, char ${char}.\n\n${pretty}`.replace(
+	return `${error.reason}\n\tin "${file.path}"\n\tat line ${line}, char ${char}.\n\n${pretty}`.replace(
 		/\t/g,
 		"  "
 	);

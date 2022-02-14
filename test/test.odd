@@ -1,0 +1,24 @@
+Message : {
+	contents : String,
+	sent-at : Time,
+	from : User,
+	to : User,
+};
+
+User : {
+	name : String
+};
+
+jantje : User;
+jantje = { name = `jantje` };
+
+peter : User;
+peter = { name = `peter` };
+
+msg : Message;
+msg = {
+	contents = `contents`,
+	sent-at = Time.now,
+	from = jantje,
+	to = peter
+};

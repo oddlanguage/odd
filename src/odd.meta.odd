@@ -1,6 +1,4 @@
-program = statements ";"?;
-
-statements = statement (";" statement)*;
+program = statement (";" statement)* ";"?;
 
 statement = export | statement-body;
 
@@ -11,7 +9,7 @@ statement-body =
 	| declaration
 	| expression;
 
-type-declaration = .identifier type-parameters? "::" type;
+type-declaration = .identifier type-parameters? ":" type;
 
 type-parameters = .identifier+
 
@@ -46,7 +44,7 @@ type-value =
 	| literal
 	| "(" type ")";
 
-type-field = literal+ "::" type;
+type-field = literal+ ":" type;
 
 literal =
 	.identifier
@@ -70,9 +68,13 @@ expression = (match-expression | if-expression | lambda | operation) where-claus
 
 match-expression = "match" expression match+;
 
-match = type "=>" expression;
+match = pattern match-guard? "=" expression;
 
-if-expression = "if" expression "then" expression ("else" expression)?;
+pattern = TODO:;
+
+match-guard = "if" expression;
+
+if-expression = "if" expression "then" expression "else" expression;
 
 lambda = parameter "->" expression;
 

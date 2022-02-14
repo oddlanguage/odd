@@ -47,6 +47,9 @@ type Grammar = Readonly<{
 	[key: string]: Parser;
 }>;
 
+export const done = (result: Result) =>
+	result.ok && result.input.length === 0;
+
 /** TODO: Short explanation
  *
  * Example:
@@ -56,30 +59,17 @@ type Grammar = Readonly<{
  * ```
  */
 const parser =
-	(grammar: Grammar) => (input: Token[]) => {
+	(grammar: Grammar) => (input: Token[]) =>
 		// TODO: A parser shouldn't have to start at some
 		// predefined member of a grammar (i.e. "program").
-		// We should just allow a new PArser parameter.
-		const result = grammar.program({
+		// We should just allow a new Parser parameter.
+		grammar.program({
 			input,
 			grammar,
 			stack: [],
 			cache: {},
 			offset: 0
 		});
-
-		if (!result.ok) throw result.reason;
-
-		if (result.input.length) {
-			const peeked = peek(result);
-			throw {
-				offset: peeked?.offset,
-				message: `Unexpected ${peeked?.type} "${peeked?.lexeme}"`
-			};
-		}
-
-		return result.stack;
-	};
 
 export default parser;
 
@@ -142,9 +132,11 @@ export const rule =
 		if (!state.grammar[name])
 			throw `Unknown grammar rule "${name}".`;
 
-		return ((state.cache[state.offset] ??= {})[
-			name
-		] ??= state.grammar[name](state));
+		if (!state.cache[state.offset])
+			state.cache[state.offset] = {};
+
+		return (state.cache[state.offset]![name] ??=
+			state.grammar[name]!(state));
 	};
 
 /** A `Parser` that, given a number `n`, will return a
@@ -726,7 +718,7 @@ export const map =
  *   program: nodeLeft("app")(nOrMore(2)(type("id")))
  * });
  *
- * console.log(parse(lex("curried(argA)(argB)")));
+ * console.log(parse(lex("a b c")));
  * // [ { type: 'app',
  * //     children:
  * //      [ { type: 'app',
