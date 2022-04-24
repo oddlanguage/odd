@@ -1,6 +1,6 @@
-import read, { makeError } from "./file.js";
+import { read } from "./file.js";
 import lexer from "./lexer.js";
-import parser, { delimited, done, fail, ignore, lexeme, node, nodeLeft, nOrMore, oneOf, oneOrMore, optional, rule, sequence, type, zeroOrMore } from "./parser.js";
+import parser, { delimited, fail, ignore, lexeme, node, nodeLeft, nOrMore, oneOf, oneOrMore, optional, sequence, type, unpack, zeroOrMore } from "./parser.js";
 import { pipe, print } from "./utils.js";
 
 const filename = process.argv[2];
@@ -20,7 +20,7 @@ const lex = lexer([
 	// TODO: Allow lexer to recognise (recursive?) string interpolation
 ]);
 
-const parse = parser({
+const parse = parser("program", rule => ({
 	"program": node("program")(
 		sequence([
 			delimited(
@@ -220,30 +220,14 @@ const parse = parser({
 				rule("declaration"))])),
 	"parameter": node("parameter")(
 		type("identifier"))
-});
+}));
 
 const file = read(filename);
 
 const odd = pipe(
 	lex,
 	parse,
-	result => {
-		if (done(result)) {
-			return result.stack[0]
-		} else {
-			// TODO: Get an error like
-			// "Unexpected "," while trying to parse a map-field in a type-map"
-			const secondLastStateOffset = Object.keys(result.cache)
-				.sort((a, b) => Number(a) > Number(b) ? -1 : 1)
-				[1]!;
-			const error = Object.values<{
-				offset: number;
-				reason: string;
-			}>(result.cache[secondLastStateOffset])[0]!;
-
-			throw makeError(error, file);
-		}
-	},
+	unpack,
 	print);
 
-odd(file.contents);
+file.then(({ contents }) => odd(contents));

@@ -74,6 +74,9 @@ const lexer = (rules: Rule[]) => {
 				.map(applyTo(input))
 				.filter(didMatch);
 
+			// TODO: Adopt the Result monad so that we have to unpack
+			// and handle errors in a type-safe way, instead of this custom
+			// error "type".
 			if (matches.length === 0)
 				throw {
 					offset,

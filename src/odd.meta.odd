@@ -1,50 +1,57 @@
-program = statement (";" statement)* ";"?;
+program = statement (-";" statement)* -";"?;
 
 statement = export | statement-body;
 
-export = "export" statement-body;
+export = -"export" statement-body;
 
 statement-body =
 	type-declaration
 	| declaration
 	| expression;
 
-type-declaration = .identifier type-parameters? ":" type;
+type-declaration = .identifier type-parameters? -":" type;
 
-type-parameters = .identifier+
+type-parameters = .identifier+;
 
 type = type-function;
 
 type-function =
-	type-union "->" type-function
+	type-union -"->" type-function
 	| type-union;
 
 type-union =
-	type-intersection "|" type-union
+	type-intersection -"|" type-union
 	| type-intersection;
 
 type-intersection =
-	type-application "&" type-intersection
+	type-application -"&" type-intersection
 	| type-application;
 
-;; TODO: Allow direct left-recursion
-;; and treat it as a
-;; (left-associative) sequence?
+;; (Direct) left-recursion can be
+;; refactored to non-recursive loops, so
+;; the parsing algorithm for metaodd must
+;; translate these implicitly, and restore
+;; the virtual parse tree to a parse tree as
+;; specified by the grammar.
+;; Furthermore, the "<" (U+003C LESS-THAN) combinator
+;; should act a bit like the sequence combinator
+;; " " (U+0020 SPACE), except that it should fold
+;; the resulting sequence into a left-associative tree.
 type-application =
-	type-application type-application
+	type-application < type-application
 	| type-access;
 
 type-access =
-	type-value "." type-access
+	type-value -"." type-access
 	| type-value;
 
 type-value =
-	"{" (type-field ("," type-field)*)? "}"
-	| "[" (type ("," type)*)? "]"
+	-"{" (type-field (-"," type-field)*)? -"}"
+	| -"[" (type (-"," type)*)? -"]"
 	| literal
-	| "(" type ")";
+	| -"(" type -")";
 
-type-field = literal+ ":" type;
+type-field = literal+ -":" type;
 
 literal =
 	.identifier
@@ -58,46 +65,45 @@ declaration =
 	| value-declaration
 	| operator-declaration;
 
-function-declaration = .identifier expression "=" expression;
+function-declaration = .identifier expression -"=" expression;
 
-value-declaration = .identifier "=" expression;
+value-declaration = .identifier -"=" expression;
 
-operator-declaration = parameter .operator parameter "=" expression;
+operator-declaration = parameter .operator parameter -"=" expression;
 
 expression = (match-expression | if-expression | lambda | operation) where-clause?;
 
-match-expression = "match" expression match+;
+match-expression = -"match" expression match+;
 
-match = pattern match-guard? "=" expression;
+match = pattern match-guard? -"=" expression;
 
-pattern = TODO:;
+;; pattern = TODO:;
 
-match-guard = "if" expression;
+match-guard = -"if" expression;
 
-if-expression = "if" expression "then" expression "else" expression;
+if-expression = -"if" expression -"then" expression -"else" expression;
 
-lambda = parameter "->" expression;
+lambda = parameter -"->" expression;
 
 operation = application (.operator operation)?;
 
 application = access application?;
 
-access = value ("." value)*
+access = value (-"." value)*
 
 value =
 	map
 	| list
 	| literal
-	| "(" expression ")";
+	| -"(" expression -")";
 
-where-clause = "where" declaration ("," declaration)*
+where-clause = -"where" declaration (-"," declaration)*
 
-map = "{" (field ("," field)*)? "}";
+map = -"{" (field (-"," field)*)? -"}";
 
-field = key "=" expression;
+field = key -"=" expression;
 
-list = "[" (expression ("," expression)*)? "]";
+list = -"[" (expression (-"," expression)*)? -"]";
 
 ;; TODO: (referencable) capture
-;; groups syntax
-;; TODO: ignored groups syntax
+;; TODO: Node syntax

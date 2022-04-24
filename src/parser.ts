@@ -59,17 +59,20 @@ export const done = (result: Result) =>
  * ```
  */
 const parser =
-	(grammar: Grammar) => (input: Token[]) =>
-		// TODO: A parser shouldn't have to start at some
-		// predefined member of a grammar (i.e. "program").
-		// We should just allow a new Parser parameter.
-		grammar.program({
+	<G extends Grammar>(
+		entrypoint: keyof G,
+		construct: (make: typeof rule) => G
+	) =>
+	(input: Token[]) => {
+		const grammar = construct(rule);
+		return grammar[entrypoint]!({
 			input,
 			grammar,
 			stack: [],
 			cache: {},
 			offset: 0
 		});
+	};
 
 export default parser;
 
@@ -94,6 +97,19 @@ export default parser;
  */
 export const peek = (state: State): Maybe<Token> =>
 	state.input[0];
+
+/** Returns the first item in the `stack` of a given `Result`,
+ * which, given a `Success`, will be a full parse tree. If
+ * you try to `unpack` a `Failure`, this function will throw
+ * the error with which the `Failure` failed parsing.
+ */
+export const unpack = (
+	result: Result
+): Result["stack"][0] => {
+	if (result.ok) return result.stack[0]!;
+	// TODO: Smart errors with line and column, instead of just the ".reason"
+	throw result.reason;
+};
 
 /** Returns a `Parser` that will yield the `Result` of
  * `name` in `Grammar`, if it exists in a given `State`.
@@ -124,10 +140,10 @@ export const peek = (state: State): Maybe<Token> =>
  * TODO: // Assume an invalid state.
  * ```
  */
-export const rule =
+const rule =
 	(name: keyof Grammar) => (state: State) => {
-		// TODO: The combinator `rule` cannot be meaningfully typed without
-		// knowing the keys in a `Grammar`. How could we do that?
+		// NOTE that `rule` is explicitly NOT exported, it must be
+		// recieved from a parser.
 
 		if (!state.grammar[name])
 			throw `Unknown grammar rule "${name}".`;
@@ -197,12 +213,15 @@ export const succeed =
 /** A `Parser` that, given a `reason`, will return a `Failure`
  * where `Failure.reason` is set to `reason`.
  *
+ * Calling `fail` on a `State` that already is a `Failure` will
+ * "overwrite" that `State`'s `reason` property.
+ *
  * Example:
  *
  * ```ts
  * const trap = fail("You have activated my trap card!");
  *
- * // Assume a valid state
+ * // Assume some state
  * trap(state);
  * // > {
  * // >   ...
@@ -210,8 +229,6 @@ export const succeed =
  * // >   reason: "You have activated my trap card!"
  * // >   ...
  * // > }
- *
- * TODO: // Assume an invalid state
  * ```
  */
 export const fail =
@@ -554,11 +571,8 @@ export const optional =
 export const benchmark =
 	(parser: Parser) => (state: State) => {
 		const before = performance.now();
-		const result = parser(state);
-		return [
-			performance.now() - before,
-			result
-		] as const;
+		parser(state);
+		return performance.now() - before;
 	};
 
 type DebugOptions = Readonly<{
@@ -579,20 +593,22 @@ type DebugOptions = Readonly<{
 export const debug =
 	(parser: Parser, options?: Partial<DebugOptions>) =>
 	(state: State) => {
-		const [elapsed, result] = benchmark(parser)(state);
-
 		const info: Record<string, any> = {};
 
 		if (options?.label) info.label = options.label;
 
-		if (options?.elapsed ?? true)
+		if (options?.elapsed) {
+			const elapsed = benchmark(parser)(state);
 			info.elapsed = elapsed;
+		}
+
+		const result = parser(state);
 
 		if (options?.stack) info.stack = result.stack;
 
 		if (options?.cache) info.cache = result.cache;
 
-		print(info);
+		if (Object.keys(info).length) print(info);
 
 		return result;
 	};
