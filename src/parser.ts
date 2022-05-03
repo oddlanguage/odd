@@ -43,7 +43,6 @@ type Result = Success | Failure;
 type Parser = (state: State) => Result;
 
 type Grammar = Readonly<{
-	program: (initalState: State) => Result;
 	[key: string]: Parser;
 }>;
 
