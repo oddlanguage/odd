@@ -35,7 +35,7 @@ type PrintOptions = Partial<
 		compact: InspectOptions["compact"];
 	}>
 >;
-export const print = <T>(
+export const log = <T>(
 	x: T,
 	options?: PrintOptions
 ) => {

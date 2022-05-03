@@ -2,9 +2,9 @@ import { performance } from "node:perf_hooks";
 import { stringify, Token } from "./lexer.js";
 import {
 	constant,
+	log,
 	Maybe,
 	prefixIndefiniteArticle,
-	print,
 	range
 } from "./utils.js";
 
@@ -608,7 +608,7 @@ export const debug =
 
 		if (options?.cache) info.cache = result.cache;
 
-		if (Object.keys(info).length) print(info);
+		if (Object.keys(info).length) log(info);
 
 		return result;
 	};
@@ -646,13 +646,11 @@ export const nothing = (state: State): Result => {
 export const anything = (state: State): Result => {
 	const peeked = peek(state);
 
-	return peeked
-		? { ...state, ok: true }
-		: {
-				...state,
-				ok: false,
-				reason: `Expected anything but got nothing.`
-		  };
+	return (
+		peeked
+			? succeed(1)
+			: fail("Expected anything but got nothing.")
+	)(state);
 };
 
 /** TODO: Short explanation

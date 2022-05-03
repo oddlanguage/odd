@@ -1,7 +1,7 @@
 import { read } from "./file.js";
 import lexer from "./lexer.js";
 import parser, { delimited, fail, ignore, lexeme, node, nodeLeft, nOrMore, oneOf, oneOrMore, optional, sequence, type, unpack, zeroOrMore } from "./parser.js";
-import { pipe, print } from "./utils.js";
+import { log, pipe } from "./utils.js";
 
 const filename = process.argv[2];
 if (!filename)
@@ -228,6 +228,6 @@ const odd = pipe(
 	lex,
 	parse,
 	unpack,
-	print);
+	log);
 
 file.then(({ contents }) => odd(contents));

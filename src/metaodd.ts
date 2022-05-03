@@ -2,7 +2,7 @@ import { read, write } from "./file.js";
 import lexer, { Token } from "./lexer.js";
 import parser, { ignore, Leaf, lexeme, node, nOrMore, oneOf, oneOrMore, sequence, type, unpack } from "./parser.js";
 import { isNode } from "./tree.js";
-import { pipe, print } from "./utils.js";
+import { log, pipe } from "./utils.js";
 
 const [fileToRead, outFile] = process.argv.slice(2);	
 if (!fileToRead)
@@ -106,7 +106,7 @@ const run = pipe(
 	data =>
 		(outFile)
 			? write(outFile, data)
-			: print(data)
+			: log(data)
 );
 
 read(fileToRead)
