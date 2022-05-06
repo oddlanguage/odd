@@ -82,6 +82,43 @@ export const zip =
 		xs.map((x, i) => [x, ys[i]] as const);
 
 export const mapObject =
-	<T, U>(f: (entry: [string, any]) => [string, U]) =>
+	<T extends object, U extends object>(
+		f: (entry: [string, any]) => [string, U]
+	) =>
 	(x: T) =>
 		Object.fromEntries(Object.entries(x).map(f));
+
+export const get =
+	<T extends object>(key: keyof T) =>
+	(target: T) =>
+		target[key];
+
+export const formatBytes = (
+	data: number,
+	decimals: number = 2,
+	bits?: boolean
+) => {
+	const size = bits ? 1000 : 1024;
+	const d = Math.floor(
+		Math.log(data) / Math.log(size)
+	);
+	return 0 == data
+		? "0 " + bits
+			? "bits"
+			: "Bytes"
+		: (data / Math.pow(size, d)).toFixed(
+				Math.max(0, decimals)
+		  ) +
+				" " +
+				[
+					bits ? "bits" : "Bytes",
+					"KB",
+					"MB",
+					"GB",
+					"TB",
+					"PB",
+					"EB",
+					"ZB",
+					"YB"
+				][d];
+};

@@ -1,8 +1,8 @@
 import { read, write } from "./file.js";
 import lexer, { Token } from "./lexer.js";
-import parser, { ignore, Leaf, lexeme, node, nOrMore, oneOf, oneOrMore, sequence, type, unpack } from "./parser.js";
+import parser, { debug, ignore, Leaf, lexeme, node, nOrMore, oneOf, oneOrMore, sequence, type, unpack } from "./parser.js";
 import { isNode } from "./tree.js";
-import { log, pipe } from "./utils.js";
+import { get, log, pipe } from "./utils.js";
 
 const [fileToRead, outFile] = process.argv.slice(2);	
 if (!fileToRead)
@@ -14,15 +14,15 @@ const lex = lexer([
 	{ type: "regex", pattern: /\/(?:[^/]|\/)+?(?<!\\)\// },
 	{ type: "string", pattern: /(?:"(?:[^"]|\")+?(?<!\\)")|(?:'(?:[^']|\')+?(?<!\\)')/ },
 	{ type: "quantifier", pattern: /[+*?]/ },
-	{ type: "type", pattern: /\.[a-zA-Z]+(?:\-[a-zA-Z]+)*[\d'"]*/ },
-	{ type: "identifier", pattern: /[a-zA-Z]+(?:\-[a-zA-Z]+)*[\d'"]*/ },
+	{ type: "type", pattern: /\.[a-zA-Z]+(?:\-[a-zA-Z]+)*/ },
+	{ type: "identifier", pattern: /[a-zA-Z]+(?:\-[a-zA-Z]+)*/ },
 	{ type: "keyword", pattern: /[=|<-]/ },
 	{ type: "punctuation", pattern: /[;()]/ }
 ]);
 
-const parse = parser("program", rule => ({
-	program: node("program")(
-		oneOrMore(rule("rule"))),
+const parse = parser(rule => ({
+	program: debug(node("program")(
+		oneOrMore(rule("rule"))), { elapsed: true, memory: true }),
 	rule: node("rule")(sequence([
 		type("identifier"),
 		ignore(lexeme("=")),
@@ -32,16 +32,16 @@ const parse = parser("program", rule => ({
 	union: oneOf([
 		node("union")(
 			sequence([
-				rule("foldl"),
+				rule("fold"),
 				ignore(lexeme("|")),
 				rule("union")])),
-		rule("foldl")]),
-	foldl: oneOf([
-		node("foldl")(
+		rule("fold")]),
+	fold: oneOf([
+		node("fold")(
 			sequence([
 				rule("sequence"),
 				ignore(lexeme("<")),
-				rule("foldl")])),
+				rule("fold")])),
 		rule("sequence")]),
 	sequence: oneOf([
 		node("sequence")(
@@ -51,14 +51,20 @@ const parse = parser("program", rule => ({
 		node("quantified")(
 			sequence([
 				rule("ignore"),
-				type("quantifier")])),
+				rule("quantifier")])),
 		rule("ignore")]),
+	quantifier: oneOf([
+		sequence([
+			ignore(lexeme("+")),
+			type("number")]),
+		type("quantifier")]),
 	ignore: oneOf([
 		node("ignore")(
 			sequence([
 				ignore(lexeme("-")),
 				rule("atom")])),
-		rule("atom")]),
+		rule("atom")
+	]),
 	atom: oneOf([
 		type("string"),
 		type("type"),
@@ -67,24 +73,26 @@ const parse = parser("program", rule => ({
 			ignore(lexeme("(")),
 			rule("expression"),
 			ignore(lexeme(")"))])])
-}));
+}))("program");
 
 const translate = (leaf: Leaf): string => {
 	if (isNode(leaf)) {
 		switch (leaf.type) {
-			case "program": return `export default parser("program", rule => ({\n${leaf.children.map(child => `  ${translate(child)}`).join(",\n")}\n}))`;
-			case "rule": return `"${(leaf.children[0]! as Token).lexeme}": ${translate(leaf.children[1]!)}`;
+			case "program": return `export default parser(rule => ({\n${leaf.children.map(child => `  ${translate(child)}`).join(",\n")}\n}))("program");`;
+			case "rule": return `"${(leaf.children[0]! as Token).lexeme}": node("${(leaf.children[0]! as Token).lexeme}")(${translate(leaf.children[1]!)})`;
 			case "sequence": return `sequence([${leaf.children.map(translate).join(", ")}])`;
 			case "quantified": {
-				const term = `(${translate(leaf.children[0]!)})`;
-				switch ((leaf.children[1] as Token).lexeme) {
-					case "?": return `optional${term}`;
-					case "*": return `zeroOrMore${term}`;
-					case "+": return `oneOrMore${term}`;
+				const term = translate(leaf.children[0]!);
+				const quantifier = (leaf.children[1] as Token);
+				switch (quantifier.lexeme) {
+					case "?": return `optional(${term})`;
+					case "*": return `zeroOrMore(${term})`;
+					case "+": return `oneOrMore(${term})`;
+					default: throw `Unknown quantifier ${quantifier.type} ("${quantifier.lexeme}").`;
 				}
 			}
 			case "union": return `oneOf([${leaf.children.map(translate).join(", ")}])`;
-			case "foldl": return `nodeLeft("TODO")(sequence([${leaf.children.map(translate).join(", ")}]))`;
+			case "fold": return `nodeLeft("TODO")(sequence([${leaf.children.map(translate).join(", ")}]))`;
 			case "ignore": return `ignore(${translate(leaf.children[0]!)})`;
 			default: throw `No rule for node of type "${leaf.type}".`
 		}
@@ -99,6 +107,7 @@ const translate = (leaf: Leaf): string => {
 };
 
 const run = pipe(
+	get("contents"),
 	lex,
 	parse,
 	unpack,
@@ -110,5 +119,18 @@ const run = pipe(
 );
 
 read(fileToRead)
-	.then(({ contents }) => run(contents))
-	.catch(console.error);
+	.then(run)
+	.catch(error => {
+		// Prevent catching real errors
+		if (!error.type || !error.reason || typeof error.offset !== "number")
+			return console.log(error);
+
+		read(fileToRead).then(({ contents }) => {
+			const startOfLine = contents.lastIndexOf("\n", error.offset) + 1;
+			const endOfLine = contents.indexOf("\n", error.offset);
+			const lineNumber = contents.slice(0, error.offset).split(/\r*\n/).length;
+			const erroneousLine = contents.slice(startOfLine, endOfLine);
+			const indexOfErrorOnErroneousLine = lineNumber.toString().length + 3 + (error.offset - startOfLine);
+			console.error(`${error.type}: ${error.reason}\n\n${lineNumber} | ${erroneousLine}\n${" ".repeat(indexOfErrorOnErroneousLine)}${"^".repeat(error.size ?? 1)}`);
+		});
+	});

@@ -1,7 +1,10 @@
 import { performance } from "node:perf_hooks";
 import { stringify, Token } from "./lexer.js";
+import { isNode } from "./tree.js";
 import {
 	constant,
+	formatBytes,
+	last,
 	log,
 	Maybe,
 	prefixIndefiniteArticle,
@@ -17,6 +20,7 @@ export type Node = Readonly<{
 
 type Offset = number;
 
+// TODO: Change input type to string and output type to T extends Leaf
 type State = Readonly<{
 	grammar: Grammar;
 	input: Token[];
@@ -38,8 +42,6 @@ type Failure = State &
 
 type Result = Success | Failure;
 
-// TODO: Make State and Parser polymorphic so it no longer
-// has predefined in- and output types.
 type Parser = (state: State) => Result;
 
 type Grammar = Readonly<{
@@ -59,9 +61,9 @@ export const done = (result: Result) =>
  */
 const parser =
 	<G extends Grammar>(
-		entrypoint: keyof G,
 		construct: (make: typeof rule) => G
 	) =>
+	(entrypoint: keyof G) =>
 	(input: Token[]) => {
 		const grammar = construct(rule);
 		return grammar[entrypoint]!({
@@ -90,7 +92,7 @@ export default parser;
  *   if (!next)
  *     return fail("Expected anything but got nothing.")(state);
  *
- *   return succeed(1)(state);
+ *   return consume(1)(state);
  * }
  * ```
  */
@@ -105,15 +107,44 @@ export const peek = (state: State): Maybe<Token> =>
 export const unpack = (
 	result: Result
 ): Result["stack"][0] => {
-	if (result.ok) return result.stack[0]!;
-	// TODO: Smart errors with line and column, instead of just the ".reason"
-	throw result.reason;
+	if (result.input.length !== 0) {
+		const peeked = peek(result)!;
+		const [rule, { reason, input }] = Object.entries(
+			last(Object.values(result.cache))!
+		)
+			.filter(([_, result]) => !result.ok)
+			.reduce(([name, result], furthest) =>
+				result.offset > furthest[1].offset
+					? [name, result]
+					: furthest
+			) as [string, Failure];
+		throw {
+			type: "ParseError",
+			reason: `Got stuck trying to parse ${prefixIndefiniteArticle(
+				rule
+			)}; ${reason}`,
+			offset: input[0]!.offset,
+			size: peeked.lexeme.length
+		};
+	}
+
+	if (!result.ok) {
+		const peeked = peek(result)!;
+		throw {
+			type: "ParseError",
+			reason: result.reason,
+			offset: peeked.offset,
+			size: peeked.lexeme.length
+		};
+	}
+
+	return result.stack[0]!;
 };
 
 /** Returns a `Parser` that will yield the `Result` of
  * `name` in `Grammar`, if it exists in a given `State`.
  *
- * All `Result`s are cached in the `State`.
+ * All `Result`s are automatically memoised.
  *
  * Example:
  *
@@ -150,21 +181,36 @@ const rule =
 		if (!state.cache[state.offset])
 			state.cache[state.offset] = {};
 
+		// TODO: See if we can allow left-recursion
+		// as per https://dl.acm.org/doi/pdf/10.5555/1621410.1621425
 		return (state.cache[state.offset]![name] ??=
 			state.grammar[name]!(state));
 	};
+
+/** A `Parser` that, given some `Leaf`, will add that `Leaf`
+ * to the _stack_.
+ *
+ * TODO: Example
+ */
+export const succeed =
+	(leaf: Leaf | Leaf[]) =>
+	(state: State): Success => ({
+		...state,
+		ok: true,
+		stack: state.stack.concat(leaf)
+	});
 
 /** A `Parser` that, given a number `n`, will return a
  * `Success` with `n` items moved from `State.input`
  * to `Success.stack`.
  *
- * Calling `succeed` on a `State` with an empty `input`
+ * Calling `consume` on a `State` with an empty `input`
  * will only enforce the type to change from `State` to `Success`.
  *
  * Example:
  *
  * ```ts
- * succeed(1)({
+ * consume(1)({
  *   ...
  *   input: [ { type: "a", lexeme: "a", offset: 0 } ],
  *   stack: []
@@ -178,7 +224,7 @@ const rule =
  * // >   ...
  * // > }
  *
- * succeed(1)({
+ * consume(1)({
  *   ...
  *   ok: false,
  *   input: [],
@@ -194,20 +240,13 @@ const rule =
  * // > }
  * ```
  */
-export const succeed =
+export const consume =
 	(n: number) =>
-	(state: State): Success =>
-		state.input.length === 0
-			? { ...state, ok: true }
-			: {
-					...state,
-					ok: true,
-					stack: state.stack.concat(
-						state.input.slice(0, n)
-					),
-					input: state.input.slice(n),
-					offset: state.offset + n
-			  };
+	(state: State): Success => ({
+		...succeed(state.input.slice(0, n))(state),
+		input: state.input.slice(n),
+		offset: state.offset + n
+	});
 
 /** A `Parser` that, given a `reason`, will return a `Failure`
  * where `Failure.reason` is set to `reason`.
@@ -286,7 +325,7 @@ export const lexeme =
 		const peeked = peek(state);
 		return (
 			peeked?.lexeme === lexeme
-				? succeed(1)
+				? consume(1)
 				: fail(
 						`Expected "${lexeme}" but got ${stringify(
 							peeked
@@ -343,7 +382,7 @@ export const type =
 		const peeked = peek(state);
 		return (
 			peeked?.type === type
-				? succeed(1)
+				? consume(1)
 				: fail(
 						`Expected ${prefixIndefiniteArticle(
 							type
@@ -579,6 +618,7 @@ type DebugOptions = Readonly<{
 	elapsed: boolean;
 	stack: boolean;
 	cache: boolean;
+	memory: boolean;
 }>;
 
 /** TODO: Short explanation
@@ -599,6 +639,14 @@ export const debug =
 		if (options?.elapsed) {
 			const elapsed = benchmark(parser)(state);
 			info.elapsed = elapsed;
+		}
+
+		if (options?.memory) {
+			const before = process.memoryUsage().heapUsed;
+			parser(state);
+			info.memory = formatBytes(
+				process.memoryUsage().heapUsed - before
+			);
 		}
 
 		const result = parser(state);
@@ -647,7 +695,7 @@ export const anything = (state: State): Result => {
 
 	return (
 		peeked
-			? succeed(1)
+			? consume(1)
 			: fail("Expected anything but got nothing.")
 	)(state);
 };
@@ -663,29 +711,6 @@ export const anything = (state: State): Result => {
 export const wrap =
 	(start: Parser, end: Parser) => (parser: Parser) =>
 		sequence([start, parser, end]);
-
-/** TODO: Short explanation
- *
- * Example:
- *
- * ```ts
- * // TODO: code showing a simple usage
- * ```
- */
-export const describe =
-	(description: string) =>
-	(parser: Parser) =>
-	(state: State): Result => {
-		const result = parser(state);
-		return result.ok
-			? result
-			: {
-					...result,
-					reason: `Expected ${description} but got ${stringify(
-						peek(state)
-					)}.`
-			  };
-	};
 
 /** TODO: Short explanation
  *
@@ -715,7 +740,7 @@ export const map =
 			  };
 	};
 
-/** Fold a sequence of parsed leaves into a single `node` of type `type` repeatedly, from the left.
+/** Fold a sequence of parsed `Leaf`s into a single `Node` through `f` repeatedly, from the left.
  *
  * Can be used to format flat lists of matches into nodes as if they were left-associative.
  *
@@ -723,36 +748,68 @@ export const map =
  *
  * ```ts
  * const lex = lexer([
- *   { type: "id", pattern: /\w+/ },
- *   { type: "ws", pattern: /\s+/, ignore: true }
+ *   { type: "identifier", pattern: /\w+/ },
+ *   { type: "whitespace", pattern: /\s+/, ignore: true }
  * ])
  *
  * const parse = parser({
- *   program: nodeLeft("app")(nOrMore(2)(type("id")))
+ *   program: fold(children => ({
+ *     type: "application",
+ *     children
+ *   }))(nOrMore(2)(type("identifier")))
  * });
  *
  * console.log(parse(lex("a b c")));
- * // [ { type: 'app',
+ * // [ { type: 'application',
  * //     children:
- * //      [ { type: 'app',
+ * //      [ { type: 'application',
  * //          children:
- * //           [ { type: 'id', lexeme: 'a', location: { line: 1, char: 1 } },
- * //             { type: 'id', lexeme: 'b', location: { line: 1, char: 3 } } ] },
- * //        { type: 'id', lexeme: 'c', location: { line: 1, char: 5 } } ] } ]
+ * //           [ { type: 'identifier', lexeme: 'a', location: { line: 1, char: 1 } },
+ * //             { type: 'identifier', lexeme: 'b', location: { line: 1, char: 3 } } ] },
+ * //        { type: 'identifier', lexeme: 'c', location: { line: 1, char: 5 } } ] } ]
  * ```
  */
-export const nodeLeft = (type: string) =>
+export const fold = (f: (stack: Leaf[]) => Node) =>
 	map(parsed =>
 		parsed
 			.slice(0, -1)
 			.reduce(
 				stack => [
-					{ type, children: stack.slice(0, 2) },
+					f(stack.slice(0, 2)),
 					...stack.slice(2)
 				],
 				parsed
 			)
 	);
+
+/** Unfold a signle `Node` into a sequence of `Leaf`s through `f` repeatedly, from the left.
+ *
+ * Can be used to flatten deep parent-child structures into their constituents.
+ *
+ * TODO: Example
+ */
+export const unfold = map(parsed => {
+	// TODO: This feels horribly over-complicated...
+	if (!parsed[0] || !isNode(parsed[0])) return parsed;
+
+	const type = parsed[0].type;
+	let stack = parsed[0].children;
+	let i = 1;
+	while (
+		stack[i] &&
+		isNode(stack[i]!) &&
+		(stack[i] as Node).type === type
+	) {
+		stack = [
+			...stack.slice(0, i),
+			...(stack[i] as Node).children,
+			...stack.slice(i + 2)
+		];
+		i += 1;
+	}
+
+	return stack;
+});
 
 /* TODO:
 These combinators are LL(1). They cannot handle left-recursion.

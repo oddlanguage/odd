@@ -1,6 +1,6 @@
 import { read } from "./file.js";
 import lexer from "./lexer.js";
-import parser, { delimited, fail, ignore, lexeme, node, nodeLeft, nOrMore, oneOf, oneOrMore, optional, sequence, type, unpack, zeroOrMore } from "./parser.js";
+import parser, { debug, delimited, fail, fold, ignore, lexeme, node, nOrMore, oneOf, oneOrMore, optional, sequence, type, unpack, zeroOrMore } from "./parser.js";
 import { log, pipe } from "./utils.js";
 
 const filename = process.argv[2];
@@ -20,13 +20,13 @@ const lex = lexer([
 	// TODO: Allow lexer to recognise (recursive?) string interpolation
 ]);
 
-const parse = parser("program", rule => ({
-	"program": node("program")(
+const parse = parser(rule => ({
+	"program": debug(node("program")(
 		sequence([
 			delimited(
 				ignore(lexeme(";")))
 				(rule("statement")),
-			optional(ignore(lexeme(";")))])),
+			optional(ignore(lexeme(";")))])), { elapsed: true, memory: true }),
 	"statement": oneOf([
 		rule("export"),
 		rule("statement-body")]),
@@ -69,10 +69,10 @@ const parse = parser("program", rule => ({
 				rule("type-application")])),
 		rule("type-application")]),
 	"type-application": oneOf([
-		nodeLeft("type-application")(nOrMore(2)(rule("type-access"))),
+		fold(children => ({type: "type-application", children }))(nOrMore(2)(rule("type-access"))),
 		rule("type-access")]),
 	"type-access": oneOf([
-		nodeLeft("type-access")(
+		fold(children => ({type: "type-access", children }))(
 			sequence([
 				rule("type-value"),
 				oneOrMore(sequence([
@@ -177,7 +177,7 @@ const parse = parser("program", rule => ({
 				rule("operation")])),
 		rule("application")]),
 	"application": oneOf([
-		nodeLeft("application")(nOrMore(2)(rule("access"))),
+		fold(children => ({type: "application", children }))(nOrMore(2)(rule("access"))),
 		rule("access")]),
 	"access": oneOf([
 		node("access")(
@@ -220,7 +220,7 @@ const parse = parser("program", rule => ({
 				rule("declaration"))])),
 	"parameter": node("parameter")(
 		type("identifier"))
-}));
+}))("program");
 
 const file = read(filename);
 

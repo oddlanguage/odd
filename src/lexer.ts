@@ -79,10 +79,9 @@ const lexer = (rules: Rule[]) => {
 			// error "type".
 			if (matches.length === 0)
 				throw {
+					type: "LexError",
 					offset,
-					message: `Unknown lexeme "${input.charAt(
-						0
-					)}"`
+					reason: `Unknown lexeme "${input.charAt(0)}"`
 				};
 
 			const longest = matches.reduce(
