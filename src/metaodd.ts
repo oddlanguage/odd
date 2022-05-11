@@ -1,8 +1,8 @@
-import { read, write } from "./file.js";
+import { read } from "./file.js";
 import lexer, { Token } from "./lexer.js";
 import parser, { debug, ignore, Leaf, lexeme, node, nOrMore, oneOf, oneOrMore, sequence, type, unpack } from "./parser.js";
 import { isNode } from "./tree.js";
-import { get, log, pipe } from "./utils.js";
+import { get, pipe } from "./utils.js";
 
 const [fileToRead, outFile] = process.argv.slice(2);	
 if (!fileToRead)
@@ -112,25 +112,27 @@ const run = pipe(
 	parse,
 	unpack,
 	translate,
-	data =>
-		(outFile)
-			? write(outFile, data)
-			: log(data)
+	// data =>
+	// 	(outFile)
+	// 		? write(outFile, data)
+	// 		: log(data)
 );
 
 read(fileToRead)
-	.then(run)
-	.catch(error => {
-		// Prevent catching real errors
-		if (!error.type || !error.reason || typeof error.offset !== "number")
-			return console.log(error);
+	.then(file => {
+		try {
+			run({ ...file, contents: file.contents.repeat(250) });
+		} catch (error: any) {
+			// Prevent catching real errors
+			if (!error.type || !error.reason || typeof error.offset !== "number")
+				return console.log(error);
 
-		read(fileToRead).then(({ contents }) => {
+			const { contents } = file;
 			const startOfLine = contents.lastIndexOf("\n", error.offset) + 1;
 			const endOfLine = contents.indexOf("\n", error.offset);
 			const lineNumber = contents.slice(0, error.offset).split(/\r*\n/).length;
 			const erroneousLine = contents.slice(startOfLine, endOfLine);
 			const indexOfErrorOnErroneousLine = lineNumber.toString().length + 3 + (error.offset - startOfLine);
 			console.error(`${error.type}: ${error.reason}\n\n${lineNumber} | ${erroneousLine}\n${" ".repeat(indexOfErrorOnErroneousLine)}${"^".repeat(error.size ?? 1)}`);
-		});
+		}
 	});

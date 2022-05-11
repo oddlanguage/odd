@@ -193,11 +193,11 @@ const rule =
  * TODO: Example
  */
 export const succeed =
-	(leaf: Leaf | Leaf[]) =>
+	(value: Leaf | Leaf[]) =>
 	(state: State): Success => ({
 		...state,
 		ok: true,
-		stack: state.stack.concat(leaf)
+		stack: state.stack.concat(value)
 	});
 
 /** A `Parser` that, given a number `n`, will return a
