@@ -25,7 +25,7 @@ type State = Readonly<{
 	grammar: Grammar;
 	input: Token[];
 	stack: Leaf[];
-	cache: Record<Offset, Record<keyof Grammar, Result>>;
+	cache: Record<string, Record<Offset, Result>>;
 	offset: Offset;
 }>;
 
@@ -141,6 +141,17 @@ export const unpack = (
 	return result.stack[0]!;
 };
 
+/** TODO: Write docs */
+const memoise =
+	(key: keyof State["cache"]) =>
+	(parser: Parser) =>
+	(state: State): Result => {
+		if (!state.cache[key]) state.cache[key] = {};
+
+		return (state.cache[key]![state.offset] ??=
+			parser(state));
+	};
+
 /** Returns a `Parser` that will yield the `Result` of
  * `name` in `Grammar`, if it exists in a given `State`.
  *
@@ -178,16 +189,12 @@ const rule =
 		if (!state.grammar[name])
 			throw `Unknown grammar rule "${name}".`;
 
-		if (!state.cache[state.offset])
-			state.cache[state.offset] = {};
-
-		// TODO: See if we can allow left-recursion
-		// as per https://dl.acm.org/doi/pdf/10.5555/1621410.1621425
-		return (state.cache[state.offset]![name] ??=
-			state.grammar[name]!(state));
+		return memoise(name as string)(
+			state.grammar[name]!
+		)(state);
 	};
 
-/** A `Parser` that, given some `Leaf`, will add that `Leaf`
+/** A `Parser` that, given one or more `Leaf`s, will add them
  * to the _stack_.
  *
  * TODO: Example
@@ -598,7 +605,11 @@ export const optional =
 		return result.ok ? result : { ...state, ok: true };
 	};
 
-/** TODO: Short explanation
+/** Run a `Parser`, keeping track of the time it took to run and its
+ * memory usage.
+ *
+ * Keep in mind that memoised parsers will skew results significantly
+ * if averaged over several runs. TODO: Implement "count" parameter.
  *
  * Example:
  *
@@ -608,9 +619,17 @@ export const optional =
  */
 export const benchmark =
 	(parser: Parser) => (state: State) => {
-		const before = performance.now();
-		parser(state);
-		return performance.now() - before;
+		const heap = process.memoryUsage().heapUsed;
+		const now = performance.now();
+		const result = parser(state);
+		const elapsed = performance.now() - now;
+		const consumed =
+			process.memoryUsage().heapUsed - heap;
+		return [
+			result,
+			formatBytes(consumed),
+			`${elapsed.toFixed(2)} ms`
+		] as const;
 	};
 
 type DebugOptions = Readonly<{
@@ -632,28 +651,20 @@ type DebugOptions = Readonly<{
 export const debug =
 	(parser: Parser, options?: Partial<DebugOptions>) =>
 	(state: State) => {
+		const [result, memory, elapsed] =
+			benchmark(parser)(state);
+
 		const info: Record<string, any> = {};
 
 		if (options?.label) info.label = options.label;
 
-		if (options?.elapsed) {
-			const elapsed = benchmark(parser)(state);
-			info.elapsed = elapsed;
-		}
-
-		if (options?.memory) {
-			const before = process.memoryUsage().heapUsed;
-			parser(state);
-			info.memory = formatBytes(
-				process.memoryUsage().heapUsed - before
-			);
-		}
-
-		const result = parser(state);
+		if (options?.elapsed) info.elapsed = elapsed;
 
 		if (options?.stack) info.stack = result.stack;
 
 		if (options?.cache) info.cache = result.cache;
+
+		if (options?.memory) info.memory = memory;
 
 		if (Object.keys(info).length) log(info);
 
@@ -757,7 +768,7 @@ export const map =
  *     type: "application",
  *     children
  *   }))(nOrMore(2)(type("identifier")))
- * });
+ * }, "program");
  *
  * console.log(parse(lex("a b c")));
  * // [ { type: 'application',
@@ -810,61 +821,3 @@ export const unfold = map(parsed => {
 
 	return stack;
 });
-
-/* TODO:
-These combinators are LL(1). They cannot handle left-recursion.
-A user can change their grammar to remove left recursion as follows:
-
-add = exp "+" exp;
-sub = exp "-" exp;
-exp = add | sub | .number;
-
-with left recursion eliminated:
-
-exp-tail = add-tail | sub-tail;
-add-tail = "+" exp;
-sub-tail = "-" exp;
-exp = .number exp-tail?
-
-Create an algorithm that recognises left-recursion
-(can we detect indirect recursion as well?)
-And internally rewrite left-recursive rules to non left recursive rules.
-Afterwards, the resulting parse tree must be transformed to the
-actually provided grammar structure:
-
-{
-	type: exp
-	children: [
-		.number
-		{
-			type: add-tail
-			children: [
-				"+"
-				.number
-			]
-		}
-	]
-}
-
-should be transformed back to
-
-{
-	type: add
-	children: [
-		.number
-		.number
-	]
-}
-
-If we continue the parser-generator metalanguage approach,
-we can just rewrite the grammar on a meta-level, preventing
-the need to rewrite the constructed tree.
-
-Furthermore, it is very common for a parser to
-handle operator precedence.
-We should decide wether a user should just use the
-grammar constructs to implement precedence climbing,
-or wether we should provide a mechanism for declaring
-operator fixity and precendence and construct an
-algorithm (pratt?) for it.
-*/

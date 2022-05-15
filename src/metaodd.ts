@@ -120,19 +120,22 @@ const run = pipe(
 
 read(fileToRead)
 	.then(file => {
+		const contents = file.contents.repeat(270);
+
 		try {
-			run({ ...file, contents: file.contents.repeat(250) });
+			run({ ...file, contents });
 		} catch (error: any) {
 			// Prevent catching real errors
 			if (!error.type || !error.reason || typeof error.offset !== "number")
 				return console.log(error);
 
-			const { contents } = file;
 			const startOfLine = contents.lastIndexOf("\n", error.offset) + 1;
-			const endOfLine = contents.indexOf("\n", error.offset);
+			const linePadding = contents.slice(startOfLine).match(/\S/)?.index ?? 0;
+			const maybeEndOfLine = contents.indexOf("\n", error.offset);
+			const endOfLine = maybeEndOfLine === -1 ? contents.length : maybeEndOfLine;
 			const lineNumber = contents.slice(0, error.offset).split(/\r*\n/).length;
-			const erroneousLine = contents.slice(startOfLine, endOfLine);
-			const indexOfErrorOnErroneousLine = lineNumber.toString().length + 3 + (error.offset - startOfLine);
+			const erroneousLine = contents.slice(startOfLine + linePadding, endOfLine);
+			const indexOfErrorOnErroneousLine = lineNumber.toString().length + 3 + (error.offset - startOfLine - linePadding);
 			console.error(`${error.type}: ${error.reason}\n\n${lineNumber} | ${erroneousLine}\n${" ".repeat(indexOfErrorOnErroneousLine)}${"^".repeat(error.size ?? 1)}`);
 		}
 	});

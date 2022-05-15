@@ -1,7 +1,7 @@
 import { read } from "./file.js";
 import lexer from "./lexer.js";
 import parser, { debug, delimited, fail, fold, ignore, lexeme, node, nOrMore, oneOf, oneOrMore, optional, sequence, type, unpack, zeroOrMore } from "./parser.js";
-import { log, pipe } from "./utils.js";
+import { get, pipe } from "./utils.js";
 
 const filename = process.argv[2];
 if (!filename)
@@ -222,12 +222,37 @@ const parse = parser(rule => ({
 		type("identifier"))
 }))("program");
 
-const file = read(filename);
-
-const odd = pipe(
+const run = pipe(
+	get("contents"),
 	lex,
 	parse,
 	unpack,
-	log);
+	// data =>
+	// 	(outFile)
+	// 		? write(outFile, data)
+	// 		: log(data)
+);
 
-file.then(({ contents }) => odd(contents));
+// TODO: This code is copy/pasted between odd.ts and metaodd.ts
+// while it really should be handled in `unpack`, but that would
+// require the contents of the file to be passed. Either pass it
+// to `unpack`, or find a way to construct errors from just a `State`.
+read(filename)
+	.then(file => {
+		try {
+			run(file);
+		} catch (error: any) {
+			// Prevent catching real errors
+			if (!error.type || !error.reason || typeof error.offset !== "number")
+				return console.log(error);
+
+			const { contents } = file;
+			const startOfLine = contents.lastIndexOf("\n", error.offset) + 1;
+			const linePadding = contents.slice(startOfLine).match(/\S/)?.index ?? 0;
+			const endOfLine = contents.indexOf("\n", error.offset);
+			const lineNumber = contents.slice(0, error.offset).split(/\r*\n/).length;
+			const erroneousLine = contents.slice(startOfLine + linePadding, endOfLine);
+			const indexOfErrorOnErroneousLine = lineNumber.toString().length + 3 + (error.offset - startOfLine - linePadding);
+			console.error(`${error.type}: ${error.reason}\n\n${lineNumber} | ${erroneousLine}\n${" ".repeat(indexOfErrorOnErroneousLine)}${"^".repeat(error.size ?? 1)}`);
+		}
+	});
