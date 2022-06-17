@@ -1,4 +1,4 @@
-;; First rule is the parser's entrypoint
+-- First rule is the parser's entrypoint
 program = rule+;
 
 rule = .identifier -"=" expression -";";
@@ -9,17 +9,17 @@ union = fold -"|" union | fold;
 
 fold = sequence -"<" fold | sequence;
 
-;; TODO: Since only 2 or more `quantified`s should be made a Sequence node here,
-;; we need to distinguish `1` or `2 or more` (instead of just saying `quantified+`).
-;; But this seems a bit ugly/hackish. We must think of some grammar construct
-;; to allow n or more repetitions, maybe even with an optional maximum?
+-- TODO: Since only 2 or more `quantified`s should be made a Sequence node here,
+-- we need to distinguish `1` or `2 or more` (instead of just saying `quantified+`).
+-- But this seems a bit ugly/hackish. We must think of some grammar construct
+-- to allow n or more repetitions, maybe even with an optional maximum?
 sequence = quantified quantified+ | quantified;
 
 quantified = ignore quantifier | ignore;
 
 quantifier = -"+" .number | .quantifier;
 
-ignore = -"-" atom;
+ignore = -"-" atom | atom;
 
 atom = .string
 	| .type

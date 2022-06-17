@@ -27,16 +27,16 @@ type-intersection =
 	type-application -"&" type-intersection
 	| type-application;
 
-;; (Direct) left-recursion can be
-;; refactored to non-recursive loops, so
-;; the parsing algorithm for metaodd must
-;; translate these implicitly, and restore
-;; the virtual parse tree to a parse tree as
-;; specified by the grammar.
-;; Furthermore, the "<" (U+003C LESS-THAN) combinator
-;; should act a bit like the sequence combinator
-;; " " (U+0020 SPACE), except that it should fold
-;; the resulting sequence into a left-associative tree.
+-- (Direct) left-recursion can be
+-- refactored to non-recursive loops, so
+-- the parsing algorithm for metaodd must
+-- translate these implicitly, and restore
+-- the virtual parse tree to a parse tree as
+-- specified by the grammar.
+-- Furthermore, the "<" (U+003C LESS-THAN) combinator
+-- should act a bit like the sequence combinator
+-- " " (U+0020 SPACE), except that it should fold
+-- the resulting sequence into a left-associative tree.
 type-application =
 	type-application < type-application
 	| type-access;
@@ -77,7 +77,7 @@ match-expression = -"match" expression match+;
 
 match = pattern match-guard? -"=" expression;
 
-;; pattern = TODO:;
+-- pattern = TODO:;
 
 match-guard = -"if" expression;
 
@@ -104,6 +104,3 @@ map = -"{" (field (-"," field)*)? -"}";
 field = key -"=" expression;
 
 list = -"[" (expression (-"," expression)*)? -"]";
-
-;; TODO: (referencable) capture
-;; TODO: Node syntax

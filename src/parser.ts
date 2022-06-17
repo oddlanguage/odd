@@ -4,7 +4,6 @@ import { isNode } from "./tree.js";
 import {
 	constant,
 	formatBytes,
-	last,
 	log,
 	Maybe,
 	prefixIndefiniteArticle,
@@ -108,16 +107,22 @@ export const unpack = (
 	result: Result
 ): Result["stack"][0] => {
 	if (result.input.length !== 0) {
-		const peeked = peek(result)!;
-		const [rule, { reason, input }] = Object.entries(
-			last(Object.values(result.cache))!
-		)
-			.filter(([_, result]) => !result.ok)
-			.reduce(([name, result], furthest) =>
-				result.offset > furthest[1].offset
-					? [name, result]
+		const offsets = Object.values(result.cache).reduce(
+			(acc, cur) => ({ ...acc, ...cur })
+		);
+		const furthest = Object.entries(offsets)
+			.filter(([_, { ok }]) => !ok)
+			.reduce((furthest, current) =>
+				parseInt(current[0]) > parseInt(furthest[0])
+					? current
 					: furthest
 			) as [string, Failure];
+		const [rule] = Object.entries(result.cache).find(
+			([_, results]) => furthest[0] in results
+		)!;
+		const { reason, input } = furthest[1];
+		const peeked = peek(furthest[1])!;
+
 		throw {
 			type: "ParseError",
 			reason: `Got stuck trying to parse ${prefixIndefiniteArticle(
@@ -146,10 +151,16 @@ const memoise =
 	(key: keyof State["cache"]) =>
 	(parser: Parser) =>
 	(state: State): Result => {
-		if (!state.cache[key]) state.cache[key] = {};
+		// TODO: This might be sped up by using a global cache?
+		// I feel like this causes a lot of misses since the cache
+		// is shared between several instances...
+		if (state.cache[key]?.[state.offset])
+			return state.cache[key]![state.offset]!;
 
-		return (state.cache[key]![state.offset] ??=
-			parser(state));
+		const result = parser(state);
+		result.cache[key] ??= {};
+		result.cache[key]![state.offset] = result;
+		return result;
 	};
 
 /** Returns a `Parser` that will yield the `Result` of

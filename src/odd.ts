@@ -8,7 +8,7 @@ if (!filename)
 	throw "Please specify a file to run.";
 
 const lex = lexer([
-	{ type: "comment", pattern: /;;[^\n]*/, ignore: true },
+	{ type: "comment", pattern: /--[^\n]*/, ignore: true },
 	{ type: "whitespace", pattern: /\s+/, ignore: true },
 	{ type: "keyword", pattern: /if|then|else|match|where|with|\=|\=>|\&|:|\->|\.|\|/ },
 	{ type: "operator", pattern: /[!@#$%^&*\-=+\\|:<>/?\.]+/ },

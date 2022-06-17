@@ -1,15 +1,15 @@
-import { read } from "./file.js";
+import { read, write } from "./file.js";
 import lexer, { Token } from "./lexer.js";
 import parser, { debug, ignore, Leaf, lexeme, node, nOrMore, oneOf, oneOrMore, sequence, type, unpack } from "./parser.js";
 import { isNode } from "./tree.js";
-import { get, pipe } from "./utils.js";
+import { get, log, pipe } from "./utils.js";
 
 const [fileToRead, outFile] = process.argv.slice(2);	
 if (!fileToRead)
 	throw "Please specify a file to run.";
 
 const lex = lexer([
-	{ type: "comment", pattern: /;;[^\n]*/, ignore: true },
+	{ type: "comment", pattern: /--[^\n]*/, ignore: true },
 	{ type: "whitespace", pattern: /\s+/, ignore: true },
 	{ type: "regex", pattern: /\/(?:[^/]|\/)+?(?<!\\)\// },
 	{ type: "string", pattern: /(?:"(?:[^"]|\")+?(?<!\\)")|(?:'(?:[^']|\')+?(?<!\\)')/ },
@@ -112,16 +112,18 @@ const run = pipe(
 	parse,
 	unpack,
 	translate,
-	// data =>
-	// 	(outFile)
-	// 		? write(outFile, data)
-	// 		: log(data)
+	data => {
+		if (false) {
+			return (outFile)
+				? write(outFile!, data)
+				: log(data);
+		}
+	}
 );
 
 read(fileToRead)
 	.then(file => {
-		const contents = file.contents.repeat(270);
-
+		const contents = (file.contents+"\n").repeat(272);
 		try {
 			run({ ...file, contents });
 		} catch (error: any) {
