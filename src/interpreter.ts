@@ -7,6 +7,11 @@ const target = process.argv[2];
 if (!target)
   throw new Error("Please specify a file to run.");
 
-readFile(target, "utf-8").then(input =>
-  console.log(serialise(odd(input)))
-);
+const input = await readFile(target, "utf-8");
+
+try {
+  console.log(serialise(odd(input)));
+} catch (err) {
+  console.error(err);
+  process.exit(1);
+}
