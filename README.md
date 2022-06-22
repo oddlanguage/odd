@@ -28,14 +28,21 @@ Odd is highly W.I.P. but these are the main goals of the language:
 
 ## 🖥️ Usage
 
-To try the Odd REPL for a spin, download it and run it through node:
+> Odd is guaranteed to work with node version 16.13.1, but should be compatible with earlier versions down to v12, possibly requiring the `--harmony` flag.
+
+To try the Odd REPL for a spin, download the repo and run it through Node:
 
 ```shell
 tsc # compile source
-tsc; node dist/repl.js # run repl
+node dist/repl.js # run repl
 ```
 
-Odd is guaranteed to work with node version 16.13.1, but should be compatible with earlier versions down to v12, possibly requiring the `--harmony` flag.
+To try the Odd interpreter, download the repo and run it through Node:
+
+```shell
+tsc # compile source
+node dist/interpreter.js path/to/file.odd # run interpreter on path/to/file.odd
+```
 
 When Odd is finished, it will be a standalone executable requiring no separate Node installation, or any other dependency.
 
