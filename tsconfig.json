@@ -1,23 +1,23 @@
 {
-	"compilerOptions": {
-		"strict": true,
-		"alwaysStrict": true,
-		"noImplicitAny": true,
-		"noUncheckedIndexedAccess": true,
-		"noUnusedLocals": true,
-		"noUnusedParameters": true,
-		"exactOptionalPropertyTypes": true,
-		"target": "esnext",
-		"module": "esnext",
-		"incremental": true,
-		"outDir": "./dist",
-		"removeComments": true,
-		"allowSyntheticDefaultImports": true,
-		"esModuleInterop": true,
-		"downlevelIteration": true,
-		"importHelpers": true,
-		"lib": ["ESNext", "DOM"],
-		"moduleResolution": "node"
-	},
-	"include": ["./src"]
+  "compilerOptions": {
+    "strict": true,
+    "alwaysStrict": true,
+    "noImplicitAny": true,
+    "noUncheckedIndexedAccess": true,
+    "noUnusedLocals": true,
+    "noUnusedParameters": true,
+    "exactOptionalPropertyTypes": true,
+    "target": "esnext",
+    "module": "esnext",
+    "incremental": true,
+    "outDir": "./dist",
+    "removeComments": true,
+    "allowSyntheticDefaultImports": true,
+    "esModuleInterop": true,
+    "downlevelIteration": true,
+    "importHelpers": true,
+    "lib": ["ESNext", "DOM"],
+    "moduleResolution": "NodeNext"
+  },
+  "include": ["./src"]
 }

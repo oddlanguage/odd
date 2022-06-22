@@ -1,11 +1,33 @@
--- Comment :)
-
-List : {
-	size : Any
+State t : {
+  input : String,
+  offset : Number,
+  output : List t,
+  grammar : Grammar,
 };
 
-a : List;
-a = {
-	size = 0,
-	name = 0
+Grammar : Record String Parser;
+
+Parser : State -> Result;
+
+Result : Success | Failure;
+
+Success : State & { ok : true, };
+
+Failure : State & { ok : false, reason : string, };
+
+Node t : {
+  type : String,
+  children: List t,
 };
+
+rule : Grammar g => Key g -> Parser;
+rule name state = state "grammar" name state;
+
+parser : Grammar -> (Parser -> Parser) -> String -> Result;
+export parser grammar program input =
+  program rule {
+    input,
+    output = [],
+    grammar,
+    offset = 0,
+  };
