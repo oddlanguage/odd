@@ -1,4 +1,4 @@
-import { context, delimited, either, except, ignore, node, nodel, oneOf, oneOrMore, optional, pair, parser, Parser, regex, sequence, string, unpack } from "./parser.js";
+import { context, delimited, either, except, ignore, node, nodel, oneOf, oneOrMore, optional, pair, parser, Parser, regex, sequence, string, unpack } from "./combinators.js";
 
 const ws = ignore(regex(/\s*/));
 

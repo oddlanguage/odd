@@ -1,6 +1,6 @@
 import { readFile } from "node:fs/promises";
 import odd from "./odd.js";
-import { serialise } from "./parser.js";
+import { serialise } from "./utils.js";
 
 const target = process.argv[2];
 

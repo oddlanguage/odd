@@ -1,5 +1,5 @@
 import odd from "./odd.js";
-import { serialise } from "./parser.js";
+import { serialise } from "./utils.js";
 
 process.stdout.write(`Odd repl 0.1\n> `);
 process.stdin.setEncoding("utf-8");
