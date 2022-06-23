@@ -1,14 +1,31 @@
-import { context, delimited, either, except, ignore, node, nodel, oneOf, oneOrMore, optional, pair, parser, Parser, regex, sequence, string, unpack } from "./combinators.js";
+import {
+  context,
+  delimited,
+  either,
+  except,
+  ignore,
+  node,
+  nodel,
+  oneOf,
+  oneOrMore,
+  optional,
+  pair,
+  parser,
+  Parser,
+  regex,
+  sequence,
+  string,
+  unpack
+} from "./combinators.js";
 
 const ws = ignore(regex(/\s*/));
 
-const list =
-  (delimiter: Parser) => (parser: Parser) =>
-    sequence([
-      delimited(sequence([ws, delimiter, ws]))(parser),
-      ws,
-      optional(delimiter)
-    ]);
+const list = (delimiter: Parser) => (parser: Parser) =>
+  sequence([
+    delimited(sequence([ws, delimiter, ws]))(parser),
+    ws,
+    optional(delimiter)
+  ]);
 
 const structure = (
   start: Parser,
@@ -355,4 +372,5 @@ const parse = parser(rule => ({
   )(pair(string("..."), rule("pattern")))
 }));
 
-export default (input: string) => unpack(parse("program")(input))[0];
+export default (input: string) =>
+  unpack(parse("program")(input))[0];
