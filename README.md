@@ -1,7 +1,7 @@
 # Odd Language
 
 <div align="center">
-<img src="./odd.svg" height="150" alt="An orange rectangle with rounded edges, with the word 'Odd' written on it. The last 'd' is raised above the rest of the word, to symbolise the quirkyness of the Odd language.">
+<img src="./logo.svg" height="150" alt="An orange rectangle with rounded edges, with the word 'Odd' written on it. The last 'd' is raised above the rest of the word, to symbolise the quirkyness of the Odd language.">
 
 _Hmm, that's **odd**..._
 
