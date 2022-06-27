@@ -3,7 +3,6 @@ import path from "node:path";
 import url from "node:url";
 import { Node, Token } from "./combinators.js";
 import odd from "./odd.js";
-import { serialise } from "./utils.js";
 
 const target = process.argv[2];
 
@@ -63,10 +62,10 @@ const compile = compiler(compile => ({
   application: node =>
     compile((node as Node).children[0]!) +
     `(${compile((node as Node).children[1]!)})`,
-  name: node => (node as any as Token).lexeme,
+  name: token => (token as any as Token).lexeme,
   "export-statement": node =>
     `export ${compile((node as Node).children[0]!)}`,
-  string: node => (node as any as Token).lexeme,
+  string: token => (token as any as Token).lexeme,
   record: node =>
     `(${
       (node as Node).children.length
@@ -88,8 +87,14 @@ const compile = compiler(compile => ({
             .join(", ")} ][n]`
         : "() => nothing"
     })`,
-  number: node =>
-    (node as any as Token).lexeme.replace(/,/g, "")
+  number: token =>
+    (token as any as Token).lexeme.replace(/,/g, ""),
+  destructuring: node =>
+    `...(${compile((node as Node).children[0]!)})`,
+  operation: node =>
+    (node as Node).children.map(compile).join(" "),
+  operator: token => (token as any as Token).lexeme,
+  boolean: token => (token as any as Token).lexeme
 }));
 
 const generateTempFilename = () =>
@@ -114,24 +119,22 @@ const run = (src: string) =>
 
 try {
   const ast = odd(input);
-  console.log(serialise(ast));
-  //   const prelude =
-  //     `
-  // //============= PRELUDE ==============
-  // import { inspect } from "node:util";
-  // const log = x => {
-  //   switch (typeof x) {
-  //     case "string": console.log(x); break;
-  //     case "function": console.log(x.toString()); break;
-  //     default: console.log(inspect(x, true, Infinity, false));
-  //   }
-  // };
-  // const nothing = Symbol("nothing");
-  //   `.trim() +
-  //     "\n//========== END OF PRELUDE ==========\n";
-  //   const src = prelude + compile(ast)!;
-  //   console.log(src);
-  //   run(src);
+  const prelude =
+    `
+  //============= PRELUDE ==============
+  import { inspect } from "node:util";
+  const log = x => {
+    switch (typeof x) {
+      case "string": console.log(x); break;
+      case "function": console.log(x.toString()); break;
+      default: console.log(inspect(x, true, Infinity, false));
+    }
+  };
+  const nothing = Symbol("nothing");
+    `.trim() +
+    "\n//========== END OF PRELUDE ==========\n";
+  const src = prelude + compile(ast)!;
+  run(src);
 } catch (err) {
   console.error(err);
   process.exit(1);
