@@ -35,10 +35,11 @@ const structure = (
   end: Parser
 ): Parser => sequence([start, ws, member, ws, end]);
 
+// TODO: let/where, if-then-else, match
 const parse = parser(rule => ({
   name: regex(/[a-z]+(?:-[a-z][a-z0-9]*)*/i, "name"),
   "string literal": regex(
-    /"(?:[^"]|\\")+?(?<!\\)"/,
+    /"(?:[^"]|\\")*?(?<!\\)"/,
     "string"
   ),
   "number literal": regex(
@@ -190,44 +191,38 @@ const parse = parser(rule => ({
         rule("expression")
       ])
     ),
-    rule("application")
-  ),
-  application: either(
-    nodel("application")(
-      pair(
-        rule("atom"),
-        oneOrMore(pair(ws, rule("atom")))
-      )
-    ),
     rule("operation")
   ),
-  operation: oneOf([
+  operation: either(
     nodel(
       "operation",
       3
     )(
       pair(
-        rule("atom"),
+        rule("application"),
         oneOrMore(
           sequence([
             ws,
             rule("operator literal"),
             ws,
-            rule("atom")
+            rule("expression")
           ])
         )
       )
     ),
-    nodel(
-      "partial operation",
-      2
-    )(
-      oneOrMore(
-        sequence([
-          rule("operator literal"),
-          ws,
-          rule("atom")
-        ])
+    rule("application")
+  ),
+  application: oneOf([
+    nodel("partial-application")(
+      pair(
+        rule("operator literal"),
+        oneOrMore(pair(ws, rule("atom")))
+      )
+    ),
+    nodel("application")(
+      pair(
+        rule("atom"),
+        oneOrMore(pair(ws, rule("atom")))
       )
     ),
     rule("atom")
@@ -259,20 +254,22 @@ const parse = parser(rule => ({
     )
   ),
   "record field": node("record-field")(
-    pair(
-      rule("record field key"),
-      optional(
-        sequence([
-          ws,
-          string("="),
-          ws,
-          rule("expression")
-        ])
+    either(
+      rule("destructuring"),
+      pair(
+        rule("record field key"),
+        optional(
+          sequence([
+            ws,
+            string("="),
+            ws,
+            rule("expression")
+          ])
+        )
       )
     )
   ),
   "record field key": oneOf([
-    rule("destructuring"),
     rule("name"),
     rule("string")
   ]),
