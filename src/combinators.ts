@@ -1,7 +1,6 @@
 import {
   escapeSpecialChars,
-  prefixIndefiniteArticle,
-  serialise
+  prefixIndefiniteArticle
 } from "./utils.js";
 
 let id = 0;
@@ -397,7 +396,7 @@ const foldl =
 export const nodel =
   (type: Node["type"], size: number = 2) =>
   (parser: Parser) =>
-    foldl(node(type)(parser), size);
+    memoise(type)(foldl(node(type)(parser), size));
 
 export const succeed = optional;
 
@@ -458,23 +457,5 @@ export const benchmark =
       `Took ${elapsed}ms and used ${used}kb.`
     );
 
-    return result;
-  };
-
-export const trace =
-  (label: string) =>
-  (parser: Parser): Parser =>
-  state => {
-    const result = parser(state);
-    console.log(
-      serialise({
-        label,
-        ok: result.ok,
-        offset: result.offset,
-        output: result.output.slice(
-          state.output.length
-        )
-      })
-    );
     return result;
   };
