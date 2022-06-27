@@ -42,7 +42,7 @@ succeed value n state = advance n accept value;
 fail : String -> State -> Failure;
 fail reason state = {
   ...state,
-  ok: false,
+  ok = false,
   reason,
 };
 
@@ -63,11 +63,11 @@ export parser grammar program input =
 
 end : Parser;
 end state = if done state
-  then { ...state, ok: true, }
+  then { ...state, ok = true, }
   else {
     ...state,
-    ok: false,
-    problem: "expected to have reached the end of the input",
+    ok = false,
+    problem = "expected to have reached the end of the input",
   };
 
 string : String -> Parser;
