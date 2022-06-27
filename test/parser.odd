@@ -1,0 +1,76 @@
+State t : {
+  input : String,
+  offset : Number,
+  output : List t,
+  grammar : Grammar,
+};
+
+Grammar : Record String Parser;
+
+Parser a b : State a -> Result b;
+
+Result t : Success t | Failure t;
+
+Success t : State t & { ok : true, };
+
+Failure t : State t
+  & {
+    ok : false,
+    reason : String,
+  };
+
+Node t : {
+  type : String,
+  children : List t,
+};
+
+Token : {
+  type : String,
+  lexe : String,
+  offset : Number,
+};
+
+advance : Number -> State -> State;
+advance n state = { ...state, offset = state "offset" + n, };
+
+accept : x -> State y -> State (x & y);
+accept value state = { ...state, output = state "output" + value, };
+
+succeed : x -> Number -> State y -> Success (x & y);
+succeed value n state = advance n accept value;
+
+fail : String -> State -> Failure;
+fail reason state = {
+  ...state,
+  ok: false,
+  reason,
+};
+
+done : State -> Boolean;
+export done state = state "offset" >= size state "input";
+
+rule : Grammar g => Key g -> Parser;
+export rule name state = state "grammar" name state;
+
+parser : Grammar -> (rule -> Parser) -> String -> Result;
+export parser grammar program input =
+  program rule {
+    input,
+    output = [],
+    grammar,
+    offset = 0,
+  };
+
+end : Parser;
+end state = if done state
+  then { ...state, ok: true, }
+  else {
+    ...state,
+    ok: false,
+    problem: "expected to have reached the end of the input",
+  };
+
+string : String -> Parser;
+string pattern state = if state "input" <| starts-with { pattern, at = state "offset" }
+  then advance size pattern <| state
+  else reject "Expected \"\(pattern)\"" <| state;

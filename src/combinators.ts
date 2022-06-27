@@ -15,18 +15,12 @@ const cache: Record<
 > = {};
 const cacheKey = Symbol("cacheKey");
 
-export type Context = Readonly<{
-  offset: number;
-  context: string;
-}>;
-
 export type State = Readonly<{
   [cacheKey]: number;
   input: string;
   offset: number;
-  output: any[];
+  output: Array<Node | Token | string>;
   grammar: Grammar;
-  contexts: Context[];
 }>;
 
 export type Grammar = Readonly<Record<string, Parser>>;
@@ -47,30 +41,76 @@ export type Failure = State &
   }>;
 
 export type Node = Readonly<{
-  type: keyof any;
-  children: any[];
+  type: string;
+  children: Array<Node | Token | string>;
+}>;
+
+export type Token = Readonly<{
+  type: string;
+  lexeme: string;
+  offset: number;
 }>;
 
 export const isNode = (value: any): value is Node =>
-  !!(value?.type && value?.children);
+  !!(
+    typeof value?.type === "string" &&
+    Array.isArray(value?.children)
+  );
+
+export const isToken = (value: any): value is Token =>
+  !!(
+    typeof value?.type === "string" &&
+    typeof value?.lexeme === "string" &&
+    typeof value?.offset === "number"
+  );
 
 export const parser =
-  (lang: (ref: typeof rule) => Grammar) =>
+  (construct: (_rule: typeof rule) => Grammar) =>
   (entrypoint: keyof Grammar) =>
   (input: string) => {
-    const grammar = lang(rule);
-    const {
-      [entrypoint]: _,
-      ...grammarWithoutEntrypoint
-    } = grammar;
-    return grammar[entrypoint]!({
+    const grammar = construct(rule);
+    const result = grammar[entrypoint]!({
       input,
       offset: 0,
       output: [],
-      grammar: grammarWithoutEntrypoint,
-      [cacheKey]: newId(),
-      contexts: []
+      grammar,
+      [cacheKey]: newId()
     });
+
+    if (!done(result)) {
+      return {
+        ...result,
+        ok: false,
+        offset: result.offset + 1,
+        problem: `Unexpected "${escapeSpecialChars(
+          String.fromCodePoint(
+            result.input.codePointAt(
+              result.offset + 1
+            )!
+          )
+        )}"`
+      };
+    }
+
+    return result;
+  };
+
+export const memoise =
+  (key: string) =>
+  (parser: Parser): Parser =>
+  state => {
+    if (
+      cache[state[cacheKey]]?.[state.offset]?.[key]
+    ) {
+      return cache[state[cacheKey]]![state.offset]![
+        key
+      ]!;
+    }
+
+    const result = parser(state);
+    ((cache[state[cacheKey]] ??= {})[state.offset] ??=
+      {})[key] = result;
+    return result;
   };
 
 const rule =
@@ -79,36 +119,25 @@ const rule =
     if (!state.grammar[name])
       throw `Unknown grammar rule "${name}".`;
 
-    if (cache[state[cacheKey]]?.[state.offset]?.[name])
-      return cache[state[cacheKey]]![state.offset]![
-        name
-      ]!;
-
-    const result = state.grammar[name]!(state);
-    ((cache[state[cacheKey]] ??= {})[state.offset] ??=
-      {})[name] = result;
-    return result;
+    return state.grammar[name]!(state);
   };
 
 export const done = (state: State) =>
   state.offset >= state.input.length;
 
-const makeError = (failure: Failure) => {
-  // TODO: the entire context stack gets erased since the actual failed attempt
-  // is the second last result, before the parsing that is ultimately returned.
-  // Any parser can write over a `Failure`, but this overwrites the last `ok` and
-  // `problem` field.
-  // Maybe if we find that `!parse(state).ok && !state.ok` then return
-  // `state` instead of `parse(state)`?
-  // const start = failure.contextStack[0] ?? failure;
-  // const end =
-  //   failure.contextStack[
-  //     failure.contextStack.length - 1
-  //   ] ?? start;
-  // Although this will probably break caching functionality
-  // which is already proving to be essential to keeping parse times low...
-  // Maybe pass the previous context if both fail?
+export const end: Parser = (state: State) =>
+  done(state)
+    ? { ...state, ok: true }
+    : {
+        ...state,
+        ok: false,
+        problem:
+          "expected to have reached the end of the input"
+      };
 
+export const getErroneousLines = (
+  failure: Failure
+) => {
   const maybeStartOfErrorLine =
     failure.input.lastIndexOf("\n", failure.offset);
   const startOfErrorLine =
@@ -128,7 +157,8 @@ const makeError = (failure: Failure) => {
       .slice(0, endOfErrorLine)
       .match(/\n/g)?.length ?? 0) + 1;
   const lineIndicator = `${erroneousLineNumber} | `;
-  const erroneousLine =
+
+  return (
     lineIndicator +
     failure.input.slice(
       firstCharPosOfErrorLine,
@@ -140,67 +170,36 @@ const makeError = (failure: Failure) => {
       failure.offset -
         firstCharPosOfErrorLine +
         lineIndicator.length
-    )}^`;
-
-  const walkContext = (failure: Failure) => {
-    const stack = failure.contexts.reverse();
-    return stack[0]
-      ? ` while parsing ${prefixIndefiniteArticle(
-          stack[0].context
-        )}`
-      : "";
-  };
-
-  return `${erroneousLine}\nGot stuck${walkContext(
-    failure
-  )}: ${failure.problem}`;
+    )}^`
+  );
 };
 
-export const unpack = (result: Result) => {
-  // TODO: Get furthest context instead of using the cache
-  const cached = cache[result[cacheKey]];
+const makeError = (failure: Failure) =>
+  getErroneousLines(failure) +
+  "\n" +
+  failure.problem +
+  ".\n";
+
+export const unpack = <T>(result: Result) => {
   delete cache[result[cacheKey]];
 
-  if (!done(result)) {
-    // TODO: Get furthest context instead of using the cache
-    const failure = (Object.values(
-      Object.entries(cached ?? {}).sort(
-        ([a], [b]) => Number(b) - Number(a)
-      )[0]?.[1] ?? {}
-    ).slice(-1)[0] as Failure) ?? {
-      ...result,
-      ok: false,
-      problem: `Unexpected "${escapeSpecialChars(
-        result.input.charAt(result.offset)
-      )}".`
-    };
-    throw makeError(failure);
-  }
-
   if (!result.ok) {
-    // TODO: Get furthest context instead of using the cache
-    throw makeError(result);
+    throw makeError({
+      ...result,
+      problem:
+        `Got stuck trying to parse <context> in <context>: ` +
+        result.problem
+    });
   }
 
-  return result.output;
+  return result.output as any as T;
 };
 
-export const context =
-  (context: Context["context"]) =>
-  (parser: Parser): Parser =>
-  state => ({
-    ...parser({
-      ...state,
-      contexts: state.contexts.concat({
-        offset: state.offset,
-        context
-      })
-    }),
-    contexts: state.contexts
-  });
-
 export const accept =
-  (value: any | any[], n: number = 0) =>
+  (
+    value: State["output"][number] | State["output"],
+    n: number = 0
+  ) =>
   (state: State): Success => ({
     ...state,
     ok: true,
@@ -217,7 +216,7 @@ export const advance =
   });
 
 export const reject =
-  (problem: string) =>
+  (problem: Failure["problem"]) =>
   (state: State): Failure => ({
     ...state,
     ok: false,
@@ -230,14 +229,7 @@ export const string =
     (state.input.startsWith(pattern, state.offset)
       ? advance(pattern.length)
       : reject(
-          `Expected "${escapeSpecialChars(
-            pattern
-          )}" but got "${escapeSpecialChars(
-            state.input.slice(
-              state.offset,
-              state.offset + pattern.length
-            )
-          )}".`
+          `Expected "${escapeSpecialChars(pattern)}"`
         ))(state);
 
 export const regex = (
@@ -281,7 +273,7 @@ export const regex = (
                   )}`) +
               ` but got "${escapeSpecialChars(
                 state.input.charAt(state.offset)
-              )}".`
+              )}"`
           )
     )(state);
   };
@@ -347,23 +339,24 @@ export const optional =
 export const node =
   (type: Node["type"]) =>
   (parser: Parser): Parser =>
-  state => {
-    const result = parser(state);
-    if (!result.ok) return result;
+    memoise(type)(state => {
+      const result = parser(state);
+      if (!result.ok) return result;
 
-    return {
-      ...result,
-      output: state.output.concat({
-        type,
-        children: result.output.slice(
-          state.output.length
-        )
-      })
-    };
-  };
+      return {
+        ...result,
+        output: state.output.concat({
+          type,
+          children: result.output.slice(
+            state.output.length
+          )
+        })
+      };
+    });
 
 const makeNode =
-  (type: Node["type"]) => (children: any[]) => ({
+  (type: Node["type"]) =>
+  (children: State["output"]) => ({
     type,
     children
   });
@@ -397,7 +390,7 @@ const foldl =
       ...result,
       output: result.output
         .slice(0, -1)
-        .concat(folded[0])
+        .concat(folded[0]!)
     };
   };
 
@@ -409,7 +402,7 @@ export const nodel =
 export const succeed = optional;
 
 export const fail =
-  (problem: string) =>
+  (problem: Failure["problem"]) =>
   (parser: Parser): Parser =>
   state => ({
     ...parser(state),
@@ -435,9 +428,11 @@ export const except =
           ...state,
           ok: false,
           problem: `Unexpected ${
-            excepted.type ??
-            excepted.lexeme ??
-            excepted
+            isNode(excepted) || isToken(excepted)
+              ? excepted.type
+              : isToken(excepted)
+              ? excepted.lexeme
+              : excepted
           }`
         };
       }

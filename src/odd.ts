@@ -1,9 +1,11 @@
 import {
-  context,
+  benchmark,
   delimited,
   either,
+  end,
   except,
   ignore,
+  Node,
   node,
   nodel,
   oneOf,
@@ -49,10 +51,15 @@ const parse = parser(rule => ({
   )(regex(/[~!@#$%^&*\-+=<>\./?:|\\]+/, "operator")),
   "literal literal": regex(/nothing/, "literal"),
 
-  program: node("program")(
-    either(
-      oneOrMore(rule("statement")),
-      rule("statement body")
+  program: benchmark(
+    node("program")(
+      pair(
+        either(
+          oneOrMore(rule("statement")),
+          rule("statement body")
+        ),
+        end
+      )
     )
   ),
   statement: sequence([
@@ -63,7 +70,7 @@ const parse = parser(rule => ({
     string(";"),
     ws
   ]),
-  "export statement": node("export statement")(
+  "export statement": node("export-statement")(
     sequence([
       string("export"),
       ws,
@@ -83,7 +90,7 @@ const parse = parser(rule => ({
       rule("type")
     ])
   ),
-  type: context("type")(rule("type function")),
+  type: rule("type function"),
   "type function": either(
     node("type-function")(
       sequence([
@@ -172,7 +179,7 @@ const parse = parser(rule => ({
       rule("expression")
     ])
   ),
-  expression: context("expression")(rule("lambda")),
+  expression: rule("lambda"),
   lambda: either(
     node("lambda")(
       sequence([
@@ -288,7 +295,7 @@ const parse = parser(rule => ({
   ),
   // TODO: Interpolation
   string: rule("string literal"),
-  pattern: context("pattern")(rule("pattern named")),
+  pattern: rule("pattern named"),
   "pattern named": either(
     node("pattern-named")(
       sequence([
@@ -317,9 +324,7 @@ const parse = parser(rule => ({
     rule("pattern record"),
     rule("pattern list"),
     regex(/_+/, "pattern-wildcard"),
-    except(regex(/as/, "reserved pattern keyword"))(
-      rule("literal")
-    ),
+    rule("literal"),
     structure(
       string("("),
       rule("pattern"),
@@ -373,4 +378,4 @@ const parse = parser(rule => ({
 }));
 
 export default (input: string) =>
-  unpack(parse("program")(input))[0];
+  unpack<readonly [Node]>(parse("program")(input))[0];
