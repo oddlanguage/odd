@@ -33,12 +33,27 @@ export default async (target: string) => {
 
   const skip = () => {};
 
+  const kebab2camel = (name: string) =>
+    name[0]!.toLowerCase() +
+    name
+      .slice(1)
+      .replace(/-([a-z])/g, ([, c]) =>
+        c!.toUpperCase()
+      );
+
   const compile = compiler(compile => ({
     program: node =>
       (node as Node).children
         .map(compile)
         .filter(Boolean)
         .join(";\n"),
+    "where-expression": node =>
+      `(()=>{${(node as Node).children
+        .slice(1)
+        .map(compile)
+        .join(";")};return ${compile(
+        (node as Node).children[0]!
+      )}})()`,
     "type-declaration": skip,
     declaration: node => {
       const name = (node as Node).children[0] as Node;
@@ -50,15 +65,20 @@ export default async (target: string) => {
         (node as Node).children.length - 1
       ] as Node;
       return (
-        `const ${compile(name)} = ${args
-          .map(arg => `${compile(arg)} =>`)
-          .join(" ")} ` + compile(expr)
+        `const ${compile(name)} = ${
+          args.length
+            ? args
+                .map(arg => `${compile(arg)} =>`)
+                .join(" ") + " "
+            : ""
+        }` + compile(expr)
       );
     },
     application: node =>
       compile((node as Node).children[0]!) +
       `(${compile((node as Node).children[1]!)})`,
-    name: token => (token as any as Token).lexeme,
+    name: token =>
+      kebab2camel((token as any as Token).lexeme),
     "export-statement": node =>
       `export ${compile((node as Node).children[0]!)}`,
     string: token => (token as any as Token).lexeme,
@@ -84,7 +104,10 @@ export default async (target: string) => {
           : "() => nothing"
       })`,
     number: token =>
-      (token as any as Token).lexeme.replace(/,/g, ""),
+      (token as any as Token).lexeme.replace(
+        /,/g,
+        "_"
+      ),
     destructuring: node =>
       `...(${compile((node as Node).children[0]!)})`,
     operation: node =>
@@ -102,7 +125,12 @@ export default async (target: string) => {
         (node as Node).children[2]
           ? compile((node as Node).children[2]!)
           : "nothing"
-      })`
+      })`,
+    lambda: node =>
+      (node as Node).children
+        .map(compile)
+        .map(str => `(${str})`)
+        .join(" => ")
   }));
 
   const generateTempFilename = () =>
@@ -140,7 +168,11 @@ export default async (target: string) => {
       default: console.log(inspect(x, true, Infinity, false));
     }
   };
+  const OPERATORS = {
+    "<|": (a, b) => a(b),
+  };
   const nothing = Symbol("nothing");
+  const fold = f => xs => xs.reduce(f);
     `.trim() +
       "\n//========== END OF PRELUDE ==========\n";
     const src = prelude + compile(ast)!;

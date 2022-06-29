@@ -1,6 +1,7 @@
 import {
   escapeSpecialChars,
-  prefixIndefiniteArticle
+  prefixIndefiniteArticle,
+  serialise
 } from "./utils.js";
 
 let id = 0;
@@ -375,15 +376,20 @@ const foldl =
         `Cannot fold a non-node value (${node}).`
       );
 
-    const folded = node.children
-      .slice(0, -1)
-      .reduce(
-        stack => [
-          makeNode(node.type)(stack.slice(0, size)),
-          ...stack.slice(size)
-        ],
-        node.children
-      );
+    const folded =
+      node.children.length === size
+        ? [node]
+        : node.children
+            .slice(0, -1)
+            .reduce(
+              stack => [
+                makeNode(node.type)(
+                  stack.slice(0, size)
+                ),
+                ...stack.slice(size)
+              ],
+              node.children
+            );
 
     return {
       ...result,
@@ -455,6 +461,23 @@ export const benchmark =
 
     console.log(
       `Took ${elapsed}ms and used ${used}kb.`
+    );
+
+    return result;
+  };
+
+export const trace =
+  (options: Array<keyof Result>) =>
+  (parser: Parser): Parser =>
+  state => {
+    const result = parser(state);
+
+    console.log(
+      serialise(
+        Object.fromEntries(
+          options.map(key => [key, result[key]])
+        )
+      )
     );
 
     return result;

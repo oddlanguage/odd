@@ -1,8 +1,8 @@
-const target = process.argv[2];
+const path = process.argv[2];
 
-if (target) {
+if (path) {
   import("./compiler.js").then(
-    ({ default: compiler }) => compiler(target)
+    ({ default: compiler }) => compiler(path)
   );
 } else {
   import("./repl.js").then(({ default: repl }) =>

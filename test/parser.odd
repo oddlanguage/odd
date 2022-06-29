@@ -74,3 +74,14 @@ string : String -> Parser;
 string pattern state = if state "input" <| starts-with { pattern, at = state "offset" }
   then advance size pattern <| state
   else reject "Expected \"\(pattern)\"" <| state;
+
+pair : [Parser, Parser] -> Parser;
+pair a b state = if ok result
+  then b result
+  else result
+    where result = a state;
+
+sequence : List Parser -> Parser;
+sequence = fold pair;
+
+log pair;

@@ -35,10 +35,13 @@ const structure = (
   end: Parser
 ): Parser => sequence([start, ws, member, ws, end]);
 
-// TODO: let/where, if-then-else, match
+// TODO: let, match
 const parse = parser(rule => ({
   name: except(
-    regex(/if|then|else|match/, "reserved name")
+    regex(
+      /if|then|else|where|match|with|export|as/,
+      "reserved name"
+    )
   )(regex(/[a-z]+(?:-[a-z][a-z0-9]*)*/i, "name")),
   "string literal": regex(
     /"(?:[^"]|\\")*?(?<!\\)"/,
@@ -173,7 +176,6 @@ const parse = parser(rule => ({
   ),
   // TODO: Interpolation
   "type string": rule("string literal"),
-
   declaration: node("declaration")(
     sequence([
       oneOrMore(pair(rule("pattern"), ws)),
@@ -182,7 +184,32 @@ const parse = parser(rule => ({
       rule("expression")
     ])
   ),
-  expression: either(rule("if"), rule("lambda")),
+  expression: either(
+    rule("where expression"),
+    rule("expression body")
+  ),
+  // TODO: Fix precedence so that
+  // if a then b else c where x = y
+  // is the same as
+  // (if a then b else c) where x = y
+  // but not
+  // if a then b else (c where x = y)
+  "where expression": node("where-expression")(
+    sequence([
+      rule("expression body"),
+      ws,
+      rule("where clause")
+    ])
+  ),
+  "where clause": sequence([
+    string("where"),
+    ws,
+    list(string(","))(rule("declaration"))
+  ]),
+  "expression body": either(
+    rule("if"),
+    rule("lambda")
+  ),
   lambda: either(
     node("lambda")(
       sequence([
@@ -195,7 +222,6 @@ const parse = parser(rule => ({
     ),
     rule("operation")
   ),
-  // TODO: This doesn't properly flatten/fold matched trees
   operation: either(
     nodel(
       "operation",
