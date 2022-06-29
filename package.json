@@ -1,9 +1,9 @@
 {
-	"type": "module",
-	"name": "odd",
-	"version": "0.0.1",
-	"devDependencies": {
-		"@types/node": "^14.14.37"
-	},
-	"license": "MIT"
+  "type": "module",
+  "name": "odd",
+  "version": "0.0.1",
+  "devDependencies": {
+    "@types/node": "^14.14.37"
+  },
+  "license": "MIT"
 }

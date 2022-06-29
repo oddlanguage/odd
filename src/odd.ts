@@ -37,7 +37,9 @@ const structure = (
 
 // TODO: let/where, if-then-else, match
 const parse = parser(rule => ({
-  name: regex(/[a-z]+(?:-[a-z][a-z0-9]*)*/i, "name"),
+  name: except(
+    regex(/if|then|else|match/, "reserved name")
+  )(regex(/[a-z]+(?:-[a-z][a-z0-9]*)*/i, "name")),
   "string literal": regex(
     /"(?:[^"]|\\")*?(?<!\\)"/,
     "string"
@@ -180,7 +182,7 @@ const parse = parser(rule => ({
       rule("expression")
     ])
   ),
-  expression: rule("lambda"),
+  expression: either(rule("if"), rule("lambda")),
   lambda: either(
     node("lambda")(
       sequence([
@@ -193,6 +195,7 @@ const parse = parser(rule => ({
     ),
     rule("operation")
   ),
+  // TODO: This doesn't properly flatten/fold matched trees
   operation: either(
     nodel(
       "operation",
@@ -371,7 +374,26 @@ const parse = parser(rule => ({
   ),
   "destructuring pattern": node(
     "destructuring-pattern"
-  )(pair(string("..."), rule("pattern")))
+  )(pair(string("..."), rule("pattern"))),
+  if: node("if")(
+    sequence([
+      string("if"),
+      ws,
+      rule("expression"),
+      ws,
+      string("then"),
+      ws,
+      rule("expression"),
+      optional(
+        sequence([
+          ws,
+          string("else"),
+          ws,
+          rule("expression")
+        ])
+      )
+    ])
+  )
 }));
 
 export default (input: string) =>
