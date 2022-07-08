@@ -44,7 +44,7 @@ const parse = parser(rule => ({
     )
   )(regex(/[a-z]+(?:-[a-z][a-z0-9]*)*/i, "name")),
   "string literal": regex(
-    /"(?:[^"]|\\")*?(?<!\\)"/,
+    /`(?:[^`]|\\`)*?(?<!\\)`/,
     "string"
   ),
   "number literal": regex(
@@ -56,6 +56,7 @@ const parse = parser(rule => ({
     regex(/->|=|:|=>|\.\.\./, "reserved operator")
   )(regex(/[~!@#$%^&*\-+=<>\./?:|\\]+/, "operator")),
   "literal literal": regex(/nothing/, "literal"),
+  comment: ignore(regex(/--[^\n]+/, "comment")),
 
   program: benchmark(
     node("program")(
@@ -70,10 +71,15 @@ const parse = parser(rule => ({
   ),
   statement: sequence([
     either(
-      rule("export statement"),
-      rule("statement body")
+      pair(
+        either(
+          rule("export statement"),
+          rule("statement body")
+        ),
+        string(";")
+      ),
+      rule("comment")
     ),
-    string(";"),
     ws
   ]),
   "export statement": node("export-statement")(
@@ -208,18 +214,6 @@ const parse = parser(rule => ({
   ]),
   "expression body": either(
     rule("if"),
-    rule("lambda")
-  ),
-  lambda: either(
-    node("lambda")(
-      sequence([
-        rule("pattern"),
-        ws,
-        string("->"),
-        ws,
-        rule("expression")
-      ])
-    ),
     rule("operation")
   ),
   operation: either(
@@ -245,17 +239,29 @@ const parse = parser(rule => ({
     nodel("partial-application")(
       pair(
         rule("operator literal"),
-        oneOrMore(pair(ws, rule("atom")))
+        oneOrMore(pair(ws, rule("lambda")))
       )
     ),
     nodel("application")(
       pair(
-        rule("atom"),
-        oneOrMore(pair(ws, rule("atom")))
+        rule("lambda"),
+        oneOrMore(pair(ws, rule("lambda")))
       )
     ),
-    rule("atom")
+    rule("lambda")
   ]),
+  lambda: either(
+    node("lambda")(
+      sequence([
+        rule("pattern"),
+        ws,
+        string("->"),
+        ws,
+        rule("expression")
+      ])
+    ),
+    rule("atom")
+  ),
   atom: oneOf([
     rule("literal"),
     structure(
@@ -422,5 +428,7 @@ const parse = parser(rule => ({
   )
 }));
 
-export default (input: string) =>
+const oddParser = (input: string) =>
   unpack<readonly [Node]>(parse("program")(input))[0];
+
+export default oddParser;

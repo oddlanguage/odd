@@ -1,3 +1,4 @@
+import { Problem } from "./problem.js";
 import {
   escapeSpecialChars,
   prefixIndefiniteArticle,
@@ -15,6 +16,7 @@ const cache: Record<
 > = {};
 const cacheKey = Symbol("cacheKey");
 
+// TODO: Make context combinator to inject context information
 export type State = Readonly<{
   [cacheKey]: number;
   input: string;
@@ -37,7 +39,7 @@ export type Success = State &
 export type Failure = State &
   Readonly<{
     ok: false;
-    problem: string;
+    problem: Problem;
   }>;
 
 export type Node = Readonly<{
@@ -67,7 +69,7 @@ export const isToken = (value: any): value is Token =>
 export const parser =
   (construct: (_rule: typeof rule) => Grammar) =>
   (entrypoint: keyof Grammar) =>
-  (input: string) => {
+  (input: string): Result => {
     const grammar = construct(rule);
     const result = grammar[entrypoint]!({
       input,
@@ -82,13 +84,25 @@ export const parser =
         ...result,
         ok: false,
         offset: result.offset + 1,
-        problem: `Unexpected "${escapeSpecialChars(
-          String.fromCodePoint(
-            result.input.codePointAt(
-              result.offset + 1
-            )!
-          )
-        )}"`
+        problem: {
+          type: "parse",
+          reason: `Unexpected "${escapeSpecialChars(
+            String.fromCodePoint(
+              result.input.codePointAt(
+                result.offset + 1
+              )!
+            )
+          )}"`,
+          start: result.offset + 1,
+          solutions: [
+            // TODO: Provide actual solutions
+            "Try removing the character, lol.",
+            [[[[["Don't write bad code?"]]]]],
+            [
+              "This is just a test of the problem system, please don't be mad :("
+            ]
+          ]
+        }
       };
     }
 
@@ -131,67 +145,17 @@ export const end: Parser = (state: State) =>
     : {
         ...state,
         ok: false,
-        problem:
-          "expected to have reached the end of the input"
+        problem: {
+          type: "parse",
+          reason:
+            "expected to have reached the end of the input",
+          start: state.offset
+        }
       };
-
-export const getErroneousLines = (
-  failure: Failure
-) => {
-  const maybeStartOfErrorLine =
-    failure.input.lastIndexOf("\n", failure.offset);
-  const startOfErrorLine =
-    maybeStartOfErrorLine === failure.offset
-      ? 0
-      : maybeStartOfErrorLine + 1;
-  const firstCharPosOfErrorLine =
-    failure.input
-      .slice(startOfErrorLine)
-      .search(/\S/) + startOfErrorLine;
-  const endOfErrorLine = failure.input.indexOf(
-    "\n",
-    failure.offset
-  );
-  const erroneousLineNumber =
-    (failure.input
-      .slice(0, endOfErrorLine)
-      .match(/\n/g)?.length ?? 0) + 1;
-  const lineIndicator = `${erroneousLineNumber} | `;
-
-  return (
-    lineIndicator +
-    failure.input.slice(
-      firstCharPosOfErrorLine,
-      endOfErrorLine === -1
-        ? failure.input.length
-        : endOfErrorLine
-    ) +
-    `\n${" ".repeat(
-      failure.offset -
-        firstCharPosOfErrorLine +
-        lineIndicator.length
-    )}^`
-  );
-};
-
-const makeError = (failure: Failure) =>
-  getErroneousLines(failure) +
-  "\n" +
-  failure.problem +
-  ".\n";
 
 export const unpack = <T>(result: Result) => {
   delete cache[result[cacheKey]];
-
-  if (!result.ok) {
-    throw makeError({
-      ...result,
-      problem:
-        `Got stuck trying to parse <context> in <context>: ` +
-        result.problem
-    });
-  }
-
+  if (!result.ok) throw result.problem;
   return result.output as any as T;
 };
 
@@ -228,9 +192,14 @@ export const string =
   state =>
     (state.input.startsWith(pattern, state.offset)
       ? advance(pattern.length)
-      : reject(
-          `Expected "${escapeSpecialChars(pattern)}"`
-        ))(state);
+      : reject({
+          type: "parse",
+          reason: `Expected "${escapeSpecialChars(
+            pattern
+          )}"`,
+          start: state.offset,
+          end: state.offset + pattern.length
+        }))(state);
 
 export const regex = (
   pattern: RegExp,
@@ -264,8 +233,10 @@ export const regex = (
               : match,
             match.length
           )
-        : reject(
-            "Expected " +
+        : reject({
+            type: "parse",
+            reason:
+              "Expected " +
               (type
                 ? prefixIndefiniteArticle(type)
                 : `to match ${escapeSpecialChars(
@@ -273,8 +244,9 @@ export const regex = (
                   )}`) +
               ` but got "${escapeSpecialChars(
                 state.input.charAt(state.offset)
-              )}"`
-          )
+              )}"`,
+            start: state.offset
+          })
     )(state);
   };
 };
@@ -372,9 +344,7 @@ const foldl =
     const node =
       result.output[result.output.length - 1];
     if (!isNode(node))
-      throw new Error(
-        `Cannot fold a non-node value (${node}).`
-      );
+      throw `Cannot fold a non-node value (${node}).`;
 
     const folded =
       node.children.length === size
@@ -432,13 +402,20 @@ export const except =
         return {
           ...state,
           ok: false,
-          problem: `Unexpected ${
-            isNode(excepted) || isToken(excepted)
-              ? excepted.type
-              : isToken(excepted)
-              ? excepted.lexeme
-              : excepted
-          }`
+          problem: {
+            type: "parse",
+            reason:
+              (isNode(excepted) || isToken(excepted)
+                ? prefixIndefiniteArticle(
+                    excepted.type
+                  )
+                : isToken(excepted)
+                ? `"${excepted.lexeme}"`
+                : `"${excepted}"`) +
+              " is not allowed here",
+            start: state.offset,
+            solutions: "Consider removing it."
+          }
         };
       }
     }

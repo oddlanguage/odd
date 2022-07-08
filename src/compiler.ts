@@ -2,7 +2,8 @@ import * as fs from "node:fs/promises";
 import path from "node:path";
 import url from "node:url";
 import { Node, Token } from "./combinators.js";
-import odd from "./odd.js";
+import parser from "./odd.js";
+import { isProblem, stringify } from "./problem.js";
 
 export default async (target: string) => {
   const input = await fs.readFile(target, "utf-8");
@@ -47,6 +48,8 @@ export default async (target: string) => {
         .map(compile)
         .filter(Boolean)
         .join(";\n"),
+    expression: node =>
+      compile((node as Node).children[0]!),
     "where-expression": node =>
       `(()=>{${(node as Node).children
         .slice(1)
@@ -81,28 +84,36 @@ export default async (target: string) => {
       kebab2camel((token as any as Token).lexeme),
     "export-statement": node =>
       `export ${compile((node as Node).children[0]!)}`,
-    string: token => (token as any as Token).lexeme,
-    record: node =>
-      `(${
+    string: token =>
+      (token as any as Token).lexeme.replace(
+        /\\\(([^)]+)\)/g,
+        (_, match) => "${" + match + "}"
+      ),
+    record: node => {
+      const obj = `({ ${(node as Node).children
+        .map(compile)
+        .join(", ")} })`;
+      return `(${
         (node as Node).children.length
-          ? `key => ({ ${(node as Node).children
-              .map(compile)
-              .join(", ")} })[key]`
-          : "() => nothing"
-      })`,
+          ? `key => key === undefined ? ${obj} : ${obj}[key]`
+          : 'key => {throw new Error(`No field with key "${key}".`)}'
+      })`;
+    },
     "record-field": node =>
       compile((node as Node).children[0]!) +
       ((node as Node).children[1]
         ? `: ${compile((node as Node).children[1]!)}`
         : ""),
-    list: node =>
-      `(${
+    list: node => {
+      const list = `[ ${(node as Node).children
+        .map(compile)
+        .join(", ")} ]`;
+      return `(${
         (node as Node).children.length
-          ? `n => [ ${(node as Node).children
-              .map(compile)
-              .join(", ")} ][n]`
-          : "() => nothing"
-      })`,
+          ? `n => n === undefined ? ${list} : ${list}[n]`
+          : "n => {throw new Error(`No element at index ${n}.`)}"
+      })`;
+    },
     number: token =>
       (token as any as Token).lexeme.replace(
         /,/g,
@@ -129,8 +140,15 @@ export default async (target: string) => {
     lambda: node =>
       (node as Node).children
         .map(compile)
-        .map(str => `(${str})`)
-        .join(" => ")
+        .map(str =>
+          str?.startsWith("(") ? str : `(${str})`
+        )
+        .join(" => "),
+    literal: node => (node as Token).lexeme,
+    "pattern-list": node =>
+      `([${(node as Node).children
+        .map(compile)
+        .join(",")}])`
   }));
 
   const generateTempFilename = () =>
@@ -156,29 +174,43 @@ export default async (target: string) => {
       .finally(() => fs.rm(TMP_FILE_LOCATION));
 
   try {
-    const ast = odd(input);
+    const ast = parser(input);
     const prelude =
       `
   //============= PRELUDE ==============
   import { inspect } from "node:util";
   const log = x => {
     switch (typeof x) {
-      case "string": console.log(x); break;
       case "function": console.log(x.toString()); break;
-      default: console.log(inspect(x, true, Infinity, false));
+      default: console.log(inspect(x, false, Infinity, true));
     }
+    return x;
   };
   const OPERATORS = {
     "<|": (a, b) => a(b),
+    "|>": (a, b) => b(a),
   };
   const nothing = Symbol("nothing");
-  const fold = f => xs => xs.reduce(f);
+  const fold = f => xs => xs().reduce((x, y) => f(x)(y));
+  const startsWith = arg =>
+    (typeof arg === "string")
+      ? str => str.startsWith(arg)
+      : str => str.startsWith(arg.pattern, arg.at);
     `.trim() +
       "\n//========== END OF PRELUDE ==========\n";
     const src = prelude + compile(ast)!;
     run(src);
-  } catch (err) {
-    console.error(err);
+  } catch (err: any) {
+    console.error(
+      "\n" +
+        (isProblem(err)
+          ? stringify(
+              path.parse(target).base,
+              input,
+              err
+            )
+          : err)
+    );
     process.exit(1);
   }
 };

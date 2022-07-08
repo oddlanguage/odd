@@ -1,7 +1,7 @@
 # Odd Language
 
 <div align="center">
-<img src="./logo.svg" height="150" alt="An orange rectangle with rounded edges, with the word 'Odd' written on it. The last 'd' is raised above the rest of the word, to symbolise the quirkyness of the Odd language.">
+<img src="./logo.svg" height="150" alt="A yellowish-grey square with a thin, faint red — almost pink — grid. In the center of this square is the word 'odd', written with an industrial design typeface with no holes, rotated to the left by 45 degrees from the centre. Every letter of the word is composed of four separated coloured parts, going from yellow-orange, to orange, to soft-red to dark crimson. Both D's of the word have ascenders that extend to the end of the square.">
 
 _Hmm, that's **odd**..._
 
@@ -30,18 +30,12 @@ Odd is highly W.I.P. but these are the main goals of the language:
 
 > Odd is guaranteed to work with node version 16.13.1, but should be compatible with earlier versions down to v12, possibly requiring the `--harmony` flag.
 
-To try the Odd REPL for a spin, download the repo and run it through Node:
+To try out Odd, download the repo and run it through Node:
 
 ```shell
 tsc # compile source
-node dist/repl.js # run repl
-```
-
-To try the Odd interpreter, download the repo and run it through Node:
-
-```shell
-tsc # compile source
-node dist/interpreter.js path/to/file.odd # run interpreter on path/to/file.odd
+node dist/run.js # start a repl
+node dist/run.js path/to/file.odd # or run the compiler on path/to/file.odd
 ```
 
 When Odd is finished, it will be a standalone executable requiring no separate Node installation, or any other dependency.
@@ -53,11 +47,13 @@ When Odd is finished, it will be a standalone executable requiring no separate N
 
 Some work has yet to be done for odd to release as v1.0. The following is a list of development milestones to get to **v1.0**:
 
-- [ ] ⏱️ **0.1**: REPL Parser and interpreter.
-- [ ] ⏱️ **0.2**: HM structured typing.
+- [ ] ✅ **0.1**: Runnable programs.
+- [ ] ⏱️ **0.2**: Type system (HM with row polymorphism).
 - [ ] ⏱️ **0.3**: Module system.
-- [ ] ⏱️ **0.4**: First compilation target (probably typescript).
-- [ ] 🏁 **1.0**: VSCode Language Server
+- [ ] ⏱️ **0.4**: Meaningful & readable errors.
+- [ ] ⏱️ **0.5**: Odd LSP for proper editor integration.
+  > ...
+- [ ] 🏁 **1.0**: Standalone executable for real-world use.
 
 <br/>
 <br/>

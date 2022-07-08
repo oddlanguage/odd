@@ -1,4 +1,4 @@
-import odd from "./odd.js";
+import parser from "./odd.js";
 import { serialise } from "./utils.js";
 
 export default async () => {
@@ -6,7 +6,7 @@ export default async () => {
   process.stdin.setEncoding("utf-8");
   for await (const input of process.stdin) {
     try {
-      process.stdout.write(serialise(odd(input)));
+      process.stdout.write(serialise(parser(input)));
     } catch (err) {
       console.error("\n" + err);
     }
