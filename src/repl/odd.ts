@@ -1,4 +1,5 @@
 import lexer from "../lexer/lexer.js";
+import { Value } from "../parser/ast";
 import {
   benchmark,
   delimited,
@@ -6,6 +7,7 @@ import {
   ignore,
   lazy,
   lexeme,
+  map,
   maybe,
   node,
   nodeLeft,
@@ -135,7 +137,26 @@ const recordPatternEntry = node(
 
 // TODO: Match left to right
 const operation = oneOf([
-  node("operation")(
+  map(children => {
+    let node: Value = {
+      type: "operation",
+      children: children.slice(0, 3)
+    };
+
+    let i = 3;
+    while (i < children.length) {
+      node = {
+        type: node.type,
+        children: [
+          node,
+          ...children.slice(i, i + 2)
+        ] as ReadonlyArray<Value>
+      };
+      i += 2;
+    }
+
+    return node;
+  })(
     sequence([
       lazy(() => value),
       oneOrMore(
@@ -143,7 +164,7 @@ const operation = oneOf([
           ws,
           type("operator"),
           ws,
-          lazy(() => operation)
+          lazy(() => application)
         ])
       )
     ])
