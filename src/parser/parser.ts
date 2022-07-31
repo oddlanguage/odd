@@ -1,5 +1,5 @@
 import Token from "../lexer/token.js";
-import { Value } from "./ast.js";
+import { Value } from "../parser/ast.js";
 
 export type Falsy<T> =
   | T
@@ -370,4 +370,23 @@ export const maybe =
     return result.ok
       ? result
       : { ...state, ok: true, value: [] };
+  };
+
+/** TODO: Docs */
+export const except =
+  (exceptions: Parser | ReadonlyArray<Parser>) =>
+  (parser: Parser) =>
+  (state: State): Result => {
+    const illegal = oneOf([exceptions].flat())(state);
+
+    if (illegal.ok)
+      return {
+        ...state,
+        ok: false,
+        reason: `Illegal token "${
+          state.tokens[state.offset + 1]
+        }"`
+      };
+
+    return parser(state);
   };
