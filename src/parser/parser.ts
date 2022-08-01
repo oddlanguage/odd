@@ -1,5 +1,11 @@
 import Token from "../lexer/token.js";
 import { Value } from "../parser/ast.js";
+import {
+  escape,
+  makeError,
+  serialise,
+  Source
+} from "../util.js";
 
 export type Falsy<T> =
   | T
@@ -33,82 +39,23 @@ type Failure = State &
     reason: string;
   }>;
 
-type Source = Readonly<{
-  input: string;
-  name: string;
-}>;
-
-const redUnderline = (string: string) =>
-  "\x1b[31;4m" + string + "\x1b[0m";
-
-const makeError = (
-  failure: Failure,
-  source: Source
-) => {
-  const problematicToken =
-    failure.tokens[failure.offset];
-  const problemEnd = problematicToken
-    ? problematicToken.offset +
-      problematicToken.lexeme.length
-    : source.input.length;
-  const startOfErroneousLine =
-    source.input.lastIndexOf(
-      "\n",
-      problematicToken?.offset
-    ) + 1;
-  const maybeEndOfErroneousLine = source.input.indexOf(
-    "\n",
-    problemEnd
-  );
-  const endOfErroneousLine =
-    maybeEndOfErroneousLine === -1
-      ? source.input.length
-      : maybeEndOfErroneousLine;
-  const erroneousLine = source.input.slice(
-    startOfErroneousLine,
-    endOfErroneousLine
-  );
-  const col = problematicToken
-    ? problematicToken.offset - startOfErroneousLine
-    : source.input.length;
-  const lineNumber = source.input
-    .slice(0, endOfErroneousLine)
-    .split(/\r*\n/).length;
-  const linePrefix = lineNumber + " | ";
-
-  return (
-    "Uh oh! Got stuck parsing " +
-    source.name +
-    ":" +
-    lineNumber +
-    ":" +
-    col +
-    "\n\n" +
-    failure.reason +
-    ":\n\n" +
-    linePrefix +
-    erroneousLine.slice(0, col) +
-    redUnderline(problematicToken?.lexeme ?? "") +
-    erroneousLine.slice(
-      problematicToken
-        ? col + problematicToken.lexeme.length
-        : source.input.length
-    )
-  );
-};
-
 /** TODO: docs */
 export const run =
   (parser: Parser) =>
-  (lexer: (input: string) => ReadonlyArray<Token>) =>
+  (lexer: (source: Source) => ReadonlyArray<Token>) =>
   (source: Source) => {
     const result = parser({
-      tokens: lexer(source.input),
+      tokens: lexer(source),
       offset: 0,
       value: []
     });
 
-    if (!result.ok) throw makeError(result, source);
+    if (!result.ok)
+      throw makeError(
+        result.tokens[result.offset]!,
+        result.reason,
+        source
+      );
 
     return result.value;
   };
@@ -142,7 +89,8 @@ const prefixIndefiniteArticle = (
   string: string | undefined
 ) =>
   string
-    ? (/^[aeiou]/.test(string) ? "an " : "a ") + string
+    ? (/^[aeiou]/.test(string) ? "an " : "a ") +
+      escape(string)
     : "";
 
 /** TODO: docs */
@@ -170,9 +118,9 @@ export const lexeme =
     satisfy(
       next =>
         next?.lexeme !== lexeme &&
-        `Expected "${lexeme}" but ${
+        `Expected "${escape(lexeme)}" but ${
           next
-            ? `got "${next.lexeme}"`
+            ? `got "${escape(next.lexeme)}"`
             : "reached end of input"
         }`
     )(state);
@@ -232,9 +180,11 @@ export const end = (state: State): Result =>
     : {
         ...state,
         ok: false,
-        reason: `Unexpected ${
+        reason: `Unexpected ${escape(
           state.tokens[state.offset]!.type
-        } "${state.tokens[state.offset]!.lexeme}"`
+        )} "${escape(
+          state.tokens[state.offset]!.lexeme
+        )}"`
       };
 
 /** TODO: docs */
@@ -256,13 +206,18 @@ export const trace =
   (label: string) =>
   (parser: Parser): Parser =>
   state => {
-    console.log(label);
-    return parser(state);
+    const result = parser(state);
+    console.log(
+      result.ok
+        ? `✅ ${label} ${serialise(result)}`
+        : `❌ ${label} ${serialise(result)}`
+    );
+    return result;
   };
 
 /** TODO: docs */
 export const zeroOrMore =
-  (parser: Parser, maxDepth = 100): Parser =>
+  (parser: Parser, maxDepth = 1000): Parser =>
   state => {
     let depth = 0;
     let [prev, result] = [
@@ -276,7 +231,7 @@ export const zeroOrMore =
         return {
           ...result,
           ok: false,
-          reason: `Parser exceeded ${maxDepth} tries -- possible infinite loop.`
+          reason: `Parser exceeded maximum depth (${maxDepth})`
         };
     }
     return prev;
@@ -370,23 +325,4 @@ export const maybe =
     return result.ok
       ? result
       : { ...state, ok: true, value: [] };
-  };
-
-/** TODO: Docs */
-export const except =
-  (exceptions: Parser | ReadonlyArray<Parser>) =>
-  (parser: Parser) =>
-  (state: State): Result => {
-    const illegal = oneOf([exceptions].flat())(state);
-
-    if (illegal.ok)
-      return {
-        ...state,
-        ok: false,
-        reason: `Illegal token "${
-          state.tokens[state.offset + 1]
-        }"`
-      };
-
-    return parser(state);
   };

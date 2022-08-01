@@ -1,10 +1,8 @@
-import lexer from "../lexer/lexer.js";
 import { Value } from "../parser/ast.js";
 import {
   benchmark,
   delimited,
   end,
-  except,
   ignore,
   lazy,
   lexeme,
@@ -15,44 +13,47 @@ import {
   oneOf,
   oneOrMore,
   optional,
+  Parser,
   run,
   sequence,
   type,
   zeroOrMore
 } from "../parser/parser.js";
-
-const lex = lexer({
-  whitespace: /\s+/,
-  comment: /--[^\n]+/,
-  punctuation: /[()\[\]{};,]/,
-  operator: /[!@#$%^&*\-+=\\:<>\.\/?]+/,
-  wildcard: /_+/,
-  number:
-    /(?:\d+(?:\d|,(?=\d))*)?\.\d+(?:e[+-]?\d+)?|\d+(?:\d|,(?=\d))*/i,
-  boolean: /true|false/,
-  string: /`(?:[^`]|\\`)*?(?<!\\)`/,
-  name: /[a-z]+[a-z0-9]*(?:-[a-z]+[a-z0-9]*)*/i
-});
+import lex from "./lexer.js";
 
 const ws = optional(
-  ignore(oneOf([type("whitespace"), type("comment")]))
+  ignore(
+    oneOrMore(
+      oneOf([type("comment"), type("whitespace")])
+    )
+  )
 );
+
+const listOf =
+  (delimiter: Parser) => (parser: Parser) =>
+    sequence([
+      ws,
+      delimited(sequence([ws, ignore(delimiter), ws]))(
+        parser
+      ),
+      ws,
+      optional(ignore(delimiter)),
+      ws
+    ]);
+
+const commaSeparated = listOf(lexeme(","));
 
 const program = benchmark(
   node("program")(
     sequence([
-      ws,
-      delimited(
-        sequence([ws, ignore(lexeme(";")), ws])
-      )(
-        oneOf([
-          lazy(() => typeDeclaration),
-          lazy(() => expression)
-        ])
+      maybe(
+        listOf(lexeme(";"))(
+          oneOf([
+            lazy(() => typeDeclaration),
+            lazy(() => expression)
+          ])
+        )
       ),
-      ws,
-      optional(ignore(lexeme(";"))),
-      ws,
       end
     ])
   )
@@ -63,15 +64,20 @@ const expression = lazy(() => lambda);
 const lambda = oneOf([
   node("lambda")(
     sequence([
+      optional(lazy(() => lambdaGuard)),
       lazy(() => pattern),
       ws,
       ignore(lexeme("->")),
       ws,
-      lazy(() => expression)
+      lazy(() => lambda)
     ])
   ),
   lazy(() => declaration)
 ]);
+
+const lambdaGuard = node("lambda-guard")(
+  sequence([lazy(() => pattern), ws, lexeme("=>"), ws])
+);
 
 const declaration = oneOf([
   node("declaration")(
@@ -81,34 +87,50 @@ const declaration = oneOf([
       ws,
       ignore(lexeme("=")),
       ws,
-      lazy(() => expression)
+      lazy(() => declaration)
     ])
   ),
   lazy(() => operation)
 ]);
 
-const pattern = oneOf([
+const pattern = lazy(() => patternApplication);
+
+const patternApplication = oneOf([
+  nodeLeft("pattern-application")(
+    sequence([
+      lazy(() => patternLiteral),
+      oneOrMore(
+        sequence([ws, lazy(() => patternLiteral)])
+      )
+    ])
+  )
+]);
+
+const patternLiteral = oneOf([
   type("wildcard"),
   lazy(() => listPattern),
   lazy(() => recordPattern),
-  lazy(() => literal)
+  lazy(() => literal),
+  sequence([
+    ignore(lexeme("(")),
+    ws,
+    lazy(() => pattern),
+    ws,
+    ignore(lexeme(")"))
+  ])
 ]);
 
 const listPattern = node("list-pattern")(
   sequence([
     ignore(lexeme("[")),
-    ws,
     maybe(
-      delimited(
-        sequence([ws, ignore(lexeme(",")), ws])
-      )(
+      commaSeparated(
         oneOf([
           lazy(() => destructuring),
           lazy(() => expression)
         ])
       )
     ),
-    ws,
     ignore(lexeme("]"))
   ])
 );
@@ -116,13 +138,9 @@ const listPattern = node("list-pattern")(
 const recordPattern = node("record-pattern")(
   sequence([
     ignore(lexeme("{")),
-    ws,
     maybe(
-      delimited(
-        sequence([ws, ignore(lexeme(",")), ws])
-      )(lazy(() => recordPatternEntry))
+      commaSeparated(lazy(() => recordPatternEntry))
     ),
-    ws,
     ignore(lexeme("}"))
   ])
 );
@@ -164,23 +182,19 @@ const operation = oneOf([
     return node;
   })(
     sequence([
-      lazy(() => value),
+      lazy(() => application),
       oneOrMore(
         sequence([
           ws,
-          lazy(() => operator),
+          type("operator"),
           ws,
-          lazy(() => application)
+          lazy(() => operation)
         ])
       )
     ])
   ),
   lazy(() => application)
 ]);
-
-const operator = except([lexeme("="), lexeme(":")])(
-  type("operator")
-);
 
 const application = oneOf([
   nodeLeft("application")(
@@ -208,18 +222,14 @@ const value = oneOf([
 const list = node("list")(
   sequence([
     ignore(lexeme("[")),
-    ws,
     maybe(
-      delimited(
-        sequence([ws, ignore(lexeme(",")), ws])
-      )(
+      commaSeparated(
         oneOf([
           lazy(() => destructuring),
           lazy(() => expression)
         ])
       )
     ),
-    ws,
     ignore(lexeme("]"))
   ])
 );
@@ -227,13 +237,7 @@ const list = node("list")(
 const record = node("record")(
   sequence([
     ignore(lexeme("{")),
-    ws,
-    maybe(
-      delimited(
-        sequence([ws, ignore(lexeme(",")), ws])
-      )(lazy(() => recordEntry))
-    ),
-    ws,
+    maybe(commaSeparated(lazy(() => recordEntry))),
     ignore(lexeme("}"))
   ])
 );
@@ -292,23 +296,25 @@ const typeDeclaration = node("type-declaration")(
   ])
 );
 
-const typePattern = oneOf([
-  type("wildcard"),
-  lazy(() => listTypePattern),
-  lazy(() => recordTypePattern),
-  lazy(() => literal)
+// TODO: type pattern lambda's?
+const typePattern = lazy(() => typePatternApplication);
+
+const typePatternApplication = oneOf([
+  nodeLeft("type-pattern-application")(
+    sequence([
+      lazy(() => typePatternLiteral),
+      oneOrMore(
+        sequence([ws, lazy(() => typePatternLiteral)])
+      )
+    ])
+  ),
+  lazy(() => typePatternLiteral)
 ]);
 
 const listTypePattern = node("list-type-pattern")(
   sequence([
     ignore(lexeme("[")),
-    ws,
-    maybe(
-      delimited(
-        sequence([ws, ignore(lexeme(",")), ws])
-      )(lazy(() => _type))
-    ),
-    ws,
+    maybe(commaSeparated(lazy(() => _type))),
     ignore(lexeme("]"))
   ])
 );
@@ -316,13 +322,11 @@ const listTypePattern = node("list-type-pattern")(
 const recordTypePattern = node("record-type-pattern")(
   sequence([
     ignore(lexeme("{")),
-    ws,
     maybe(
-      delimited(
-        sequence([ws, ignore(lexeme(",")), ws])
-      )(lazy(() => recordTypePatternEntry))
+      commaSeparated(
+        lazy(() => recordTypePatternEntry)
+      )
     ),
-    ws,
     ignore(lexeme("}"))
   ])
 );
@@ -345,20 +349,44 @@ const recordTypePatternEntry = node(
   ])
 );
 
+const typePatternLiteral = oneOf([
+  type("wildcard"),
+  lazy(() => listTypePattern),
+  lazy(() => recordTypePattern),
+  lazy(() => literal),
+  sequence([
+    ignore(lexeme("(")),
+    ws,
+    lazy(() => typePattern),
+    ws,
+    ignore(lexeme(")"))
+  ])
+]);
+
 const _type = lazy(() => typeLambda);
 
 const typeLambda = oneOf([
   node("type-lambda")(
     sequence([
+      optional(lazy(() => typeLambdaGuard)),
       lazy(() => typePattern),
       ws,
       ignore(lexeme("->")),
       ws,
-      lazy(() => _type)
+      lazy(() => typeLambda)
     ])
   ),
   lazy(() => typeOperation)
 ]);
+
+const typeLambdaGuard = node("type-lambda-guard")(
+  sequence([
+    lazy(() => typePattern),
+    ws,
+    lexeme("=>"),
+    ws
+  ])
+);
 
 const typeOperation = oneOf([
   map(children => {
@@ -380,13 +408,13 @@ const typeOperation = oneOf([
     return node;
   })(
     sequence([
-      lazy(() => typeValue),
+      lazy(() => typeApplication),
       oneOrMore(
         sequence([
           ws,
-          lazy(() => operator),
+          type("operator"),
           ws,
-          lazy(() => typeApplication)
+          lazy(() => typeOperation)
         ])
       )
     ])
@@ -420,18 +448,14 @@ const typeValue = oneOf([
 const typeList = node("type-list")(
   sequence([
     ignore(lexeme("[")),
-    ws,
     maybe(
-      delimited(
-        sequence([ws, ignore(lexeme(",")), ws])
-      )(
+      commaSeparated(
         oneOf([
           lazy(() => typeDestructuring),
           lazy(() => _type)
         ])
       )
     ),
-    ws,
     ignore(lexeme("]"))
   ])
 );
@@ -439,13 +463,7 @@ const typeList = node("type-list")(
 const typeRecord = node("type-record")(
   sequence([
     ignore(lexeme("{")),
-    ws,
-    maybe(
-      delimited(
-        sequence([ws, ignore(lexeme(",")), ws])
-      )(lazy(() => typeRecordEntry))
-    ),
-    ws,
+    maybe(commaSeparated(lazy(() => typeRecordEntry))),
     ignore(lexeme("}"))
   ])
 );

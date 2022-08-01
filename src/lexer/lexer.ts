@@ -1,12 +1,14 @@
+import { makeError, Source } from "../util.js";
 import Token from "./token.js";
 
 type Pattern = RegExp | string;
 
 const lexer =
   (rules: Record<string, Pattern>) =>
-  (input: string) => {
+  (source: Source) => {
     let offset = 0;
     const tokens: Token[] = [];
+    let { input } = source;
     chomper: while (true) {
       for (const [type, pattern] of Object.entries(
         rules
@@ -17,9 +19,11 @@ const lexer =
           if (input.startsWith(pattern)) {
             tokens.push({
               type,
-              lexeme: pattern
-            } as Token);
+              lexeme: pattern,
+              offset
+            });
             input = input.slice(pattern.length);
+            offset += pattern.length;
             continue chomper;
           }
         } else {
@@ -34,7 +38,7 @@ const lexer =
               type,
               lexeme: match,
               offset
-            } as Token);
+            });
             input = input.slice(match.length);
             offset += match.length;
             continue chomper;
@@ -42,10 +46,20 @@ const lexer =
         }
       }
 
-      throw `Unexpected lexeme "${String.fromCodePoint(
+      const unexpected = String.fromCodePoint(
         input.codePointAt(0)!
-      )}".`;
+      )!;
+      throw makeError(
+        {
+          type: "unknown",
+          lexeme: unexpected,
+          offset
+        },
+        `Unexpected lexeme "${unexpected}"`,
+        source
+      );
     }
+
     return tokens;
   };
 

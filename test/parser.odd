@@ -81,25 +81,25 @@ string pattern state = if state `input` |> starts-with { pattern, at = state `of
 uncurry : (a -> b -> c) -> [a, b] -> c;
 uncurry f = [a, b] -> f a b;
 
-pair : Parser -> Parser -> Parser;
-pair a b state = (if result `ok`
-  then b result
-  else result)
-    where result = a state;
+-- pair : Parser -> Parser -> Parser;
+-- pair a b state = (if result `ok`
+--   then b result
+--   else result)
+--     where result = a state;
 
-sequence : List Parser -> Parser;
-sequence = fold pair;
+-- sequence : List Parser -> Parser;
+-- sequence = fold pair;
 
-space : Parser;
-space = string ` `;
+-- space : Parser;
+-- space = string ` `;
 
-odd = parser
-  { program = sequence [string `testi`, space, string `tosti`, string `;`] }
-  rule -> rule `program`;
+-- odd = parser
+--   { program = sequence [string `testi`, space, string `tosti`, string `;`] }
+--   rule -> rule `program`;
 
-unpack : State t -> ParseError | t;
-unpack state = if state `ok`
-  then state `output`
-  else state `reason`;
+-- unpack : State t -> ParseError | t;
+-- unpack state = if state `ok`
+--   then state `output`
+--   else state `reason`;
 
-log <| odd `testi tosti;` |> unpack;
+-- log <| odd `testi tosti;` |> unpack;
