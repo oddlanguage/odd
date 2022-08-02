@@ -69,7 +69,7 @@ export const makeError = (
     ":" +
     lineNumber +
     ":" +
-    col +
+    (col + 1) +
     "\n\n" +
     reason +
     ":\n\n" +

@@ -4,7 +4,7 @@ const lex = lexer({
   whitespace: /\s+/,
   comment: /--[^\n]+/,
   punctuation: /[()\[\]{};,]/,
-  "reserved operator": /=>|=|:|->/,
+  "reserved operator": /(?:=|:|[-=]>)(?=\b|\s|$)/,
   operator: /[!@#$%^&*\-+=\\:<>\.\|\/?]+/,
   wildcard: /_+/,
   number:
