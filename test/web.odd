@@ -11,6 +11,7 @@ init flags = {
 };
 
 -- TODO: How to type view? view : Model -> html `Html` Msg?
+-- TODO: This bad boy takes a good 13 seconds to parse... that's not ok.
 view model = document [] [
   head [] [],
   body [] [
