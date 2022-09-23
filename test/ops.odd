@@ -1,0 +1,16 @@
+<| : (a -> b) -> a -> b;
+a <| b = a b;
+
+|> : a -> (a -> b) -> b;
+a |> b = b a;
+
+>> : (a -> b) -> (b -> c) -> a -> c;
+a >> b = x -> b (a x);
+
+<< : (b -> c) -> (a -> b) -> a -> c;
+a << b = x -> a (b x);
+
+strlen = stringify >> size;
+strlen = size << stringify;
+strlen x = x |> stringify |> size;
+strlen x = size <| stringify <| x;

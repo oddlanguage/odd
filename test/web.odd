@@ -1,0 +1,32 @@
+{ browser, Browser = { App } } = await (import `browser`);
+{ document, head, body, main, h1, button, on-click, text } = await (import `html`);
+
+main : App;
+main = browser `app` { init, view, update };
+
+init : List Flag -> Model;
+init flags = {
+  title = `Odd Web App`,
+  count = 0,
+};
+
+-- TODO: How to type view? view : Model -> html `Html` Msg?
+view model = document [] [
+  head [] [],
+  body [] [
+    main [] [
+      h1 [] [ text (model `title`) ],
+      button [ on-click `decrement`] [ text `-` ],
+      text (model `count`),
+      button [ on-click `increment`] [ text `+` ],
+    ],
+  ],
+];
+
+Msg : `increment` | `decrement`;
+
+update : Msg -> Model;
+update msg =
+  match msg with
+    `increment` => { ...model, count = model `count` + 1 },
+    `decrement` => { ...model, count = model `count` - 1 };
