@@ -1,8 +1,8 @@
 import { readFile } from "fs/promises";
-import Token from "lexer/token.js";
 import path from "node:path";
 import url from "node:url";
-import { Tree } from "parser/ast.js";
+import Token from "../lexer/token.js";
+import { Tree } from "../parser/ast.js";
 import parser from "./parser.js";
 
 const [target, output] = process.argv.slice(2);
@@ -96,7 +96,7 @@ readFile(target, "utf-8")
     readFile(
       path.join(
         url.fileURLToPath(import.meta.url),
-        "parser/parser.js"
+        "../parser/parser.js"
       ),
       "utf-8"
     ).then(parser => console.log(parser + data))

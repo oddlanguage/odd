@@ -1,4 +1,4 @@
-import Token from "lexer/token.js";
+import Token from "../lexer/token.js";
 
 export type Tree = Readonly<{
   type: string;

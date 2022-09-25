@@ -1,5 +1,5 @@
-import parse from "odd/parser.js";
-import { serialise } from "util.js";
+import parse from "../odd/parser.js";
+import { serialise } from "../util.js";
 
 const repl = async () => {
   process.stdout.write(`Odd repl 0.1\n> `);

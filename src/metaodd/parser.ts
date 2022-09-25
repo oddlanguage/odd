@@ -13,7 +13,7 @@ import {
   run,
   sequence,
   type
-} from "parser/parser.js";
+} from "../parser/parser.js";
 import lex from "./lexer.js";
 
 const ws = optional(

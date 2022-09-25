@@ -1,6 +1,6 @@
 import fs from "node:fs/promises";
-import parse from "odd/parser.js";
-import { serialise } from "util.js";
+import parse from "../odd/parser.js";
+import { serialise } from "../util.js";
 
 const compile = (target: string) =>
   fs

@@ -1,5 +1,5 @@
-import Token from "lexer/token.js";
-import { makeError, Source } from "util.js";
+import Token from "../lexer/token.js";
+import { makeError, Source } from "../util.js";
 
 type Pattern = RegExp | string;
 
