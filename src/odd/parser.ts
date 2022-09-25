@@ -1,4 +1,4 @@
-import { Value } from "../parser/ast.js";
+import { Value } from "parser/ast.js";
 import {
   benchmark,
   delimited,
@@ -18,7 +18,7 @@ import {
   sequence,
   type,
   zeroOrMore
-} from "../parser/parser.js";
+} from "parser/parser.js";
 import lex from "./lexer.js";
 
 const ws = optional(

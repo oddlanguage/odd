@@ -12,22 +12,22 @@ init flags = {
 
 -- TODO: How to type view? view : Model -> html `Html` Msg?
 -- TODO: This bad boy takes a good 13 seconds to parse... that's not ok.
-view model = document [] [
-  head [] [],
-  body [] [
-    main [] [
-      h1 [] [ text (model `title`) ],
-      button [ on-click `decrement`] [ text `-` ],
-      text (model `count`),
-      button [ on-click `increment`] [ text `+` ],
-    ],
-  ],
-];
+view model =
+  document [] [
+    head [] [],
+    body [] [
+      main [] [
+        h1 [] [ text (model `title`) ],
+        button [ on-click `decrement`] [
+          text `-` ],
+        text (model `count`),
+        button [ on-click `increment`] [
+          text `+` ] ] ] ];
 
 Msg : `increment` | `decrement`;
 
 update : Msg -> Model;
 update msg =
-  match msg with
+  case msg of
     `increment` => { ...model, count = model `count` + 1 },
     `decrement` => { ...model, count = model `count` - 1 };

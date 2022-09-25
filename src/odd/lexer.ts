@@ -1,4 +1,4 @@
-import lexer from "../lexer/lexer.js";
+import lexer from "lexer/lexer.js";
 
 const lex = lexer({
   whitespace: /\s+/,

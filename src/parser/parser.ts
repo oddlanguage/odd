@@ -1,11 +1,11 @@
-import Token from "../lexer/token.js";
-import { Value } from "../parser/ast.js";
+import Token from "lexer/token.js";
+import { Value } from "parser/ast.js";
 import {
   escape,
   makeError,
   serialise,
   Source
-} from "../util.js";
+} from "util.js";
 
 export type Falsy<T> =
   | T
