@@ -51,7 +51,7 @@ const parenthesised = between(ignore(string("(")))(
   ignore(string(")"))
 );
 
-const parameters = separatedBy(ws)(identifier);
+const parameters = separatedBy(ws)(lazy(() => atom));
 
 const declaration = node("declaration")(
   chain([
