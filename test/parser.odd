@@ -37,7 +37,7 @@ accept : x -> State y -> State (x & y);
 accept value state = { ...state, output = state `output` + value, };
 
 succeed : x -> Number -> State y -> Success (x & y);
-succeed value n state = advance n accept value;
+succeed value n state = advance n (accept value);
 
 fail : String -> State -> Failure;
 fail reason state = {
@@ -47,7 +47,7 @@ fail reason state = {
 };
 
 done : State -> Boolean;
-export done state = state `offset` >= size state `input`;
+export done state = state `offset` >= size (state `input`);
 
 rule : Grammar g => Key g -> Parser;
 export rule name state = state `grammar` name state;

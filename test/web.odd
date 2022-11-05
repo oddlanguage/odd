@@ -1,14 +1,28 @@
-{ browser, Browser = { App } } = await (import `browser`);
-{ document, head, body, main, h1, button, on-click, text } = await (import `html`);
+{
+  browser,
+  Browser = { App }
+} = await (import `browser`);
+{
+  document,
+  head,
+  body,
+  main,
+  h1,
+  button,
+  on-click,
+  text
+} = await (import `html`);
 
 main : App;
-main = browser `app` { init, view, update };
+main = browser `app` {
+  init,
+  view,
+  update };
 
 init : List Flag -> Model;
 init flags = {
   title = `Odd Web App`,
-  count = 0,
-};
+  count = 0 };
 
 -- TODO: How to type view? view : Model -> html `Html` Msg?
 -- TODO: This bad boy takes a good 13 seconds to parse... that's not ok.

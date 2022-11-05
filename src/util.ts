@@ -1,93 +1,83 @@
 import { inspect } from "node:util";
-import Token from "./lexer/token.js";
 
 export const serialise = (x: any) =>
   typeof x === "string"
     ? x
     : inspect(x, false, Infinity, true);
 
-export type Source = Readonly<{
-  input: string;
-  name: string;
-}>;
+export const log = <T>(x: T) => {
+  console.log(serialise(x));
+  return x;
+};
 
 export const redUnderline = (string: string) =>
   "\x1b[31;4m" + string + "\x1b[0m";
 
-export const log = <T>(x: T) => {
-  console.log(x);
-  return x;
+type Primitive =
+  | string
+  | boolean
+  | number
+  | symbol
+  | null
+  | undefined;
+
+export const isPrimitive = <T>(
+  value: T | Primitive
+): value is T =>
+  [
+    "number",
+    "string",
+    "boolean",
+    "undefined"
+  ].includes(typeof value) || value === null;
+
+export const equal = <
+  T extends Record<keyof any, any>
+>(
+  a: T,
+  b: T
+): boolean =>
+  isPrimitive(a)
+    ? a === b
+    : Object.keys(a).length ===
+        Object.keys(b).length &&
+      Object.entries(a).every(
+        ([key, value]) =>
+          key in b && equal(value, b[key])
+      );
+
+export const unique = <T>(
+  items: ReadonlyArray<T>
+): ReadonlyArray<T> => {
+  if (isPrimitive(items[0]))
+    return [...new Set(items)];
+
+  const [uniques, duplicates] = [[] as T[], [] as T[]];
+  for (const item of items) {
+    (uniques.find(x => equal(x as any, item))
+      ? duplicates
+      : uniques
+    ).push(item);
+  }
+  return uniques;
 };
 
-// TODO: Extract into some sort of "Problem" interface
-export const makeError = (
-  token: Token | undefined,
-  reason: string,
-  source: Source
-) => {
-  const problematicToken = token ?? {
-    type: "EOF",
-    lexeme: "",
-    offset: source.input.length
+export type Mutable<T extends Record<keyof any, any>> =
+  {
+    -readonly [K in keyof T]: T[K];
   };
-  const problemEnd =
-    problematicToken.offset +
-    problematicToken.lexeme.length -
-    (problematicToken.lexeme.match(
-      /^[\r\n\v\f\t]+$/
-    )?.[0]?.length ?? 0);
-  const startOfErroneousLine =
-    source.input.lastIndexOf(
-      "\n",
-      problematicToken.offset
-    ) + 1;
-  const maybeEndOfErroneousLine = source.input.indexOf(
-    "\n",
-    problemEnd
-  );
-  const endOfErroneousLine =
-    maybeEndOfErroneousLine === -1
-      ? source.input.length
-      : maybeEndOfErroneousLine;
-  const erroneousLine = source.input.slice(
-    startOfErroneousLine,
-    endOfErroneousLine
-  );
-  const col =
-    problematicToken.offset - startOfErroneousLine;
-  const lineNumber = source.input
-    .slice(0, endOfErroneousLine)
-    .split(/\r*\n/).length;
-  const linePrefix = lineNumber + " | ";
-  const isNotDisplayable = /^[\r\n\v\f\t]+$/.test(
-    problematicToken.lexeme
-  );
 
-  return (
-    "Uh oh! Got stuck at " +
-    source.name +
-    ":" +
-    lineNumber +
-    ":" +
-    (col + 1) +
-    "\n\n" +
-    reason +
-    ":\n\n" +
-    linePrefix +
-    erroneousLine.slice(0, col) +
-    redUnderline(
-      isNotDisplayable ? " " : problematicToken.lexeme
-    ) +
-    erroneousLine.slice(
-      col + problematicToken.lexeme.length
-    )
-  );
-};
-
-export const escape = (input: string) =>
-  input
-    .replace(/\r/g, "\\r")
-    .replace(/\n/g, "\\n")
-    .replace(/\t/g, "\\t")
-    .replace(/\f/g, "\\f")
-    .replace(/\v/g, "\\v");
+export const chunk =
+  (n: number) =>
+  <T>(
+    values: ReadonlyArray<T> | T[]
+  ): ReadonlyArray<ReadonlyArray<T>> => {
+    if (n <= 0)
+      throw new RangeError(
+        `n out of range [1..${values.length}]: ${n}`
+      );
+    const chunks = [] as any[];
+    const copy = values.slice();
+    while (copy.length) chunks.push(copy.splice(0, n));
+    return chunks;
+  };
