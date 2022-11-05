@@ -31,10 +31,10 @@ Token : {
 };
 
 advance : Number -> State -> State;
-advance n state = { ...state, offset = state `offset` + n, };
+advance n state = { ...state, offset = state ''offset'' + n, };
 
 accept : x -> State y -> State (x & y);
-accept value state = { ...state, output = state `output` + value, };
+accept value state = { ...state, output = state ''output'' + value, };
 
 succeed : x -> Number -> State y -> Success (x & y);
 succeed value n state = advance n (accept value);
@@ -47,10 +47,10 @@ fail reason state = {
 };
 
 done : State -> Boolean;
-export done state = state `offset` >= size (state `input`);
+export done state = state ''offset'' >= size (state ''input'');
 
 rule : Grammar g => Key g -> Parser;
-export rule name state = state `grammar` name state;
+export rule name state = state ''grammar'' name state;
 
 parser : Grammar -> (rule -> Parser) -> String -> Result;
 export parser grammar program input =
@@ -67,22 +67,22 @@ end state = if done state
   else {
     ...state,
     ok = false,
-    problem = `expected to have reached the end of the input.`,
+    problem = ''expected to have reached the end of the input.'',
   };
 
 reject : String -> Parser;
 reject reason state = { ...state, ok = false, reason };
 
 string : String -> Parser;
-string pattern state = if state `input` |> starts-with { pattern, at = state `offset` }
+string pattern state = if state ''input'' |> starts-with { pattern, at = state ''offset'' }
   then advance <| size pattern <| state
-  else reject `Expected "\(pattern)".` <| state;
+  else reject ''Expected "\(pattern)".'' <| state;
 
 uncurry : (a -> b -> c) -> [a, b] -> c;
 uncurry f = [a, b] -> f a b;
 
 -- pair : Parser -> Parser -> Parser;
--- pair a b state = (if result `ok`
+-- pair a b state = (if result ''ok''
 --   then b result
 --   else result)
 --     where result = a state;
@@ -91,15 +91,15 @@ uncurry f = [a, b] -> f a b;
 -- sequence = fold pair;
 
 -- space : Parser;
--- space = string ` `;
+-- space = string '' '';
 
 -- odd = parser
---   { program = sequence [string `testi`, space, string `tosti`, string `;`] }
---   rule -> rule `program`;
+--   { program = sequence [string ''testi'', space, string ''tosti'', string '';''] }
+--   rule -> rule ''program'';
 
 -- unpack : State t -> ParseError | t;
--- unpack state = if state `ok`
---   then state `output`
---   else state `reason`;
+-- unpack state = if state ''ok''
+--   then state ''output''
+--   else state ''reason'';
 
--- log <| odd `testi tosti;` |> unpack;
+-- log <| odd ''testi tosti;'' |> unpack;

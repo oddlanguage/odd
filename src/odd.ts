@@ -19,10 +19,16 @@ import {
   _try
 } from "./parser.js";
 
-const ws = _try(ignore(pattern(/\s+/)));
+const comment = pattern(/--[^\n]+/);
 
-const identifier = label("an identifier")(
-  pattern(/[a-z]+\w*(?:-\w)*/i)
+const spaces = pattern(/\s+/);
+
+const ws = _try(
+  ignore(oneOrMore(choice([spaces, comment])))
+);
+
+const name = label("a name")(
+  pattern(/[a-z]+\w*(?:-\w+)*/i)
 );
 
 const oddString = label("a string")(
@@ -37,13 +43,14 @@ const number = label("a number")(
 
 const reservedOp = choice([
   string("->"),
-  string(":"),
+  // TODO: Add types
+  // string(":"),
   string("=")
 ]);
 
 const operator = label("an operator")(
   except(reservedOp)(
-    pattern(/[-!@#$%^&*_+=:\/\\\.\<\>\?]+/)
+    pattern(/[-!@#$%^&*_+=:\|\/\\\.\<\>\?]+/)
   )
 );
 
@@ -142,12 +149,10 @@ const list = node("list")(
 );
 
 const field = node("field")(
-  chain([
-    choice([destructuring, declaration, identifier])
-  ])
+  chain([choice([destructuring, declaration, name])])
 );
 
-const object = node("object")(
+const record = node("record")(
   chain([
     ignore(string("{")),
     ws,
@@ -163,10 +168,10 @@ const object = node("object")(
 
 const literal = choice([
   oddString,
-  identifier,
+  name,
   number,
   list,
-  object,
+  record,
   parenthesised(operator)
 ]);
 
