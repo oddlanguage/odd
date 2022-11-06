@@ -1,5 +1,6 @@
 import fs from "node:fs/promises";
 import parse from "./odd.js";
+import stringify from "./stringify.js";
 import { serialise } from "./util.js";
 
 const target = process.argv[2];
@@ -8,7 +9,7 @@ const compile = (target: string) =>
   fs
     .readFile(target, "utf-8")
     .then(input =>
-      console.log(serialise(parse(input)))
+      console.log(stringify(parse(input)))
     )
     .catch(err => {
       console.error("\n" + serialise(err) + "\n");
@@ -20,9 +21,14 @@ const repl = async () => {
   process.stdin.setEncoding("utf-8");
   for await (const input of process.stdin) {
     try {
-      process.stdout.write(
-        serialise(parse(input.trimEnd()))
+      const compiled = stringify(
+        parse(input.trimEnd())
       );
+      console.log(
+        compiled,
+        "\n" + "-".repeat(compiled.length)
+      );
+      process.stdout.write(serialise(eval(compiled)));
     } catch (err) {
       console.error("\n" + serialise(err));
     }
