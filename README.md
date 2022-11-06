@@ -49,13 +49,13 @@ For a more in-depth look at how Odd works, [have a look at the documentation](do
 
 Some work has yet to be done for odd to release as v1.0. The following is a list of development milestones to get to **v1.0**:
 
-- [ ] ⏱️ **0.1**: Runnable programs.
+- [x] ⏱️ **0.1**: Runnable programs.
 - [ ] ⏱️ **0.2**: Module system.
 - [ ] ⏱️ **0.3**: Meaningful & readable errors.
 - [ ] ⏱️ **0.4**: Odd LSP for proper editor integration.
 - [ ] ⏱️ **0.5**: Type system (HM with row polymorphism).
 
-  > ...
+> ...
 
 - [ ] 🏁 **1.0**: Standalone executable for real-world use.
 
@@ -71,5 +71,5 @@ Conceptualised and authored by ([@maanlamp](https://github.com/maanlamp)). Feel 
 
 ## © License
 
-Copyright 2021 ([@maanlamp](https://github.com/maanlamp)).
+Copyright 2022 ([@maanlamp](https://github.com/maanlamp)).
 [This project is licensed under MIT](./LICENSE.txt).
