@@ -20,6 +20,7 @@ Odd is highly W.I.P. but these are the main goals of the language:
 - Odd must have no (unnecessary) dependencies.
   - Full ownership of the codebase ensures any bug is our responsibility to fix, but also any feature ours to add.
 - Odd must run on every machine (_within reason, of course_).
+  - WebAssembly is a promising target platform to immediately work on most devices.
   - A tiny footprint should allow the language to be used or embedded anywhere. Imagine your IOT devices running Odd 🤯.
   - Having an old(er) or less powerful device should never be a reason to be unable to program.
 

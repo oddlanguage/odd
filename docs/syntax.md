@@ -16,6 +16,7 @@
       - [Interpolation](#interpolation)
       - [Common pitfalls](#common-pitfalls)
     - [Names](#names)
+      - [Common pitfalls](#common-pitfalls-1)
     - [Lists](#lists)
     - [Records](#records)
     - [Operators](#operators)
@@ -23,7 +24,9 @@
   - [Assignment](#assignment)
   - [Application](#application)
   - [Modules](#modules)
+  - [Functions](#functions)
   - [Types](#types)
+- [🤸 Contribute](#-contribute)
 
 </details>
 
