@@ -10,15 +10,18 @@ This document describes the Odd syntax. It is a live document and is not a forma
 - [Odd Syntax](#odd-syntax)
   - [Comments](#comments)
   - [Literals](#literals)
+    - [Booleans](#booleans)
+    - [Nothing](#nothing)
     - [Numbers](#numbers)
       - [Legibility](#legibility)
       - [Decimal](#decimal)
       - [Exponent](#exponent)
+      - [Infinity](#infinity)
     - [Strings](#strings)
       - [Interpolation](#interpolation)
-      - [Common pitfalls](#common-pitfalls)
+      - [Common pitfalls in strings](#common-pitfalls-in-strings)
     - [Names](#names)
-      - [Common pitfalls](#common-pitfalls-1)
+      - [Common pitfalls in names](#common-pitfalls-in-names)
     - [Lists](#lists)
     - [Records](#records)
     - [Operators](#operators)
@@ -172,7 +175,7 @@ A string is a sequence of any character (except newlines), contained within _two
 
 > ℹ️ String interpolation is a planned feature. It will use the backslash (`\`) to denote interpolated parts.
 
-#### Common pitfalls
+#### Common pitfalls in strings
 
 The reason Odd uses this syntax is to avoid common pitfalls of strings in other languages.
 
@@ -217,9 +220,9 @@ this-is-also-a-name;
 
 The way we separate words in a name is often called _kebab case_, because of the resemblance to kebab on a skewer.
 
-Odd supports kebab case because it's more legible than _camelCase_ or _PascalCase_, and requires fewer key presses than _snake_case_. While camelCasing your vairables is still possible, the official Odd styleguide requires kebab-case.
+Odd supports kebab case because it's more legible than _camelCase_ or _PascalCase_, and requires fewer key presses than _snake_case_. While camelCasing your variables is still possible, the official Odd styleguide requires kebab-case.
 
-#### Common pitfalls
+#### Common pitfalls in names
 
 Because the hyphen character is also used for the minus operator, one might get confused between `a-name` and `an - expression`. In practise, people mostly put spaces between terms and operators in their maths, so it's easily distinguishable.
 
@@ -405,13 +408,13 @@ a (b -> c);
 
 ## Assignment
 
-You can assign a value to a variable using the _equals sign_ (`=`):
+You can assign a value to a name using the _equals sign_ (`=`):
 
 ```hs
 a = b;
 ```
 
-Odd references are immutable:
+Odd values are immutable:
 
 ```hs
 a = b;
