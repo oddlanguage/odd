@@ -27,6 +27,13 @@ Odd is highly W.I.P. but these are the main goals of the language:
 <br/>
 <br/>
 
+## 🤸 Contribute
+
+Feel free to contribute: [create an issue](https://github.com/oddlanguage/odd/issues/new) or [a pull request](https://github.com/oddlanguage/odd/pulls).
+
+<br/>
+<br/>
+
 ## 🖥️ Usage
 
 > Odd is guaranteed to work with node version 16.13.1, but should be compatible with earlier versions down to v12, possibly requiring the `--harmony` flag.
@@ -64,14 +71,7 @@ Some work has yet to be done for odd to release as v1.0. The following is a list
 <br/>
 <br/>
 
-## 🤸 Contribute
-
-Conceptualised and authored by ([@maanlamp](https://github.com/maanlamp)). Feel free to contribute: [create an issue](https://github.com/oddlanguage/odd/issues/new) or [a pull request](https://github.com/oddlanguage/odd/pulls).
-
-<br/>
-<br/>
-
 ## © License
 
-Copyright 2022 ([@maanlamp](https://github.com/maanlamp)).
+Conceptualised and authored by [@maanlamp](https://github.com/maanlamp).
 [This project is licensed under MIT](./LICENSE.txt).
