@@ -150,6 +150,8 @@ The exponent can also be negative:
 
 There is a special literal in Odd that represents a number greater than any other number, named `infinity`. This is also the case for `-infinity`, which is always smaller than any other number.
 
+Of course, infinity isn't a number but let's pretend 😉.
+
 <br/>
 
 ### Strings
