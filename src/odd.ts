@@ -37,7 +37,7 @@ const oddString = label("a string")(
 const number = label("a number")(
   node("number")(
     pattern(
-      /-?(?:\d+(?:,\d+)*(?:\.\d+(?:e[+-]?\d+)?)?|\.\d+(?:e[+-]?\d+)?)/i
+      /-?(?:\d+(?:,\d+)*(?:\.\d+)?|\.\d+)(?:e[+-]?\d+)?/i
     )
   )
 );
