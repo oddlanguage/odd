@@ -33,10 +33,11 @@ Odd is highly W.I.P. but these are the main goals of the language:
 
 To try out Odd, download the repo and run it through Node:
 
-```shell
+```sh
 tsc # compile source
 node dist/run.js # start a repl
-node dist/run.js path/to/file.odd # or run the compiler on path/to/file.odd
+node dist/run.js path/to/file.odd # Compile path/to/file.odd and emit to stdout
+node dist/run.js path/to/file.odd out/file # Compile path/to/file.odd and write to out/file
 ```
 
 When Odd is finished, it will be a standalone executable requiring no separate Node installation, or any other dependency.
