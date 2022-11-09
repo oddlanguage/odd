@@ -24,17 +24,14 @@ const repl = async () => {
   process.stdout.write(`Odd repl 0.1\n> `);
   process.stdin.setEncoding("utf-8");
   for await (const input of process.stdin) {
+    let compiled;
     try {
-      const compiled = stringify(
-        parse(input.trimEnd())
-      );
-      console.log(
-        compiled,
-        "\n" + "-".repeat(compiled.length)
-      );
+      compiled = stringify(parse(input.trimEnd()));
       process.stdout.write(serialise(eval(compiled)));
     } catch (err) {
-      console.error("\n" + serialise(err));
+      console.error(
+        compiled + "\n\n" + serialise(err)
+      );
     }
     process.stdout.write("\n> ");
   }
