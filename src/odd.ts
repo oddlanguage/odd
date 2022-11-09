@@ -147,6 +147,8 @@ const list = node("list")(
       )
     ),
     ws,
+    _try(ignore(string(","))),
+    ws,
     ignore(string("]"))
   ])
 );
@@ -164,6 +166,8 @@ const record = node("record")(
         chain([ws, ignore(string(",")), ws])
       )(field)
     ),
+    ws,
+    _try(ignore(string(","))),
     ws,
     ignore(string("}"))
   ])
