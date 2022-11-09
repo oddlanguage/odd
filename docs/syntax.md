@@ -1,6 +1,8 @@
 # Odd Syntax
 
-> TODO intro
+This document describes the Odd syntax. It is a live document and is not a formal specification in any way.
+
+<br/>
 
 <details>
   <summary><b>📚 Table of Contents</b></summary>
