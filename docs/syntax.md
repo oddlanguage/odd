@@ -1,6 +1,6 @@
 # Odd Syntax
 
-> TODO
+> TODO intro
 
 <details>
   <summary><b>📚 Table of Contents</b></summary>
@@ -52,6 +52,26 @@ There are no multiline comments.
 
 A `literal` is a lexeme that represents a value _literally_. Below are all possible literal productions, ordered by simplicity.
 
+### Booleans
+
+Odd features two values that represent truth and falsehood: `true` and `false`, respectively.
+
+```hs
+infinity > 1 -- true
+1 == ''1''-- false
+```
+
+### Nothing
+
+It's really useful to be able to say something holds no value, instead of crashing and burning. There's a special literal for this case: `nothing`. It behaves like `null` does in other c-like languages.
+
+Nothing is equal to `nothing`, except itself:
+
+```hs
+nothing == nothing -- true
+1 == nothing -- false
+```
+
 ### Numbers
 
 A number is any string of consecutive digits:
@@ -89,14 +109,21 @@ The integral part is optional:
 .123456789;
 ```
 
-#### Exponent
-
-The decimal part can contain an exponent, delimited by _the letter e_ (case-insensitive):
+You cannot insert commas after the full stop:
 
 ```hs
-10e6;
+1,000.03534 -- ok!
+1.033,534 -- ERROR!
+```
+
+#### Exponent
+
+A number can contain an exponent, delimited by _the letter e_ (case-insensitive):
+
+```hs
+1e6;
 -- is the same as
-10E6;
+1E6;
 -- is the same as
 1,000,000;
 ```
@@ -104,20 +131,24 @@ The decimal part can contain an exponent, delimited by _the letter e_ (case-inse
 The exponent is assumed to be positive, but can be explicitly marked as such:
 
 ```hs
-10e6;
+1e6;
 -- is the same as
-10e+6;
+1e+6;
 ```
 
 The exponent can also be negative:
 
 ```hs
-10e-6;
+1e-6;
 -- is the same as
-0.00001;
+0.000001;
 -- is the same as
-.00001;
+.000001;
 ```
+
+#### Infinity
+
+There is a special literal in Odd that represents a number greater than any other number, named `infinity`. This is also the case for `-infinity`, which is always smaller than any other number.
 
 <br/>
 
