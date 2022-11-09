@@ -1,5 +1,4 @@
 import {
-  benchmark,
   between,
   chain,
   choice,
@@ -32,12 +31,14 @@ const name = label("a name")(
 );
 
 const oddString = label("a string")(
-  pattern(/''(?:[^']|\')*?(?<!\\)''/)
+  node("string")(pattern(/''(?:[^']|\')*?(?<!\\)''/))
 );
 
 const number = label("a number")(
-  pattern(
-    /-?(?:\d+(?:\.\d+(?:e[+-]?\d+)?)?|\.\d+(?:e[+-]?\d+)?)/i
+  node("number")(
+    pattern(
+      /-?(?:\d+(?:,\d+)*(?:\.\d+(?:e[+-]?\d+)?)?|\.\d+(?:e[+-]?\d+)?)/i
+    )
   )
 );
 
@@ -45,12 +46,14 @@ const reservedOp = choice([
   string("->"),
   // TODO: Add types
   // string(":"),
-  string("=")
+  pattern(/=(?!=)/)
 ]);
 
 const operator = label("an operator")(
-  except(reservedOp)(
-    pattern(/[-!@#$%^&*_+=:\|\/\\\.\<\>\?]+/)
+  node("operator")(
+    except(reservedOp)(
+      pattern(/[-!@#$%^&*_+=:\|\/\\\.\<\>\?]+/)
+    )
   )
 );
 
@@ -214,7 +217,7 @@ const program = node("program")(
   chain([ws, _try(statements), ws, eof])
 );
 
-const odd = benchmark(program);
+const odd = program;
 
 const parse = (input: string) =>
   unpack(run(odd)(input))[0]!;
