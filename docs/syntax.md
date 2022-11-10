@@ -429,6 +429,8 @@ multiply a b = a * b;
 
 > ℹ️ [We will expand upon function syntax later on](#application).
 
+> ℹ️ [Pattern matching](#pattern-matching) in declarations is a planned feature.
+
 <br/>
 <br/>
 
@@ -449,6 +451,68 @@ f(x);
 ```
 
 One could think of these syntaxes as the same, but without requiring parentheses (the c-like syntax is also legal syntax in Odd).
+
+<br/>
+<br/>
+
+## Pattern matching
+
+Patterns allow you to match data by its value or shape.
+
+With a `case` expression, you can couple values together based on any pattern.
+
+A case expression consist of the word `case`, followed by _an expression between paretheses_ `()`, followed by the word `of`, followed by one or more _cases_:
+
+```hs
+two-is-even = case (is-even 2) of
+  true = ''yep'',
+  false = ''nope'';
+
+two-is-even; -- ''yep''
+```
+
+A case consistof of _a pattern_, followed by _an equals sign_ (`=`), followed by _an expression_.
+
+Here are some valid patterns:
+
+- Literals, such as
+  - Strings
+  - Numbers
+  - Booleans
+  - etc.
+
+```hs
+case (''a'') of
+  1 = 1, -- no match
+  true = 2, -- no match
+  ''a'' = 3; -- match!
+-- final result is 3
+```
+
+- The _success_ case, which is one or more underscores (`_`), and always matches.
+
+```hs
+case (''a'') of
+  1 = 1, -- no match
+  true = 2, -- no match
+  _ = 3; -- match!
+-- final result is 3
+```
+
+The order of cases is important. They are evaluated top to bottom / left to right:
+
+```hs
+case (''a'') of
+  1 = 1, -- no match
+  true = 2, -- no match
+  ''a'' = 3, -- match!
+  _ = 4; -- also a match, but will not
+         -- be chosen since it comes
+         -- after another matching pattern
+-- final result is 3
+```
+
+> ℹ️ Complex patterns, such as shapes (records/lists) and application, are a planned feature.
 
 <br/>
 <br/>

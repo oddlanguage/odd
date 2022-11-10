@@ -40,8 +40,8 @@ view model =
 
 Msg : ''increment'' | ''decrement'';
 
--- update : Msg -> Model;
--- update msg =
---   case msg of
---     ''increment'' => { ...model, count = model ''count'' + 1 },
---     ''decrement'' => { ...model, count = model ''count'' - 1 };
+update : Msg -> Model;
+update msg =
+  case (msg) of
+    ''increment'' => { ...model, count = model ''count'' + 1 },
+    ''decrement'' => { ...model, count = model ''count'' - 1 };

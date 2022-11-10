@@ -47,6 +47,7 @@ const prelude = `const ENV = {
   repeat:x=>n=>${lazyAccessor(
     "[...Array(n).keys()].map(()=>x)"
   )},
+	show:x=>x.toString(),
 };
 `;
 
@@ -64,9 +65,11 @@ const stringify = (tree: Tree): string => {
         ? `ENV["${
             (node.children[0] as Token).text
           }"]=${node.children
-            .slice(1)
+            .slice(1, -1)
             .map(param => (param as Token).text)
-            .join("=>")}`
+            .join("=>")}${stringify(
+            node.children[1]!
+          )}`
         : `ENV["${
             (node.children[0] as Token).text
           }"]=${stringify(node.children[1]!)}`;
@@ -126,12 +129,21 @@ const stringify = (tree: Tree): string => {
       return (
         "..." + stringify(node.children[0]!) + "()"
       );
+    case "match":
+      return `(()=>{const _=(${stringify(
+        node.children[0]!
+      )});return[${node.children
+        .slice(1)
+        .map(stringify)}].find(([f])=>f()===_)[1]})()`;
+    case "case":
+      return `[()=>(${
+        /^_+$/.test((node.children[0] as Token).text)
+          ? "_"
+          : stringify(node.children[0]!)
+      }),${stringify(node.children[1]!)}]`;
     case undefined: {
       const token = tree as Token;
-      const name = token.text.replace(
-        /(?<=[a-z])-(?=[a-z])/gi,
-        "_"
-      );
+      const name = token.text;
       return name === "nothing"
         ? `ENV["nothing"]`
         : `(ENV["${name}"]??(()=>{throw\`Unknown name "${name}".\`})())`;

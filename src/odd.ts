@@ -42,17 +42,10 @@ const number = label("a number")(
   )
 );
 
-const reservedOp = choice([
-  string("->"),
-  // TODO: Add types
-  // string(":"),
-  pattern(/=(?!=)/)
-]);
-
 const operator = label("an operator")(
   node("operator")(
-    except(reservedOp)(
-      pattern(/[-!@#$%^&*_+=:\|\/\\\.\<\>\?]+/)
+    pattern(
+      /[!@#$%^&*_+:\|\/\\\.\<\>\?][-!@#$%^&*_=+:\|\/\\\.\<\>\?]*/
     )
   )
 );
@@ -61,7 +54,9 @@ const parenthesised = between(ignore(string("(")))(
   ignore(string(")"))
 );
 
-const parameters = separatedBy(ws)(lazy(() => atom));
+const parameters = separatedBy(ws)(
+  except(string("case"))(lazy(() => atom))
+);
 
 const declaration = node("declaration")(
   chain([
@@ -72,6 +67,35 @@ const declaration = node("declaration")(
     lazy(() => expression)
   ])
 );
+
+const match = node("match")(
+  chain([
+    ignore(string("case")),
+    ws,
+    parenthesised(lazy(() => expression)),
+    ws,
+    ignore(string("of")),
+    ws,
+    separatedBy(chain([ws, ignore(string(",")), ws]))(
+      lazy(() => matchCase)
+    )
+  ])
+);
+
+const matchCase = node("case")(
+  chain([
+    choice([lazy(() => expression), pattern(/_+/)]),
+    ws,
+    ignore(string("=")),
+    ws,
+    lazy(() => expression)
+  ])
+);
+
+const precedenceMatch = choice([
+  match,
+  lazy(() => precedenceLambda)
+]);
 
 const lambda = node("lambda")(
   chain([
@@ -100,6 +124,7 @@ const infix = nodeLeft(
         operator,
         ws,
         choice([
+          lazy(() => match),
           lambda,
           lazy(() => application),
           lazy(() => atom)
@@ -120,7 +145,12 @@ const application = nodeLeft("application")(
     oneOrMore(
       chain([
         ws,
-        choice([lambda, infix, lazy(() => atom)])
+        choice([
+          lazy(() => match),
+          lambda,
+          infix,
+          lazy(() => atom)
+        ])
       ])
     )
   ])
@@ -196,7 +226,7 @@ const statement = choice([
 // const type = node("type")(literal);
 
 // TODO: Add types
-const expression = precedenceLambda;
+const expression = precedenceMatch;
 // chain([
 //   lambda,
 //   // TODO: Currently we can't wrap the type in a node

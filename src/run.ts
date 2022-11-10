@@ -21,8 +21,8 @@ const compile = (target: string) =>
     });
 
 const repl = async () => {
-  process.stdout.write(`Odd repl 0.1\n> `);
   process.stdin.setEncoding("utf-8");
+  process.stdout.write(`Odd repl 0.1\n> `);
   for await (const input of process.stdin) {
     let compiled;
     try {
