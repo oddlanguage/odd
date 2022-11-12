@@ -62,22 +62,8 @@ export const unique = <T>(
   return uniques;
 };
 
-export type Mutable<T extends Record<keyof any, any>> =
-  {
-    -readonly [K in keyof T]: T[K];
-  };
+export const last = <T>(arr: ReadonlyArray<T>) =>
+  arr[arr.length - 1];
 
-export const chunk =
-  (n: number) =>
-  <T>(
-    values: ReadonlyArray<T> | T[]
-  ): ReadonlyArray<ReadonlyArray<T>> => {
-    if (n <= 0)
-      throw new RangeError(
-        `n out of range [1..${values.length}]: ${n}`
-      );
-    const chunks = [] as any[];
-    const copy = values.slice();
-    while (copy.length) chunks.push(copy.splice(0, n));
-    return chunks;
-  };
+export const capitalise = (string: string) =>
+  string[0]!.toUpperCase() + string.slice(1);

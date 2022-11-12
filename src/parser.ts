@@ -25,6 +25,7 @@ type Problem = ProblemBase &
 
 type ProblemBase = Readonly<{
   at: number;
+  size?: number;
 }>;
 
 type Expected = Readonly<{
@@ -49,11 +50,12 @@ type Failure = Readonly<{
 }>;
 
 export type Token = Readonly<{
+  type?: string | undefined;
   text: string;
   offset: number;
 }>;
 
-export type Tree<T = Token> = Branch | T;
+export type Tree = Branch | Token;
 
 export type Branch = Readonly<{
   type: string;
@@ -69,7 +71,7 @@ export const run =
     });
 
 export const string =
-  (string: string): Parser =>
+  (string: string, type?: string): Parser =>
   state => {
     if (state.input.length <= state.offset)
       return {
@@ -88,7 +90,11 @@ export const string =
           ok: true,
           offset: state.offset + string.length,
           value: [
-            { text: string, offset: state.offset }
+            {
+              type,
+              text: string,
+              offset: state.offset
+            }
           ]
         }
       : {
@@ -103,7 +109,10 @@ export const string =
         };
   };
 
-export const pattern = (pattern: RegExp): Parser => {
+export const pattern = (
+  pattern: RegExp,
+  type?: string
+): Parser => {
   const compiledPattern = new RegExp(
     `^(?:${pattern.source})`,
     pattern.flags
@@ -127,7 +136,7 @@ export const pattern = (pattern: RegExp): Parser => {
           ok: true,
           offset: state.offset + match.length,
           value: [
-            { text: match, offset: state.offset }
+            { type, text: match, offset: state.offset }
           ]
         }
       : {
@@ -264,7 +273,7 @@ export const ignore =
       : result;
   };
 
-const getLineOfProblem =
+export const getLineOfProblem =
   (failure: State & Failure) => (problem: Problem) => {
     const start =
       failure.input.lastIndexOf("\n", problem.at) + 1;
@@ -278,8 +287,16 @@ const getLineOfProblem =
         : maybeEnd;
     const lineContent =
       failure.input.slice(start, problem.at) +
-      redUnderline(failure.input[problem.at] ?? " ") +
-      failure.input.slice(problem.at + 1, end);
+      redUnderline(
+        failure.input.slice(
+          problem.at,
+          problem.at + (problem.size ?? 1)
+        ) ?? " ".repeat(problem.size ?? 1)
+      ) +
+      failure.input.slice(
+        problem.at + (problem.size ?? 1),
+        end
+      );
     const line =
       (failure.input.slice(0, start - 1).match(/\n/g)
         ?.length ?? 0) + 1;
@@ -288,8 +305,11 @@ const getLineOfProblem =
     return `${linePrefix}${lineContent}`;
   };
 
-export const makeError = (failure: State & Failure) =>
-  `❌ Uh oh! Got stuck while parsing:\n\n` +
+export const makeError = (
+  message: string,
+  failure: State & Failure
+) =>
+  `❌ Uh oh! ${message}:\n\n` +
   failure.problems
     .map(
       problem =>
@@ -315,7 +335,8 @@ const stringifyProblem = (problem: Problem) => {
 };
 
 export const unpack = (result: Result) => {
-  if (!result.ok) throw makeError(result);
+  if (!result.ok)
+    throw makeError(`Got stuck while parsing`, result);
   return result.value;
 };
 

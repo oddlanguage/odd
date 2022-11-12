@@ -27,26 +27,24 @@ const ws = _try(
 );
 
 const name = label("a name")(
-  pattern(/[a-z]+\w*(?:-\w+)*/i)
+  pattern(/[a-z]+\w*(?:-\w+)*/i, "name")
 );
 
 const oddString = label("a string")(
-  node("string")(pattern(/''(?:[^']|\')*?(?<!\\)''/))
+  pattern(/''(?:[^']|\')*?(?<!\\)''/, "string")
 );
 
 const number = label("a number")(
-  node("number")(
-    pattern(
-      /-?(?:\d+(?:,\d+)*(?:\.\d+)?|\.\d+)(?:e[+-]?\d+)?/i
-    )
+  pattern(
+    /-?(?:\d+(?:,\d+)*(?:\.\d+)?|\.\d+)(?:e[+-]?\d+)?/i,
+    "number"
   )
 );
 
 const operator = label("an operator")(
-  node("operator")(
-    pattern(
-      /[!@#$%^&*_+:\|\/\\\.\<\>\?][-!@#$%^&*_=+:\|\/\\\.\<\>\?]*/
-    )
+  pattern(
+    /[-=!@#$%^&*_+:\|\/\\\.\<\>\?]+(?<!^(?:=|->))/,
+    "operator"
   )
 );
 
@@ -84,7 +82,10 @@ const match = node("match")(
 
 const matchCase = node("case")(
   chain([
-    choice([lazy(() => expression), pattern(/_+/)]),
+    choice([
+      lazy(() => expression),
+      pattern(/_+/, "placeholder")
+    ]),
     ws,
     ignore(string("=")),
     ws,
@@ -162,7 +163,7 @@ const precedenceApplication = choice([
 ]);
 
 const destructuring = node("destructuring")(
-  chain([ignore(string("...")), lazy(() => atom)])
+  chain([ignore(string("...")), ws, lazy(() => atom)])
 );
 
 const list = node("list")(
