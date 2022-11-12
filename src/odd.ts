@@ -59,13 +59,37 @@ const parameters = separatedBy(ws)(
 );
 
 const declaration = node("declaration")(
-  chain([
-    parameters,
-    ws,
-    ignore(string("=")),
-    ws,
-    lazy(() => expression)
-  ])
+  map(children => {
+    if (children.length === 2) return children;
+    // Wrap multi-param into separate lambdas
+    const funPart = children.slice(1);
+    let node = {
+      type: "lambda",
+      children: funPart
+    };
+    let i = funPart.length;
+    const step = 2;
+    while (i > step) {
+      const body = node.children.slice(i - step, i);
+      node.children = [
+        ...funPart.slice(0, i - step),
+        {
+          type: "lambda",
+          children: body
+        }
+      ];
+      i -= 1;
+    }
+    return [children[0]!, node as Branch];
+  })(
+    chain([
+      parameters,
+      ws,
+      ignore(string("=")),
+      ws,
+      lazy(() => expression)
+    ])
+  )
 );
 
 const match = node("match")(

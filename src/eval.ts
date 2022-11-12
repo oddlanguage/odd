@@ -211,7 +211,10 @@ const field = (
     env,
     input
   );
-  return [[name, value], newEnv] as const;
+  return [
+    [name, value],
+    { ...newEnv, ...env }
+  ] as const;
 };
 
 const record = (
@@ -291,12 +294,7 @@ const declaration = (
 ) => {
   const name = (branch.children[0] as Token).text;
   const [value, newEnv] = _eval(
-    branch.children.length > 2
-      ? {
-          type: "lambda",
-          children: branch.children.slice(1)
-        }
-      : branch.children[1]!,
+    branch.children[1]!,
     env,
     input
   );
