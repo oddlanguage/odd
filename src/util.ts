@@ -21,9 +21,9 @@ type Primitive =
   | null
   | undefined;
 
-export const isPrimitive = <T>(
-  value: T | Primitive
-): value is T =>
+export const isPrimitive = (
+  value: any
+): value is Primitive =>
   [
     "number",
     "string",
