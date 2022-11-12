@@ -1,17 +1,20 @@
 import _eval, { Env } from "./eval.js";
 import parse from "./odd.js";
-import { serialise } from "./util.js";
+import { equal, serialise } from "./util.js";
 
 const target = process.argv[2];
 const outfile = process.argv[3];
 
 const compile = async (target: string) => {
-  throw "Not implemented.";
+  console.error(
+    "Error: Compiler is not implemented yet."
+  );
+  process.exit(1);
 };
 
 const repl = async () => {
   process.stdin.setEncoding("utf-8");
-  process.stdout.write(`Odd repl 0.1\n> `);
+  process.stdout.write(`Odd v0.1.4 repl\n> `);
   let env: Env = {
     "/": (a: number) => (b: number) => b / a,
     "*": (a: number) => (b: number) => b * a,
@@ -23,8 +26,8 @@ const repl = async () => {
     ">": (a: any) => (b: any) => b > a,
     "<=": (a: any) => (b: any) => b <= a,
     ">=": (a: any) => (b: any) => b >= a,
-    "==": (a: any) => (b: any) => b === a,
-    "!=": (a: any) => (b: any) => b !== a,
+    "==": (a: any) => (b: any) => equal(a, b),
+    "!=": (a: any) => (b: any) => !equal(a, b),
     "&": (a: any) => (b: any) => b && a,
     "|": (a: any) => (b: any) => b || a,
     ".": (f: Function) => (g: Function) => (x: any) =>

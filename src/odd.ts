@@ -1,5 +1,6 @@
 import {
   between,
+  Branch,
   chain,
   choice,
   eof,
@@ -7,6 +8,7 @@ import {
   ignore,
   label,
   lazy,
+  map,
   node,
   nodeLeft,
   oneOrMore,
@@ -98,7 +100,27 @@ const precedenceMatch = choice([
   lazy(() => precedenceLambda)
 ]);
 
-const lambda = node("lambda")(
+const lambda = map(children => {
+  // Wrap multi-param into separate lambdas
+  let node = {
+    type: "lambda",
+    children
+  };
+  let i = children.length;
+  const step = 2;
+  while (i > step) {
+    const body = node.children.slice(i - step, i);
+    node.children = [
+      ...children.slice(0, i - step),
+      {
+        type: "lambda",
+        children: body
+      }
+    ];
+    i -= 1;
+  }
+  return [node as Branch];
+})(
   chain([
     parameters,
     ws,

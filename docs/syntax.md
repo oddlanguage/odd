@@ -171,8 +171,6 @@ A string is a sequence of any character (except newlines), contained within _two
 
 #### Interpolation
 
-> TODO
-
 > ℹ️ String interpolation is a planned feature. It will use the backslash (`\`) to denote interpolated parts.
 
 #### Common pitfalls in strings
@@ -526,7 +524,23 @@ case (''a'') of
 
 ## Functions
 
-> TODO
+A function is written like any other value declaration:
+
+```hs
+add a b = a + b;
+```
+
+The syntactical difference between a normal value and a function is that a function has multiple patterns on the left side of the equals sign. The first symbol is the name of the function, followed by one or more patterns that are treated as parameters.
+
+This syntax is sugar for assigning a lambda to the leftmost symbol, meaning it is curried by default:
+
+```hs
+a b c d = 3;
+-- is equal to
+a = b c d -> 3;
+-- which in turn is equal to
+a = b -> c -> d -> 3;
+```
 
 <br/>
 <br/>

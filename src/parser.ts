@@ -363,15 +363,16 @@ export const nodeLeft = (type: string, size = 2) =>
       type,
       children: children.slice(0, i)
     };
+    const step = Math.max(1, size - 1);
     while (i < children.length) {
       node = {
         type,
         children: [
           node,
-          ...children.slice(i, i + size - 1)
+          ...children.slice(i, i + step)
         ] as ReadonlyArray<Branch>
       };
-      i += size - 1;
+      i += step;
     }
     return [node as Branch];
   });
