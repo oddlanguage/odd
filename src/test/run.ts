@@ -10,10 +10,11 @@ const run = (file: string) => {
   });
   console.log(`Running test/${file}`);
   exec(`node dist/test/${file}`, (err, stdout) => {
-    if (err) {
+    process.stdout.write(stdout + "\n");
+
+    if (err || stdout.includes("❌")) {
       reject(err);
     } else {
-      process.stdout.write(stdout + "\n");
       resolve();
     }
   });
@@ -21,11 +22,24 @@ const run = (file: string) => {
   return promise;
 };
 
-for (const file of (await readdir("dist/test")).filter(
+const files = (await readdir("dist/test")).filter(
   file =>
     file !==
     import.meta.url.slice(
       import.meta.url.lastIndexOf("/") + 1
     )
-))
-  await run(file);
+);
+
+let succeeded = 0;
+for (const file of files) {
+  try {
+    await run(file);
+    succeeded += 1;
+  } catch (_) {}
+}
+
+console.log(
+  `${succeeded}/${files.length} test succeeded (${
+    (succeeded / files.length) * 100
+  }%)`
+);
