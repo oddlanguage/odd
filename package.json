@@ -2,6 +2,9 @@
   "type": "module",
   "name": "odd",
   "version": "0.1.5",
+  "scripts": {
+    "test": "tsc && node dist/test/run.js"
+  },
   "devDependencies": {
     "@types/node": "^14.14.37"
   },

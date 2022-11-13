@@ -35,16 +35,22 @@ export const equal = <
   T extends Record<keyof any, any>
 >(
   a: T,
-  b: T
+  b: T,
+  filter: ([key, value]: [
+    keyof any,
+    any
+  ]) => boolean = () => true
 ): boolean =>
   isPrimitive(a)
     ? a === b
     : Object.keys(a).length ===
         Object.keys(b).length &&
-      Object.entries(a).every(
-        ([key, value]) =>
-          key in b && equal(value, b[key])
-      );
+      Object.entries(a)
+        .filter(filter as any)
+        .every(
+          ([key, value]) =>
+            key in b && equal(value, b[key], filter)
+        );
 
 export const unique = <T>(
   items: ReadonlyArray<T>

@@ -4,8 +4,10 @@ import { equal, serialise } from "./util.js";
 
 const target = process.argv[2];
 const outfile = process.argv[3];
+outfile;
 
 const compile = async (target: string) => {
+  target;
   console.error(
     "Error: Compiler is not implemented yet."
   );

@@ -147,7 +147,7 @@ const destructuring = (
     input
   );
   if (
-    !["record", "list"].includes(
+    !["record", "list", "name"].includes(
       branch.children[0]!.type!
     )
   ) {
@@ -292,7 +292,21 @@ const declaration = (
   env: Env,
   input: string
 ) => {
-  const name = (branch.children[0] as Token).text;
+  const token = branch.children[0] as Token;
+  const name = token.text;
+  if (name in env)
+    throw makeError("Something went wrong", {
+      input,
+      offset: 0,
+      ok: false,
+      problems: [
+        {
+          reason: `"${name}" is already defined.`,
+          at: token.offset,
+          size: token.text.length
+        }
+      ]
+    });
   const [value, newEnv] = _eval(
     branch.children[1]!,
     env,
