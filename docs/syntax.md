@@ -517,7 +517,29 @@ case (''a'') of
 
 ## Modules
 
-> ℹ️ Modules are a planned feature after asynchronicity is thought out. When implemented they will behave like records.
+Any file can be imported into another file or repl by using the `import` function:
+
+```hs
+module = import ''module''
+```
+
+No special syntax for importing, you just assign it to a name.
+
+A module cannot explicitly mark a value to be exported. Any names in the global scope are exported:
+
+```hs
+-- numbers.odd
+a = 1;
+b = 3;
+```
+
+```hs
+-- main.odd
+numbers = import ''numbers''; -- { a = 1, b = 3 }
+numbers ''a'' + numbers ''b'' -- 4
+```
+
+> ℹ️ When implemented, you can destructure values directly from a record, allowing a more streamlined interface to work with modules/
 
 <br/>
 <br/>
