@@ -45,7 +45,7 @@ const number = label("a number")(
 
 const operator = label("an operator")(
   pattern(
-    /[-=!@#$%^&*_+:\|\/\\\.\<\>\?]+(?<!^(?:=|->))/,
+    /[-=!@#$%^&*_+:\|\/\\\.\<\>\?]+(?<!^(?:=|->|\.(?=\d)))/,
     "operator"
   )
 );
