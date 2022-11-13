@@ -1,3 +1,6 @@
+import { readFile } from "node:fs/promises";
+import path from "node:path";
+import _eval from "./eval.js";
 import {
   between,
   Branch,
@@ -19,6 +22,7 @@ import {
   unpack,
   _try
 } from "./parser.js";
+import { diff, equal } from "./util.js";
 
 const comment = pattern(/--[^\n]+/);
 
@@ -58,6 +62,8 @@ const parameters = separatedBy(ws)(
   except(string("case"))(lazy(() => atom))
 );
 
+// TODO: Cleanup
+// TODO: Patterns
 const declaration = node("declaration")(
   map(children => {
     if (children.length === 2) return children;
@@ -124,6 +130,7 @@ const precedenceMatch = choice([
   lazy(() => precedenceLambda)
 ]);
 
+// TODO: Cleanup
 const lambda = map(children => {
   // Wrap multi-param into separate lambdas
   let node = {
@@ -270,21 +277,7 @@ const statement = choice([
 ]);
 
 // TODO: Add types
-// const type = node("type")(literal);
-
-// TODO: Add types
 const expression = precedenceMatch;
-// chain([
-//   lambda,
-//   // TODO: Currently we can't wrap the type in a node
-//   // conditionally. See if we can avoid having to parse
-//   // the first part twice only to check if the last
-//   // part is there, and pack it up neatly with some
-//   // combinator. Or can we be lazy and when evaluating
-//   // an expression, just check if its last child is a
-//   // node of type "type"?
-//   _try(chain([ws, ignore(string(":")), ws, type]))
-// ]);
 
 const statements = chain([
   separatedBy(chain([ws, ignore(string(";")), ws]))(
@@ -304,3 +297,44 @@ const parse = (input: string) =>
   unpack(run(odd)(input))[0]!;
 
 export default parse;
+
+export const defaultEnv = {
+  "/": (b: any) => (a: any) => a / b,
+  "*": (b: any) => (a: any) => a * b,
+  "+": (b: any) => (a: any) => a + b,
+  "-": (b: any) => (a: any) => a - b,
+  "%": (b: any) => (a: any) => a % b,
+  "^": (b: any) => (a: any) => a ** b,
+  "<": (b: any) => (a: any) => a < b,
+  ">": (b: any) => (a: any) => a > b,
+  "<=": (b: any) => (a: any) => a <= b,
+  ">=": (b: any) => (a: any) => a >= b,
+  "==": (b: any) => (a: any) => equal(a, b),
+  "!=": (b: any) => (a: any) => !equal(a, b),
+  "&": (b: any) => (a: any) => a && b,
+  "|": (b: any) => (a: any) => a || b,
+  ".": (f: Function) => (g: Function) => (x: any) =>
+    g(f(x)),
+  ".>": (f: Function) => (g: Function) => (x: any) =>
+    f(g(x)),
+  "|>": (f: Function) => (x: any) => f(x),
+  "<|": (x: any) => (f: Function) => f(x),
+  true: true,
+  false: false,
+  nothing: Symbol("nothing"),
+  infinity: Infinity,
+  not: (x: any) => !x,
+  map: (f: (x: any) => any) => (x: any[]) => x.map(f),
+  import: (module: string) =>
+    readFile(
+      path.parse(module).ext
+        ? module
+        : module + ".odd",
+      "utf8"
+    ).then(input =>
+      diff(
+        defaultEnv,
+        _eval(parse(input), defaultEnv, input)[1]
+      )
+    )
+};

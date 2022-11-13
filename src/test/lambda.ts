@@ -1,12 +1,16 @@
 import _eval from "../eval.js";
-import parse from "../odd.js";
+import parse, { defaultEnv } from "../odd.js";
 import test from "../test.js";
-import { equal } from "../util.js";
+import { diff, equal } from "../util.js";
 
 test("Lambdas do not pollute parent scope", () => {
   const code = `(a -> a) 1`;
-  const [_, env] = _eval(parse(code), {}, code);
-  return equal(env, {});
+  const [_, env] = _eval(
+    parse(code),
+    defaultEnv,
+    code
+  );
+  return equal(diff(env, defaultEnv), {});
 });
 
 test(

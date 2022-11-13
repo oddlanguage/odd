@@ -1,10 +1,14 @@
 import _eval from "../eval.js";
-import parse from "../odd.js";
+import parse, { defaultEnv } from "../odd.js";
 import test from "../test.js";
 import { equal } from "../util.js";
 
 const code = `a = 1`;
-const [result, env] = _eval(parse(code), {}, code);
+const [result, env] = _eval(
+  parse(code),
+  defaultEnv,
+  code
+);
 
 test(
   "Declared values are stored in scope",

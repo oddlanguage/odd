@@ -1,5 +1,5 @@
 import _eval from "../eval.js";
-import parse from "../odd.js";
+import parse, { defaultEnv } from "../odd.js";
 import test from "../test.js";
 import { equal } from "../util.js";
 
@@ -24,7 +24,7 @@ test(
 test("Using an undefined operator raises an error", () => {
   try {
     const code = `1 ** 1`;
-    _eval(parse(code), {}, code);
+    _eval(parse(code), defaultEnv, code);
     return false;
   } catch (err: any) {
     return (err.toString() as string).includes(

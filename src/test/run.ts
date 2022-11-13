@@ -39,7 +39,9 @@ for (const file of files) {
 }
 
 console.log(
-  `${succeeded}/${files.length} test succeeded (${
+  `${succeeded}/${
+    files.length
+  } test succeeded (${Math.round(
     (succeeded / files.length) * 100
-  }%)`
+  )}%)`
 );

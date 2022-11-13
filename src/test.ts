@@ -1,12 +1,13 @@
-const test = (
+const test = async (
   description: string,
-  condition: boolean | (() => boolean)
+  condition:
+    | boolean
+    | (() => boolean | Promise<boolean>)
 ) => {
   try {
-    const ok =
-      typeof condition === "function"
-        ? condition()
-        : condition;
+    const ok = await (typeof condition === "function"
+      ? condition()
+      : condition);
     if (!ok) throw null;
     console.log(`✅ ${description}`);
   } catch (err) {
