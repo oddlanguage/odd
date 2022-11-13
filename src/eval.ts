@@ -342,7 +342,7 @@ const infix = (
     input
   );
 
-  return [op(lhs)(rhs), env3] as const;
+  return [op(rhs)(lhs), env3] as const;
 };
 
 const string = (

@@ -32,3 +32,29 @@ test("Using an undefined operator raises an error", () => {
     );
   }
 });
+
+test("Operators can be literally applied", () => {
+  const code = `(+) 1 1`;
+  const [result] = _eval(
+    parse(code),
+    { "+": (b: any) => (a: any) => a + b },
+    code
+  );
+  return result === 2;
+});
+
+test("Literal application follows natural order", () => {
+  const code1 = `(/) 9 2`;
+  const [a] = _eval(
+    parse(code1),
+    { "/": (b: any) => (a: any) => a / b },
+    code1
+  );
+  const code2 = `2 / 9`;
+  const [b] = _eval(
+    parse(code2),
+    { "/": (b: any) => (a: any) => a / b },
+    code2
+  );
+  return a === b;
+});
