@@ -1,6 +1,8 @@
+import { readFile } from "node:fs/promises";
+import path from "node:path";
 import _eval, { Env } from "./eval.js";
 import parse from "./odd.js";
-import { equal, serialise } from "./util.js";
+import { diff, equal, serialise } from "./util.js";
 
 const target = process.argv[2];
 const outfile = process.argv[3];
@@ -16,7 +18,7 @@ const compile = async (target: string) => {
 
 const repl = async () => {
   process.stdin.setEncoding("utf-8");
-  process.stdout.write(`Odd v0.1.4 repl\n> `);
+  process.stdout.write(`Odd v0.2 repl\n> `);
   let env: Env = {
     "/": (a: number) => (b: number) => b / a,
     "*": (a: number) => (b: number) => b * a,
@@ -45,7 +47,15 @@ const repl = async () => {
     not: (x: any) => !x,
     map: (f: (x: any) => any) => (x: any[]) =>
       x.map(f),
-    eval: (f: Function) => f()
+    import: (module: string) =>
+      readFile(
+        path.parse(module).ext
+          ? module
+          : module + ".odd",
+        "utf8"
+      ).then(input =>
+        diff(env, _eval(parse(input), env, input)[1])
+      )
   };
   for await (const input of process.stdin) {
     try {
@@ -54,7 +64,7 @@ const repl = async () => {
         env,
         input
       );
-      console.log(serialise(result));
+      console.log(serialise(await result));
       env = newEnv;
     } catch (err) {
       console.error(err);

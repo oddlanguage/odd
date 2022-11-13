@@ -73,3 +73,19 @@ export const last = <T>(arr: ReadonlyArray<T>) =>
 
 export const capitalise = (string: string) =>
   string[0]!.toUpperCase() + string.slice(1);
+
+export const diff = (
+  a: Record<any, any>,
+  b: Record<any, any>
+) => ({
+  ...Object.fromEntries(
+    Object.keys(a)
+      .filter(key => !(key in b))
+      .map(key => [key, a[key]])
+  ),
+  ...Object.fromEntries(
+    Object.keys(b)
+      .filter(key => !(key in a))
+      .map(key => [key, b[key]])
+  )
+});
