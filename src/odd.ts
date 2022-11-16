@@ -22,7 +22,7 @@ import {
   unpack,
   _try
 } from "./parser.js";
-import { diff, equal } from "./util.js";
+import { difference, equal } from "./util.js";
 
 const comment = pattern(/--[^\n]+/);
 
@@ -318,28 +318,48 @@ export const defaultEnv = {
   "!=": (b: any) => (a: any) => !equal(a, b),
   "&": (b: any) => (a: any) => a && b,
   "|": (b: any) => (a: any) => a || b,
-  ".": (f: Function) => (g: Function) => (x: any) =>
-    g(f(x)),
-  ".>": (f: Function) => (g: Function) => (x: any) =>
+  "<.": (g: Function) => (f: Function) => (x: any) =>
     f(g(x)),
-  "|>": (f: Function) => (x: any) => f(x),
-  "<|": (x: any) => (f: Function) => f(x),
+  ".>": (g: Function) => (f: Function) => (x: any) =>
+    g(f(x)),
+  "|>": (x: any) => (f: Function) => f(x),
+  "<|": (f: Function) => (x: any) => f(x),
   true: true,
   false: false,
   nothing: Symbol("nothing"),
   infinity: Infinity,
   not: (x: any) => !x,
   map: (f: (x: any) => any) => (x: any[]) => x.map(f),
-  import: (module: string) =>
+  filter: (f: (x: any) => any) => (x: any[]) =>
+    x.filter(f),
+  fold:
+    (f: (a: any) => (x: any) => any) =>
+    (a: any) =>
+    (x: any[]) =>
+      x.reduce((a, x) => f(x)(a), a),
+  foldr:
+    (f: (a: any) => (x: any) => any) =>
+    (a: any) =>
+    (x: any[]) =>
+      x.reduceRight((a, x) => f(x)(a), a),
+  reverse: (x: Array<any>) => x.slice().reverse(),
+  head: (x: Array<any>) => x[0] ?? defaultEnv.nothing,
+  tail: (x: Array<any>) => x.slice(1),
+  max: (a: any) => (b: any) => Math.max(a, b),
+  min: (a: any) => (b: any) => Math.min(a, b),
+  import: (name: string) =>
     readFile(
-      path.parse(module).ext
-        ? module
-        : module + ".odd",
+      path.parse(name).ext ? name : name + ".odd",
       "utf8"
-    ).then(input =>
-      diff(
-        defaultEnv,
-        _eval(parse(input), defaultEnv, input)[1]
-      )
+    ).then(
+      input =>
+        difference(
+          defaultEnv,
+          _eval(parse(input), defaultEnv, input)[1]
+        ),
+      err =>
+        err.code === "ENOENT"
+          ? `Cannot resolve module "${name}".`
+          : err.toString()
     )
 };
