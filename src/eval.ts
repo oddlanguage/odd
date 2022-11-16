@@ -1,3 +1,4 @@
+import { defaultEnv } from "./odd.js";
 import {
   Branch,
   makeError,
@@ -259,7 +260,7 @@ const list = (
   branch.children.reduce(
     ([list, env], child) => {
       const [value, newEnv] = _eval(child, env, input);
-      return [list.concat(value), newEnv] as const;
+      return [[...list, value], newEnv] as const;
     },
     [[] as any, env] as const
   );
@@ -411,5 +412,5 @@ const program = (
 ) =>
   branch.children.reduce(
     ([, newEnv], child) => _eval(child, newEnv, input),
-    [null, env] as const
+    [defaultEnv.nothing, env] as const
   );
