@@ -1,7 +1,7 @@
 import _eval from "../eval.js";
 import parse, { defaultEnv } from "../odd.js";
 import test from "../test.js";
-import { equal } from "../util.js";
+import { difference, equal } from "../util.js";
 
 test("Empty record", () => {
   const code = `{}`;
@@ -61,4 +61,10 @@ test("Destructuring", () => {
     code
   );
   return equal(result, { a: 1 });
+});
+
+test("Properties do not pollute scope", () => {
+  const code = `{a=1}`;
+  const [, env] = _eval(parse(code), defaultEnv, code);
+  return equal(difference(defaultEnv, env), {});
 });

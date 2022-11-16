@@ -1,7 +1,7 @@
 import _eval from "../eval.js";
 import parse, { defaultEnv } from "../odd.js";
 import test from "../test.js";
-import { diff, equal } from "../util.js";
+import { difference, equal } from "../util.js";
 
 test("Lambdas do not pollute parent scope", () => {
   const code = `(a -> a) 1`;
@@ -10,7 +10,7 @@ test("Lambdas do not pollute parent scope", () => {
     defaultEnv,
     code
   );
-  return equal(diff(env, defaultEnv), {});
+  return equal(difference(env, defaultEnv), {});
 });
 
 test(

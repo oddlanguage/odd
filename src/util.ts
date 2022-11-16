@@ -74,7 +74,7 @@ export const last = <T>(arr: ReadonlyArray<T>) =>
 export const capitalise = (string: string) =>
   string[0]!.toUpperCase() + string.slice(1);
 
-export const diff = (
+export const difference = (
   a: Record<any, any>,
   b: Record<any, any>
 ) => ({
@@ -89,3 +89,7 @@ export const diff = (
       .map(key => [key, b[key]])
   )
 });
+
+export const typeOf = (x: any) => typeof x;
+
+export const equals = (b: any) => (a: any) => a === b;

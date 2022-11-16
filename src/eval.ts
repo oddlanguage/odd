@@ -203,9 +203,12 @@ const field = (
   if (branch.children[0]!.type === "destructuring")
     return _eval(branch.children[0]!, env, input);
 
-  const name = (
-    (branch.children[0] as Branch).children[0] as Token
-  ).text;
+  const token = (branch.children[0] as Branch)
+    .children[0] as Token;
+  const name =
+    token.type === "string"
+      ? string(token, env)[0]
+      : token.text;
   const [value, newEnv] = _eval(
     branch.children[0]!,
     env,
@@ -225,22 +228,25 @@ const record = (
   input: string,
   env: Env
 ) =>
-  branch.children.reduce(
-    ([record, env], child) => {
-      const [result, newEnv] = _eval(
-        child,
-        env,
-        input
-      );
-      return [
-        Array.isArray(result)
-          ? { ...record, [result[0]]: result[1] }
-          : { ...record, ...result },
-        newEnv
-      ] as const;
-    },
-    [{}, env] as const
-  );
+  [
+    branch.children.reduce(
+      ([record, env], child) => {
+        const [result, newEnv] = _eval(
+          child,
+          env,
+          input
+        );
+        return [
+          Array.isArray(result)
+            ? { ...record, [result[0]]: result[1] }
+            : { ...record, ...result },
+          newEnv
+        ] as const;
+      },
+      [{}, env] as const
+    )[0],
+    env
+  ] as const;
 
 const list = (
   branch: Readonly<{
