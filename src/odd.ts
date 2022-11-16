@@ -171,7 +171,12 @@ const infix = nodeLeft(
   3
 )(
   chain([
-    lazy(() => atom),
+    choice([
+      lazy(() => match),
+      lambda,
+      lazy(() => application),
+      lazy(() => atom)
+    ]),
     oneOrMore(
       chain([
         ws,
@@ -201,9 +206,9 @@ const application = nodeLeft("application")(
         ws,
         choice([
           lazy(() => match),
-          lambda,
+          lazy(() => atom),
           infix,
-          lazy(() => atom)
+          lambda
         ])
       ])
     )
