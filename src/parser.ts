@@ -305,11 +305,8 @@ export const getLineOfProblem =
     return `${linePrefix}${lineContent}`;
   };
 
-export const makeError = (
-  message: string,
-  failure: State & Failure
-) =>
-  `❌ Uh oh! ${message}:\n\n` +
+export const makeError = (failure: State & Failure) =>
+  `❌ Uh oh!\n\n` +
   failure.problems
     .map(
       problem =>
@@ -335,8 +332,7 @@ const stringifyProblem = (problem: Problem) => {
 };
 
 export const unpack = (result: Result) => {
-  if (!result.ok)
-    throw makeError(`Got stuck while parsing`, result);
+  if (!result.ok) throw makeError(result);
   return result.value;
 };
 

@@ -25,3 +25,24 @@ test(
     ([key]) => key !== "offset"
   )
 );
+
+test("Only names are assignable", () => {
+  try {
+    [`''a'' = 1;`, `1 = 1;`, `true = 1;`].forEach(
+      code => _eval(parse(code), env, code)
+    );
+    return false;
+  } catch (_) {
+    return true;
+  }
+});
+
+test("Redefining a value raises an error", () => {
+  const code = `a=1;a=2`;
+  try {
+    _eval(parse(code), defaultEnv, code);
+    return false;
+  } catch (_) {
+    return true;
+  }
+});

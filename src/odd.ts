@@ -303,6 +303,8 @@ const parse = (input: string) =>
 
 export default parse;
 
+export const nothing = Symbol("nothing");
+
 export const defaultEnv = {
   "/": (b: any) => (a: any) => a / b,
   "*": (b: any) => (a: any) => a * b,
@@ -324,29 +326,74 @@ export const defaultEnv = {
     g(f(x)),
   "|>": (x: any) => (f: Function) => f(x),
   "<|": (f: Function) => (x: any) => f(x),
+  "@": (k: string) => (x: any) => x[k],
   true: true,
   false: false,
-  nothing: Symbol("nothing"),
+  nothing,
   infinity: Infinity,
   not: (x: any) => !x,
-  map: (f: (x: any) => any) => (x: any[]) => x.map(f),
-  filter: (f: (x: any) => any) => (x: any[]) =>
-    x.filter(f),
+  has: (k: string) => (x: any) => k in x,
+  map: (f: (x: any) => any) => (xs: any[]) =>
+    xs.map(f),
+  group:
+    (f: (x: any) => string) =>
+    (x: Record<any, any>[]) => {
+      const groups: Record<string, any> = {};
+      for (const obj of x) {
+        const key = f(obj);
+        if (!groups[key]) groups[key] = [];
+        groups[key].push(obj);
+      }
+      return groups;
+    },
+  filter: (f: (x: any) => any) => (xs: any[]) =>
+    xs.filter(f),
   fold:
     (f: (a: any) => (x: any) => any) =>
     (a: any) =>
-    (x: any[]) =>
-      x.reduce((a, x) => f(x)(a), a),
+    (xs: any[]) =>
+      xs.reduce((a, x) => f(x)(a), a),
   foldr:
     (f: (a: any) => (x: any) => any) =>
     (a: any) =>
-    (x: any[]) =>
-      x.reduceRight((a, x) => f(x)(a), a),
-  reverse: (x: Array<any>) => x.slice().reverse(),
-  head: (x: Array<any>) => x[0] ?? defaultEnv.nothing,
-  tail: (x: Array<any>) => x.slice(1),
+    (xs: any[]) =>
+      xs.reduceRight((a, x) => f(x)(a), a),
+  reverse: (xs: any[]) => xs.slice().reverse(),
+  head: (xs: any[]) => xs[0] ?? nothing,
+  tail: (xs: any[]) => xs.slice(1),
+  sort:
+    (f: (b: any) => (a: any) => number) =>
+    (xs: any[]) =>
+      xs.slice().sort((a, b) => f(a)(b)),
+  "sort-by": (key: string | Function) => (xs: any[]) =>
+    xs
+      .slice()
+      .sort((a, b) =>
+        typeof key === "function"
+          ? key(a) > key(b)
+            ? -1
+            : key(b) > key(a)
+            ? 1
+            : 0
+          : a[key] > b[key]
+          ? 1
+          : b[key] > a[key]
+          ? -1
+          : 0
+      ),
+  partition:
+    (f: (x: any) => boolean) => (xs: any[]) => {
+      const parts: [any[], any[]] = [[], []];
+      for (const x of xs) parts[f(x) ? 1 : 0].push(x);
+      return parts;
+    },
+  size: (x: any) => Object.keys(x).length,
   max: (a: any) => (b: any) => Math.max(a, b),
   min: (a: any) => (b: any) => Math.min(a, b),
+  show: (x: any) => {
+    console.log(x);
+    return x;
+  },
   import: (name: string) =>
     readFile(
       path.parse(name).ext ? name : name + ".odd",

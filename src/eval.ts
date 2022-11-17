@@ -1,4 +1,4 @@
-import { defaultEnv } from "./odd.js";
+import { nothing } from "./odd.js";
 import {
   Branch,
   makeError,
@@ -167,7 +167,7 @@ const destructuring = (
         ).offset) -
       at +
       1;
-    throw makeError("Something went wrong", {
+    throw makeError({
       input,
       offset: 0,
       ok: false,
@@ -260,7 +260,12 @@ const list = (
   branch.children.reduce(
     ([list, env], child) => {
       const [value, newEnv] = _eval(child, env, input);
-      return [[...list, value], newEnv] as const;
+      return [
+        child.type === "destructuring"
+          ? list.concat(value)
+          : [...list, value],
+        newEnv
+      ] as const;
     },
     [[] as any, env] as const
   );
@@ -284,9 +289,9 @@ const application = (
     input
   );
   return [
-    Array.isArray(lhs) || lhs?.constructor === Object
+    (Array.isArray(lhs) || lhs?.constructor === Object
       ? lhs[rhs]
-      : lhs(rhs),
+      : lhs(rhs)) ?? nothing,
     env2
   ] as const;
 };
@@ -300,9 +305,23 @@ const declaration = (
   input: string
 ) => {
   const token = branch.children[0] as Token;
+  if (token.type !== "name")
+    throw makeError({
+      input,
+      offset: 0,
+      ok: false,
+      problems: [
+        {
+          reason: `Cannot assign a value to a ${token.type}.`,
+          at: token.offset,
+          size: token.text.length
+        }
+      ]
+    });
+
   const name = token.text;
   if (name in env)
-    throw makeError("Something went wrong", {
+    throw makeError({
       input,
       offset: 0,
       ok: false,
@@ -314,6 +333,7 @@ const declaration = (
         }
       ]
     });
+
   const [value, newEnv] = _eval(
     branch.children[1]!,
     env,
@@ -385,7 +405,7 @@ const symbol = (
 ) => {
   const value = env[token.text];
   if (value === undefined || value === null)
-    throw makeError("Something went wrong", {
+    throw makeError({
       input,
       offset: 0,
       ok: false,
@@ -412,5 +432,5 @@ const program = (
 ) =>
   branch.children.reduce(
     ([, newEnv], child) => _eval(child, newEnv, input),
-    [defaultEnv.nothing, env] as const
+    [nothing, env] as const
   );

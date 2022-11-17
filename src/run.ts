@@ -2,8 +2,7 @@ import _eval, { Env } from "./eval.js";
 import parse, { defaultEnv } from "./odd.js";
 import { serialise } from "./util.js";
 
-const target = process.argv[2];
-const outfile = process.argv[3];
+const [target, outfile] = process.argv.slice(2);
 outfile;
 
 const compile = async (target: string) => {
