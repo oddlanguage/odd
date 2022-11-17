@@ -305,9 +305,20 @@ export const getLineOfProblem =
     return `${linePrefix}${lineContent}`;
   };
 
+const furthest = (problems: ReadonlyArray<Problem>) =>
+  problems.reduce(
+    (furthest, problem) =>
+      problem.at > (furthest[0]?.at ?? -1)
+        ? problems.filter(
+            ({ at }) => at === problem.at
+          )
+        : furthest,
+    [] as Problem[]
+  );
+
 export const makeError = (failure: State & Failure) =>
   `❌ Uh oh!\n\n` +
-  failure.problems
+  furthest(failure.problems)
     .map(
       problem =>
         stringifyProblem(problem) +
@@ -318,15 +329,15 @@ export const makeError = (failure: State & Failure) =>
 
 const stringifyProblem = (problem: Problem) => {
   if ((problem as Expected).expected) {
-    return `Expected ${
+    return `ParseError: Expected ${
       (problem as Expected).expected
     }`;
   } else if ((problem as Unexpected).unexpected) {
-    return `Unexpected ${
+    return `ParseError: Unexpected ${
       (problem as Unexpected).unexpected
     }`;
   } else if ((problem as EndOfInput).endOfInput) {
-    return `Unexpected end of input (EOF)`;
+    return `ParseError: Unexpected end of input (EOF)`;
   }
   return (problem as Custom).reason;
 };
@@ -421,4 +432,13 @@ export const except =
           ]
         }
       : parser(state);
+  };
+
+export const optional =
+  (parser: Parser): Parser =>
+  state => {
+    const result = parser(state);
+    return !result.ok && result.offset !== state.offset
+      ? result
+      : { ...state, ok: true, value: [] };
   };

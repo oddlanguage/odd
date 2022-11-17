@@ -15,6 +15,7 @@ import {
   node,
   nodeLeft,
   oneOrMore,
+  optional,
   pattern,
   run,
   separatedBy,
@@ -224,16 +225,19 @@ const destructuring = node("destructuring")(
   chain([ignore(string("...")), ws, lazy(() => atom)])
 );
 
+const element = choice([
+  destructuring,
+  lazy(() => expression)
+]);
+
 const list = node("list")(
   chain([
     ignore(string("[")),
     ws,
-    _try(
+    optional(
       separatedBy(
         chain([ws, ignore(string(",")), ws])
-      )(
-        choice([destructuring, lazy(() => expression)])
-      )
+      )(element)
     ),
     ws,
     _try(ignore(string(","))),
@@ -243,14 +247,14 @@ const list = node("list")(
 );
 
 const field = node("field")(
-  chain([choice([destructuring, declaration, name])])
+  choice([destructuring, declaration, name])
 );
 
 const record = node("record")(
   chain([
     ignore(string("{")),
     ws,
-    _try(
+    optional(
       separatedBy(
         chain([ws, ignore(string(",")), ws])
       )(field)
@@ -281,7 +285,6 @@ const statement = choice([
   lazy(() => expression)
 ]);
 
-// TODO: Add types
 const expression = precedenceMatch;
 
 const statements = chain([
@@ -293,7 +296,10 @@ const statements = chain([
 ]);
 
 const program = node("program")(
-  chain([ws, _try(statements), ws, eof])
+  chain([
+    ws,
+    choice([eof, chain([statements, ws, eof])])
+  ])
 );
 
 const odd = program;
