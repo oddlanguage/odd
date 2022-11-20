@@ -20,6 +20,7 @@ import {
   run,
   separatedBy,
   string,
+  trace,
   unpack,
   _try
 } from "./parser.js";
@@ -250,20 +251,22 @@ const field = node("field")(
   choice([destructuring, declaration, name])
 );
 
-const record = node("record")(
-  chain([
-    ignore(string("{")),
-    ws,
-    optional(
-      separatedBy(
-        chain([ws, ignore(string(",")), ws])
-      )(field)
-    ),
-    ws,
-    _try(ignore(string(","))),
-    ws,
-    ignore(string("}"))
-  ])
+const record = trace(
+  node("record")(
+    chain([
+      ignore(string("{")),
+      ws,
+      optional(
+        separatedBy(
+          chain([ws, ignore(string(",")), ws])
+        )(field)
+      ),
+      ws,
+      _try(ignore(string(","))),
+      ws,
+      ignore(string("}"))
+    ])
+  )
 );
 
 const literal = choice([
@@ -298,7 +301,7 @@ const statements = chain([
 const program = node("program")(
   chain([
     ws,
-    choice([eof, chain([statements, ws, eof])])
+    choice([eof, chain([trace(statements), ws, eof])])
   ])
 );
 

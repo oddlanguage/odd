@@ -18,11 +18,12 @@ const repl = async () => {
   process.stdout.write(`Odd v0.2.3 repl\n> `);
   let env: Env = defaultEnv;
   for await (const input of process.stdin) {
+    const inputWithoutNewline = input.slice(0, -2);
     try {
       const [result, newEnv] = _eval(
-        parse(input),
+        parse(inputWithoutNewline),
         env,
-        input
+        inputWithoutNewline
       );
       console.log(serialise(await result));
       env = newEnv;

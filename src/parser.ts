@@ -72,19 +72,8 @@ export const run =
 
 export const string =
   (string: string, type?: string): Parser =>
-  state => {
-    if (state.input.length <= state.offset)
-      return {
-        ...state,
-        ok: false,
-        problems: [
-          { endOfInput: true, at: state.offset }
-        ]
-      };
-
-    return state.input
-      .slice(state.offset)
-      .startsWith(string)
+  state =>
+    state.input.slice(state.offset).startsWith(string)
       ? {
           ...state,
           ok: true,
@@ -107,7 +96,6 @@ export const string =
             }
           ]
         };
-  };
 
 export const pattern = (
   pattern: RegExp,
@@ -118,15 +106,6 @@ export const pattern = (
     pattern.flags
   );
   return state => {
-    if (state.input.length <= state.offset)
-      return {
-        ...state,
-        ok: false,
-        problems: [
-          { endOfInput: true, at: state.offset }
-        ]
-      };
-
     const match = state.input
       .slice(state.offset)
       .match(compiledPattern)?.[0];
@@ -291,7 +270,7 @@ export const getLineOfProblem =
         failure.input.slice(
           problem.at,
           problem.at + (problem.size ?? 1)
-        ) ?? " ".repeat(problem.size ?? 1)
+        ) || " ".repeat(problem.size ?? 1)
       ) +
       failure.input.slice(
         problem.at + (problem.size ?? 1),
