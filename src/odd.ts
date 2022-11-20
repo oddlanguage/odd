@@ -113,7 +113,10 @@ const match = node("match")(
   chain([
     ignore(string("case")),
     ws,
-    parenthesised(lazy(() => expression)),
+    choice([
+      lazy(() => literal),
+      parenthesised(lazy(() => expression))
+    ]),
     ws,
     ignore(string("of")),
     ws,
