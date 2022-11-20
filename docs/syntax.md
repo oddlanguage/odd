@@ -459,7 +459,7 @@ Patterns allow you to match data by its value or shape.
 
 With a `case` expression, you can couple values together based on any pattern.
 
-A case expression consist of the word `case`, followed by _an expression between paretheses_ `()`, followed by the word `of`, followed by one or more _cases_:
+A case expression consist of the word `case`, followed by _a literal (numbers, strings, names, etc.), or an expression between paretheses_ `()`, followed by the word `of`, followed by one or more _cases_:
 
 ```hs
 two-is-even = case (is-even 2) of
@@ -480,7 +480,7 @@ Here are some valid patterns:
   - etc.
 
 ```hs
-case (''a'') of
+case ''a'' of
   1 = 1, -- no match
   true = 2, -- no match
   ''a'' = 3; -- match!
@@ -490,7 +490,7 @@ case (''a'') of
 - The _success_ case, which is one or more underscores (`_`), and always matches.
 
 ```hs
-case (''a'') of
+case ''a'' of
   1 = 1, -- no match
   true = 2, -- no match
   _ = 3; -- match!
@@ -500,7 +500,7 @@ case (''a'') of
 The order of cases is important. They are evaluated top to bottom / left to right:
 
 ```hs
-case (''a'') of
+case ''a'' of
   1 = 1, -- no match
   true = 2, -- no match
   ''a'' = 3, -- match!
