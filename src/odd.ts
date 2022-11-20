@@ -16,11 +16,11 @@ import {
   nodeLeft,
   oneOrMore,
   optional,
+  Parser,
   pattern,
   run,
   separatedBy,
   string,
-  trace,
   unpack,
   _try
 } from "./parser.js";
@@ -33,6 +33,15 @@ const spaces = pattern(/\s+/);
 const ws = _try(
   ignore(oneOrMore(choice([spaces, comment])))
 );
+
+const listOf = (parser: Parser) =>
+  chain([
+    separatedBy(chain([ws, ignore(string(",")), ws]))(
+      parser
+    ),
+    ws,
+    _try(ignore(string(",")))
+  ]);
 
 const name = label("a name")(
   pattern(/[a-z]+\w*(?:-\w+)*/i, "name")
@@ -108,9 +117,7 @@ const match = node("match")(
     ws,
     ignore(string("of")),
     ws,
-    separatedBy(chain([ws, ignore(string(",")), ws]))(
-      lazy(() => matchCase)
-    )
+    listOf(lazy(() => matchCase))
   ])
 );
 
@@ -235,38 +242,28 @@ const list = node("list")(
   chain([
     ignore(string("[")),
     ws,
-    optional(
-      separatedBy(
-        chain([ws, ignore(string(",")), ws])
-      )(element)
-    ),
-    ws,
-    _try(ignore(string(","))),
+    optional(listOf(element)),
     ws,
     ignore(string("]"))
   ])
 );
 
 const field = node("field")(
-  choice([destructuring, declaration, name])
+  choice([
+    destructuring,
+    except(chain([name, ws, string("=")]))(name),
+    declaration
+  ])
 );
 
-const record = trace(
-  node("record")(
-    chain([
-      ignore(string("{")),
-      ws,
-      optional(
-        separatedBy(
-          chain([ws, ignore(string(",")), ws])
-        )(field)
-      ),
-      ws,
-      _try(ignore(string(","))),
-      ws,
-      ignore(string("}"))
-    ])
-  )
+const record = node("record")(
+  chain([
+    ignore(string("{")),
+    ws,
+    optional(listOf(field)),
+    ws,
+    ignore(string("}"))
+  ])
 );
 
 const literal = choice([
@@ -288,7 +285,9 @@ const statement = choice([
   lazy(() => expression)
 ]);
 
-const expression = precedenceMatch;
+const expression = label("an expression")(
+  precedenceMatch
+);
 
 const statements = chain([
   separatedBy(chain([ws, ignore(string(";")), ws]))(
@@ -301,7 +300,7 @@ const statements = chain([
 const program = node("program")(
   chain([
     ws,
-    choice([eof, chain([trace(statements), ws, eof])])
+    choice([eof, chain([statements, ws, eof])])
   ])
 );
 

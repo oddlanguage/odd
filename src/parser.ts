@@ -6,7 +6,7 @@ import {
   unique
 } from "./util.js";
 
-type Parser = (input: State) => Result;
+export type Parser = (input: State) => Result;
 
 type Result = State & (Success | Failure);
 
@@ -122,12 +122,17 @@ export const pattern = (
           ...state,
           ok: false,
           problems: [
-            {
-              unexpected: `"${state.input[
-                state.offset
-              ]!}"`,
-              at: state.offset
-            }
+            state.input[state.offset]
+              ? {
+                  unexpected: `"${
+                    state.input[state.offset]
+                  }"`,
+                  at: state.offset
+                }
+              : {
+                  endOfInput: true,
+                  at: state.offset
+                }
           ]
         };
   };
@@ -144,9 +149,13 @@ export const label =
           ...result,
           problems: [
             ...result.problems.filter(
-              problem => (problem as Expected).expected
+              problem =>
+                !(problem as Expected).expected
             ),
-            { expected: label, at: state.offset }
+            {
+              expected: label,
+              at: state.offset
+            }
           ]
         };
   };
@@ -184,7 +193,12 @@ export const fail =
   state => ({
     ...state,
     ok: false,
-    problems: [{ reason, at: state.offset }]
+    problems: [
+      {
+        reason,
+        at: state.offset
+      }
+    ]
   });
 
 export const either =
@@ -295,28 +309,45 @@ const furthest = (problems: ReadonlyArray<Problem>) =>
     [] as Problem[]
   );
 
-export const makeError = (failure: State & Failure) =>
-  `❌ Uh oh!\n\n` +
-  furthest(failure.problems)
-    .map(
-      problem =>
-        stringifyProblem(problem) +
-        "\n" +
-        getLineOfProblem(failure)(problem)
-    )
-    .join("\n\n");
+const weigh = (problem: Problem) => {
+  if ((problem as Expected).expected) {
+    return 1;
+  } else if ((problem as Unexpected).unexpected) {
+    return 2;
+  } else if ((problem as EndOfInput).endOfInput) {
+    return 3;
+  }
+  return 0;
+};
+
+export const makeError = (
+  failure: State & Failure
+) => {
+  const prefix = `❌ Uh oh, got stuck while parsing!`;
+  const problems = furthest(failure.problems);
+  return (
+    prefix +
+    "\n\n" +
+    getLineOfProblem(failure)(problems[0]!) +
+    "\n\n" +
+    problems
+      .sort((a, b) => weigh(a) - weigh(b))
+      .map(problem => `- ${stringifyProblem(problem)}`)
+      .join("\n")
+  );
+};
 
 const stringifyProblem = (problem: Problem) => {
   if ((problem as Expected).expected) {
-    return `ParseError: Expected ${
+    return `Expected ${
       (problem as Expected).expected
     }`;
   } else if ((problem as Unexpected).unexpected) {
-    return `ParseError: Unexpected ${
+    return `Unexpected ${
       (problem as Unexpected).unexpected
     }`;
   } else if ((problem as EndOfInput).endOfInput) {
-    return `ParseError: Unexpected end of input (EOF)`;
+    return `Unexpected end of input (EOF)`;
   }
   return (problem as Custom).reason;
 };
@@ -417,7 +448,7 @@ export const optional =
   (parser: Parser): Parser =>
   state => {
     const result = parser(state);
-    return !result.ok && result.offset !== state.offset
+    return result.ok || result.offset !== state.offset
       ? result
       : { ...state, ok: true, value: [] };
   };
