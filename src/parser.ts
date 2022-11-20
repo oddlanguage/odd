@@ -323,7 +323,7 @@ const weigh = (problem: Problem) => {
 export const makeError = (
   failure: State & Failure
 ) => {
-  const prefix = `❌ Uh oh, got stuck while parsing!`;
+  const prefix = `❌ Uh oh, something went wrong!`;
   const problems = furthest(failure.problems);
   return (
     prefix +
@@ -464,13 +464,10 @@ export const notBefore =
           ...result,
           ok: false,
           problems: [
-            result.input[result.offset]
-              ? {
-                  unexpected:
-                    result.input[result.offset]!,
-                  at: result.offset
-                }
-              : { endOfInput: true, at: result.offset }
+            {
+              unexpected: result.input[result.offset]!,
+              at: result.offset
+            }
           ]
         }
       : result;
