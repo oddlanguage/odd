@@ -14,6 +14,7 @@ import {
   map,
   node,
   nodeLeft,
+  notBefore,
   oneOrMore,
   optional,
   Parser,
@@ -254,8 +255,8 @@ const list = node("list")(
 const field = node("field")(
   choice([
     destructuring,
-    except(chain([name, ws, string("=")]))(name),
-    declaration
+    declaration,
+    notBefore(string("="))(name)
   ])
 );
 

@@ -452,3 +452,26 @@ export const optional =
       ? result
       : { ...state, ok: true, value: [] };
   };
+
+export const notBefore =
+  (lookahead: Parser) =>
+  (parser: Parser): Parser =>
+  state => {
+    const result = parser(state);
+    const next = lookahead(result);
+    return next.ok
+      ? {
+          ...result,
+          ok: false,
+          problems: [
+            result.input[result.offset]
+              ? {
+                  unexpected:
+                    result.input[result.offset]!,
+                  at: result.offset
+                }
+              : { endOfInput: true, at: result.offset }
+          ]
+        }
+      : result;
+  };
