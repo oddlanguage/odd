@@ -1,7 +1,7 @@
 {
   "type": "module",
   "name": "odd",
-  "version": "0.2.6",
+  "version": "0.2.7",
   "scripts": {
     "test": "tsc && node dist/test/run.js"
   },
