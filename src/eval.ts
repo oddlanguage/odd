@@ -412,12 +412,13 @@ const declaration = (
   );
 
   switch (branch.children[0]!.type) {
-    case "literal-pattern":
+    case "literal-pattern": {
       return [
         value,
-        { ...env2, [names[0]]: value }
+        { ...env2, [names]: value }
       ] as const;
-    case "list-pattern":
+    }
+    case "list-pattern": {
       return [
         value,
         {
@@ -430,7 +431,8 @@ const declaration = (
           )
         }
       ] as const;
-    case "record-pattern":
+    }
+    case "record-pattern": {
       return [
         value,
         {
@@ -443,6 +445,7 @@ const declaration = (
           )
         }
       ] as const;
+    }
     default: {
       console.log(serialise(branch.children[0]));
       throw makeError({

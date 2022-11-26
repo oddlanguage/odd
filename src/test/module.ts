@@ -5,17 +5,26 @@ import test from "../test.js";
 import { equal } from "../util.js";
 
 test("Modules export all values in global scope", async () => {
-  await fs.writeFile("module.odd", "a=1;b=1;");
-  const code = `import ''module'';`;
-  const [value] = _eval(parse(code), defaultEnv, code);
-  await fs.unlink("module.odd");
-  return equal(await value, { a: 1, b: 1 });
+  try {
+    await fs.writeFile("module.odd", "a=1;b=1;");
+    const code = `import ''module'';`;
+    const [value] = _eval(
+      parse(code),
+      defaultEnv,
+      code
+    );
+    return equal(value, { a: 1, b: 1 });
+  } finally {
+    await fs.unlink("module.odd");
+  }
 });
 
-test("Importing a non-existent module throws an error", async () => {
+test("Importing a non-existent module throws an error", () => {
   const code = `import ''bogus'';`;
-  const [value] = _eval(parse(code), defaultEnv, code);
-  return /cannot resolve module "bogus"/i.test(
-    await value
-  );
+  try {
+    _eval(parse(code), defaultEnv, code);
+    return false;
+  } catch (err: any) {
+    return /cannot resolve module "bogus"/i.test(err);
+  }
 });
