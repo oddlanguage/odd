@@ -44,13 +44,19 @@ This document describes the Odd syntax. It is a live document and is not a forma
 
 ## Comments
 
+You can write a comment by typing two dashes (--) followed by any character, up until a newline:
+
 ```hs
--- You can write a comment by
--- typing two dashes (--) followed
--- by any character, up until a newline.
+-- This is a comment.
 ```
 
-Comments are legal anywhere whitespace is allowed, meaning pretty much anywhere.
+Comments are legal anywhere whitespace is allowed, meaning pretty much anywhere:
+
+```hs
+a b c =
+  -- Do something with `b` and `c`
+  do-something b c;
+```
 
 There are no multiline comments.
 
@@ -74,7 +80,7 @@ infinity > 1 -- true
 
 ### Nothing
 
-It's really useful to be able to say something holds no value, instead of crashing and burning. There's a special literal for this case: `nothing`. It behaves like `null` does in other c-like languages.
+It's really useful to be able to say something holds no value, instead of crashing and burning. There's a special literal for this case: `nothing`. It behaves somewhat like `null` would in other c-like languages.
 
 Nothing is equal to `nothing`, except itself:
 
@@ -630,6 +636,21 @@ b = 3;
 -- main.odd
 numbers = import ''numbers''; -- { a = 1, b = 3 }
 numbers ''a'' + numbers ''b'' -- 4
+```
+
+To import only specific names from a module, you can destructure them:
+
+```hs
+-- module.odd
+a = 1;
+b = 2;
+c = 3;
+
+-- main.odd
+{ a, c } = import ''module'';
+a -- 1
+b -- Error: "b" is not defined
+c -- 3
 ```
 
 <br/>
