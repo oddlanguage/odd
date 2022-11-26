@@ -7,6 +7,7 @@ import {
 } from "./parser.js";
 import {
   capitalise,
+  difference,
   last,
   serialise
 } from "./util.js";
@@ -320,12 +321,13 @@ const field = (
   if (branch.children[0]!.type === "destructuring")
     return _eval(branch.children[0]!, env, input);
 
-  const [value, nameEnv] = _eval(
+  const [value, env2] = _eval(
     branch.children[0]!,
-    {},
+    env,
     input
   );
-  const name = Object.keys(nameEnv)[0];
+  // TODO: Should probably pass the name as param instead :)
+  const name = Object.keys(difference(env, env2))[0];
   return [[name, value], env] as const;
 };
 

@@ -68,3 +68,9 @@ test("Properties do not pollute scope", () => {
   const [, env] = _eval(parse(code), defaultEnv, code);
   return equal(difference(defaultEnv, env), {});
 });
+
+test("Fields can reference outer scope", () => {
+  const code = `b=1;{a=b} ''a''`;
+  const [value] = _eval(parse(code), defaultEnv, code);
+  return value === 1;
+});
