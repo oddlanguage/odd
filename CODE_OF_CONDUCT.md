@@ -21,7 +21,7 @@ We don't specifically require you to use certain language while communicating in
 
 ## Our Standards
 
-Examples of behavior that contributes to creating a positive environment include:
+Examples of encouraged behavior include:
 
 - Being respectful of differing viewpoints and experiences
 - Gracefully accepting constructive criticism
