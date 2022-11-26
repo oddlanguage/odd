@@ -21,3 +21,15 @@ test(
     ([key]) => !["offset", "size"].includes(key as any)
   )
 );
+
+test("First-order record pattern argument destructuring", () => {
+  const code = `({a}->a) {a=1}`;
+  const [value] = _eval(parse(code), defaultEnv, code);
+  return value === 1;
+});
+
+test("First-order list pattern argument destructuring", () => {
+  const code = `([a]->a) [1]`;
+  const [value] = _eval(parse(code), defaultEnv, code);
+  return value === 1;
+});

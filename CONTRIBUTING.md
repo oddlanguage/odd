@@ -32,4 +32,5 @@ If you find an Issue that addresses the problem you're having, please add your o
 1. Ensure any files for local development aren't pushed onto your branch. If new files are generated as a result of your changes, add them to the `.gitignore`.
 2. Update the corresponding documentation files ([README](./README.md), [docs](./docs/syntax.md), etc) with information regarding your changes.
 3. Increase the version numbers in the necessary files and the README.md to the new version that this Pull Request would represent. The versioning scheme we use is [SemVer](http://semver.org/).
-4. You may merge the Pull Request in once you have the sign-off of two other developers, or if you do not have permission to do that, you may request the second reviewer to merge it for you.
+4. Always run `npm run test` and make sure all tests pass. In the event of a test failing, your PR will not be merged until it passes.
+5. You may merge the Pull Request in once you have the sign-off of two other developers, or if you do not have permission to do that, you may request the second reviewer to merge it for you.
