@@ -15,7 +15,7 @@ const compile = async (target: string) => {
 
 const repl = async () => {
   process.stdin.setEncoding("utf-8");
-  process.stdout.write(`Odd v0.2.4 repl\n> `);
+  process.stdout.write(`Odd v0.2.5 repl\n> `);
   let env: Env = defaultEnv;
   for await (const input of process.stdin) {
     const inputWithoutNewline = input.slice(0, -2);
