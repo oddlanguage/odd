@@ -71,16 +71,19 @@ const parenthesised = between(ignore(string("(")))(
 );
 
 const _pattern = choice([
-  node("literal-pattern")(
-    choice([
-      oddString,
-      except(string("case"))(name),
-      number,
-      parenthesised(operator)
-    ])
-  ),
-  lazy(() => listPattern)
+  lazy(() => literalPattern),
+  lazy(() => listPattern),
+  lazy(() => recordPattern)
 ]);
+
+const literalPattern = node("literal-pattern")(
+  choice([
+    oddString,
+    except(string("case"))(name),
+    number,
+    parenthesised(operator)
+  ])
+);
 
 const listPattern = node("list-pattern")(
   chain([
@@ -90,6 +93,17 @@ const listPattern = node("list-pattern")(
     optional(listOf(_pattern)),
     ws,
     ignore(string("]"))
+  ])
+);
+
+const recordPattern = node("record-pattern")(
+  chain([
+    ignore(string("{")),
+    ws,
+    // TODO: Nested fields & destructuring
+    optional(listOf(literalPattern)),
+    ws,
+    ignore(string("}"))
   ])
 );
 

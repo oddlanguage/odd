@@ -75,6 +75,8 @@ const _eval = (
       return literalPattern(branch, env, input);
     case "list-pattern":
       return listPattern(branch, env, input);
+    case "record-pattern":
+      return recordPattern(branch, env, input);
     default: {
       console.log(serialise(branch));
       throw makeError({
@@ -94,6 +96,18 @@ const _eval = (
 };
 
 export default _eval;
+
+const recordPattern = (
+  branch: Branch,
+  env: Env,
+  input: string
+) =>
+  [
+    branch.children.map(
+      node => _eval(node, env, input)[0]
+    ),
+    env
+  ] as const;
 
 const listPattern = (
   branch: Branch,
@@ -216,15 +230,22 @@ const lambda = (
     // TODO: non-operator / non-name / record patterns
     return _eval(
       branch.children[1]!,
-      !Array.isArray(names)
-        ? { ...env, [names]: arg }
-        : {
+      Array.isArray(names)
+        ? {
             ...env,
             // TODO: deep lists
-            ...Object.fromEntries(
-              names.map((name, i) => [name, arg[i]])
-            )
-          },
+            ...(Array.isArray(arg)
+              ? Object.fromEntries(
+                  names.map((name, i) => [
+                    name,
+                    arg[i]
+                  ])
+                )
+              : Object.fromEntries(
+                  names.map(name => [name, arg[name]])
+                ))
+          }
+        : { ...env, [names]: arg },
       input
     )[0];
   };
