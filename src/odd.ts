@@ -1,4 +1,4 @@
-import { readFile } from "node:fs/promises";
+import { readFileSync } from "node:fs";
 import path from "node:path";
 import _eval from "./eval.js";
 import {
@@ -110,7 +110,6 @@ const recordPattern = node("record-pattern")(
 const parameters = separatedBy(ws)(_pattern);
 
 // TODO: Cleanup
-// TODO: Patterns
 const declaration = node("declaration")(
   map(children => {
     if (children.length === 2) return children;
@@ -461,19 +460,21 @@ export const defaultEnv = {
     console.log(x);
     return x;
   },
-  import: (name: string) =>
-    readFile(
-      path.parse(name).ext ? name : name + ".odd",
-      "utf8"
-    ).then(
-      input =>
-        difference(
-          defaultEnv,
-          _eval(parse(input), defaultEnv, input)[1]
-        ),
-      err =>
-        err.code === "ENOENT"
-          ? `Cannot resolve module "${name}".`
-          : err.toString()
-    )
+  import: (name: string) => {
+    try {
+      const input = readFileSync(
+        path.parse(name).ext ? name : name + ".odd",
+        "utf8"
+      );
+
+      return difference(
+        defaultEnv,
+        _eval(parse(input), defaultEnv, input)[1]
+      );
+    } catch (err: any) {
+      throw err.code === "ENOENT"
+        ? `Cannot resolve module "${name}".`
+        : err.toString();
+    }
+  }
 };

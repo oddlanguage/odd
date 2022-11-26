@@ -28,6 +28,10 @@ This document describes the Odd syntax. It is a live document and is not a forma
     - [Lambdas](#lambdas)
   - [Assignment](#assignment)
   - [Application](#application)
+  - [Pattern matching](#pattern-matching)
+    - [Case expressions](#case-expressions)
+    - [Patterns in declarations](#patterns-in-declarations)
+    - [Lambdas](#lambdas-1)
   - [Modules](#modules)
   - [Functions](#functions)
   - [Types](#types)
@@ -56,6 +60,8 @@ There are no multiline comments.
 ## Literals
 
 A `literal` is a lexeme that represents a value _literally_. Below are all possible literal productions, ordered by simplicity.
+
+<br/>
 
 ### Booleans
 
@@ -321,16 +327,23 @@ y = {
   f = 6 };
 
 -- the destructuring
-{ ...x,
-  ...y }
+destructured = {
+  ...x,
+  ...y,
+};
 
 -- is equal to
-{ a = 1,
+handwritten = {
+  a = 1,
   b = 2,
   c = 3,
   d = 4,
   e = 5,
-  f = 6 };
+  f = 6,
+};
+
+-- as proven by
+destructured == handwritten -- yields true
 ```
 
 <br/>
@@ -457,6 +470,10 @@ One could think of these syntaxes as the same, but without requiring parentheses
 
 Patterns allow you to match data by its value or shape.
 
+<br/>
+
+### Case expressions
+
 With a `case` expression, you can couple values together based on any pattern.
 
 A case expression consist of the word `case`, followed by _a literal (numbers, strings, names, etc.), or an expression between paretheses_ `()`, followed by the word `of`, followed by one or more _cases_:
@@ -513,6 +530,82 @@ case ''a'' of
 > ℹ️ Complex patterns, such as shapes (records/lists) and application, are a planned feature.
 
 <br/>
+
+### Patterns in declarations
+
+You can also destructure values in a declaration.
+
+For example, you can destructure specific properties from a record parameter as follows:
+
+```hs
+daniel = {
+  name = ''Daniel'',
+  age = 20,
+  occupation: ''Steward'',
+};
+
+get-name { name } = name;
+
+get-name daniel -- ''Daniel''
+```
+
+The same applies to lists:
+
+```hs
+names = [
+  ''Daniel'',
+  ''Baernhardt'',
+  ''Molly'',
+  ''Iseabail'',
+];
+
+head [first] = first;
+
+head names -- ''Daniel''
+```
+
+> ℹ️ Complex patterns, such as nested shapes (records/lists) are a planned feature.
+
+<br/>
+
+### Lambdas
+
+Because function declarations are sugar for writing lambdas, the same pattern matching is possible in lambdas:
+
+```hs
+people = [
+  {
+    name = ''Daniel'',
+    age = 20,
+    occupation: ''Steward'',
+  },
+  {
+    name = ''Bearnhardt'',
+    age = 53,
+    occupation: ''Medieval Knight'',
+  },
+  {
+    name = ''Molly'',
+    age = 41,
+    occupation: ''Stewardess'',
+  },
+  {
+    name = ''Iseabail'',
+    age = 19,
+    occupation: ''Nurse'',
+  },
+];
+
+-- yields [
+--   ''Daniel'',
+--   ''Baernhardt'',
+--   ''Molly'',
+--   ''Iseabail'',
+-- ];
+names = map ({name} -> name) people;
+```
+
+<br/>
 <br/>
 
 ## Modules
@@ -538,8 +631,6 @@ b = 3;
 numbers = import ''numbers''; -- { a = 1, b = 3 }
 numbers ''a'' + numbers ''b'' -- 4
 ```
-
-> ℹ️ When implemented, you can destructure values directly from a record, allowing a more streamlined interface to work with modules/
 
 <br/>
 <br/>

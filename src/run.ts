@@ -28,7 +28,7 @@ const repl = async () => {
         env,
         inputWithoutNewline
       );
-      console.log(serialise(await result));
+      console.log(serialise(result));
       env = newEnv;
     } catch (err) {
       console.error(err);

@@ -238,11 +238,14 @@ const lambda = (
               ? Object.fromEntries(
                   names.map((name, i) => [
                     name,
-                    arg[i]
+                    arg[i] ?? nothing
                   ])
                 )
               : Object.fromEntries(
-                  names.map(name => [name, arg[name]])
+                  names.map(name => [
+                    name,
+                    arg[name] ?? nothing
+                  ])
                 ))
           }
         : { ...env, [names]: arg },
@@ -397,7 +400,7 @@ const declaration = (
   env: Env,
   input: string
 ) => {
-  const [name, env1] = _eval(
+  const [names, env1] = _eval(
     branch.children[0]!,
     env,
     input
@@ -407,7 +410,57 @@ const declaration = (
     env1,
     input
   );
-  return [value, { ...env2, [name]: value }] as const;
+
+  switch (branch.children[0]!.type) {
+    case "literal-pattern":
+      return [
+        value,
+        { ...env2, [names[0]]: value }
+      ] as const;
+    case "list-pattern":
+      return [
+        value,
+        {
+          ...env2,
+          ...Object.fromEntries(
+            (names as any[]).map((name, i) => [
+              name,
+              value[i] ?? nothing
+            ])
+          )
+        }
+      ] as const;
+    case "record-pattern":
+      return [
+        value,
+        {
+          ...env2,
+          ...Object.fromEntries(
+            (names as any[]).map(name => [
+              name,
+              value[name] ?? nothing
+            ])
+          )
+        }
+      ] as const;
+    default: {
+      console.log(serialise(branch.children[0]));
+      throw makeError({
+        input,
+        offset: 0,
+        ok: false,
+        problems: [
+          {
+            reason: `DevDidAnOopsieError: unhandled assignment target "${
+              branch.children[0]!.type
+            }".`,
+            at: branch.children[0]!.offset,
+            size: branch.children[0]!.size
+          }
+        ]
+      });
+    }
+  }
 };
 
 const infix = (

@@ -47,14 +47,26 @@ test("Redefining a value raises an error", () => {
   }
 });
 
-test("Record pattern destructuring", () => {
+test("First-order record pattern argument destructuring", () => {
   const code = `get-a {a} = a;get-a {a=1}`;
   const [value] = _eval(parse(code), defaultEnv, code);
   return value === 1;
 });
 
-test("List pattern destructuring", () => {
+test("First-order record pattern destructuring", () => {
+  const code = `{a}={a=1};a`;
+  const [value] = _eval(parse(code), defaultEnv, code);
+  return value === 1;
+});
+
+test("First-order list pattern argument destructuring", () => {
   const code = `first [a] = a;first [1]`;
+  const [value] = _eval(parse(code), defaultEnv, code);
+  return value === 1;
+});
+
+test("First-order list pattern destructuring", () => {
+  const code = `[a]=[1];a`;
   const [value] = _eval(parse(code), defaultEnv, code);
   return value === 1;
 });
