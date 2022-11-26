@@ -18,6 +18,6 @@ test(
   equal(
     parse("a b c -> 1"),
     parse("a -> b -> c -> 1"),
-    ([key]) => key !== "offset"
+    ([key]) => !["offset", "size"].includes(key as any)
   )
 );

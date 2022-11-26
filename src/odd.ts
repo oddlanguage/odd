@@ -70,9 +70,30 @@ const parenthesised = between(ignore(string("(")))(
   ignore(string(")"))
 );
 
-const parameters = separatedBy(ws)(
-  except(string("case"))(lazy(() => atom))
+const _pattern = choice([
+  node("literal-pattern")(
+    choice([
+      oddString,
+      except(string("case"))(name),
+      number,
+      parenthesised(operator)
+    ])
+  ),
+  lazy(() => listPattern)
+]);
+
+const listPattern = node("list-pattern")(
+  chain([
+    ignore(string("[")),
+    ws,
+    // TODO: Destructuring
+    optional(listOf(_pattern)),
+    ws,
+    ignore(string("]"))
+  ])
 );
+
+const parameters = separatedBy(ws)(_pattern);
 
 // TODO: Cleanup
 // TODO: Patterns
@@ -81,19 +102,29 @@ const declaration = node("declaration")(
     if (children.length === 2) return children;
     // Wrap multi-param into separate lambdas
     const funPart = children.slice(1);
+    const offset = funPart[0]!.offset;
+    const size =
+      funPart[funPart.length - 1]!.offset - offset;
     let node = {
       type: "lambda",
-      children: funPart
+      children: funPart,
+      offset,
+      size
     };
     let i = funPart.length;
     const step = 2;
     while (i > step) {
       const body = node.children.slice(i - step, i);
+      const offset = body[0]!.offset;
+      const size =
+        body[body.length - 1]!.offset - offset;
       node.children = [
         ...funPart.slice(0, i - step),
         {
           type: "lambda",
-          children: body
+          children: body,
+          offset,
+          size
         }
       ];
       i -= 1;
@@ -146,19 +177,29 @@ const precedenceMatch = choice([
 // TODO: Cleanup
 const lambda = map(children => {
   // Wrap multi-param into separate lambdas
+  const offset = children[0]!.offset;
+  const size =
+    children[children.length - 1]!.offset - offset;
   let node = {
     type: "lambda",
-    children
+    children,
+    offset,
+    size
   };
   let i = children.length;
   const step = 2;
   while (i > step) {
     const body = node.children.slice(i - step, i);
+    const offset = body[0]!.offset;
+    const size =
+      body[body.length - 1]!.offset - offset;
     node.children = [
       ...children.slice(0, i - step),
       {
         type: "lambda",
-        children: body
+        children: body,
+        offset,
+        size
       }
     ];
     i -= 1;

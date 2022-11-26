@@ -22,7 +22,7 @@ test(
   equal(
     parse("a b c = 1"),
     parse("a = b -> c -> 1"),
-    ([key]) => key !== "offset"
+    ([key]) => !["offset", "size"].includes(key as any)
   )
 );
 
@@ -45,4 +45,16 @@ test("Redefining a value raises an error", () => {
   } catch (_) {
     return true;
   }
+});
+
+test("Record pattern destructuring", () => {
+  const code = `get-a {a} = a;get-a {a=1}`;
+  const [value] = _eval(parse(code), defaultEnv, code);
+  return value === 1;
+});
+
+test("List pattern destructuring", () => {
+  const code = `first [a] = a;first [1]`;
+  const [value] = _eval(parse(code), defaultEnv, code);
+  return value === 1;
 });

@@ -18,6 +18,15 @@ import {
 // https://webassembly.github.io/spec/core/index.html
 // https://blog.scottlogic.com/2018/04/26/webassembly-by-hand.html
 
+const firstTokenChild = (branch: any): Token => {
+  if ((branch as Token).text) return branch;
+  for (const child of branch.children) {
+    const token = firstTokenChild(child);
+    if (token) return token;
+  }
+  throw "Unreachable";
+};
+
 export type Env = Readonly<Record<string, any>>;
 
 const _eval = (
@@ -25,6 +34,9 @@ const _eval = (
   env: Env,
   input: string
 ): readonly [any, Env] => {
+  // TODO: Optimise: extract errors in a try/catch
+  // and wrap it in makeError to prevent passing
+  // `input` through every function
   const branch = tree as Branch;
   const token = tree as Token;
   switch (branch.type) {
@@ -59,14 +71,84 @@ const _eval = (
       return matchCase(branch, env, input);
     case "placeholder":
       return [null, env] as const;
+    case "literal-pattern":
+      return literalPattern(branch, env, input);
+    case "list-pattern":
+      return listPattern(branch, env, input);
     default: {
       console.log(serialise(branch));
-      throw `Error: unhandled node type "${branch.type}".`;
+      throw makeError({
+        input,
+        offset: 0,
+        ok: false,
+        problems: [
+          {
+            reason: `DevDidAnOopsieError: unhandled node type "${branch.type}".`,
+            at: branch.offset,
+            size: branch.size
+          }
+        ]
+      });
     }
   }
 };
 
 export default _eval;
+
+const listPattern = (
+  branch: Branch,
+  env: Env,
+  input: string
+) =>
+  [
+    branch.children.map(
+      node => _eval(node, env, input)[0]
+    ),
+    env
+  ] as const;
+
+const literalPattern = (
+  branch: Branch,
+  env: Env,
+  input: string
+) => {
+  // TODO: This only handles name and operator patterns.
+  // TODO: Support all types of literal patterns (when not lhs)
+
+  const token = branch.children[0] as Token;
+  if (!["name", "operator"].includes(token.type!))
+    throw makeError({
+      input,
+      offset: 0,
+      ok: false,
+      problems: [
+        {
+          reason: `"${token.type}" is not an assignable pattern.`,
+          at: token.offset,
+          size: token.size
+        }
+      ]
+    });
+
+  const name = token.text;
+  if (name in env)
+    throw makeError({
+      input,
+      offset: 0,
+      ok: false,
+      problems: [
+        {
+          reason: `${capitalise(
+            token.type!
+          )} "${name}" is already defined.`,
+          at: token.offset,
+          size: token.size
+        }
+      ]
+    });
+
+  return [name, env] as const;
+};
 
 const matchCase = (
   branch: Branch,
@@ -123,19 +205,32 @@ const lambda = (
   branch: Branch,
   env: Env,
   input: string
-) =>
-  [
-    (arg: any) =>
-      _eval(
-        branch.children[1]!,
-        {
-          ...env,
-          [(branch.children[0] as Token).text]: arg
-        },
-        input
-      )[0],
-    env
-  ] as const;
+) => {
+  const [names] = _eval(
+    branch.children[0]!,
+    env,
+    input
+  );
+
+  const lambda = (arg: any) => {
+    // TODO: non-operator / non-name / record patterns
+    return _eval(
+      branch.children[1]!,
+      !Array.isArray(names)
+        ? { ...env, [names]: arg }
+        : {
+            ...env,
+            // TODO: deep lists
+            ...Object.fromEntries(
+              names.map((name, i) => [name, arg[i]])
+            )
+          },
+      input
+    )[0];
+  };
+
+  return [lambda, env] as const;
+};
 
 const destructuring = (
   branch: Branch,
@@ -184,10 +279,7 @@ const destructuring = (
 };
 
 const field = (
-  branch: Readonly<{
-    type: string;
-    children: readonly Tree[];
-  }>,
+  branch: Branch,
   env: Env,
   input: string
 ) => {
@@ -204,28 +296,17 @@ const field = (
   if (branch.children[0]!.type === "destructuring")
     return _eval(branch.children[0]!, env, input);
 
-  const token = (branch.children[0] as Branch)
-    .children[0] as Token;
-  const name =
-    token.type === "string"
-      ? string(token, env)[0]
-      : token.text;
-  const [value, newEnv] = _eval(
+  const [value, nameEnv] = _eval(
     branch.children[0]!,
-    env,
+    {},
     input
   );
-  return [
-    [name, value],
-    { ...newEnv, ...env }
-  ] as const;
+  const name = Object.keys(nameEnv)[0];
+  return [[name, value], env] as const;
 };
 
 const record = (
-  branch: Readonly<{
-    type: string;
-    children: readonly Tree[];
-  }>,
+  branch: Branch,
   input: string,
   env: Env
 ) =>
@@ -250,10 +331,7 @@ const record = (
   ] as const;
 
 const list = (
-  branch: Readonly<{
-    type: string;
-    children: readonly Tree[];
-  }>,
+  branch: Branch,
   input: string,
   env: Env
 ) =>
@@ -271,10 +349,7 @@ const list = (
   );
 
 const application = (
-  branch: Readonly<{
-    type: string;
-    children: readonly Tree[];
-  }>,
+  branch: Branch,
   env: Env,
   input: string
 ) => {
@@ -297,59 +372,25 @@ const application = (
 };
 
 const declaration = (
-  branch: Readonly<{
-    type: string;
-    children: readonly Tree[];
-  }>,
+  branch: Branch,
   env: Env,
   input: string
 ) => {
-  const token = branch.children[0] as Token;
-  if (token.type !== "name")
-    throw makeError({
-      input,
-      offset: 0,
-      ok: false,
-      problems: [
-        {
-          reason: `Cannot assign a value to a ${token.type}.`,
-          at: token.offset,
-          size: token.text.length
-        }
-      ]
-    });
-
-  const name = token.text;
-  if (name in env)
-    throw makeError({
-      input,
-      offset: 0,
-      ok: false,
-      problems: [
-        {
-          reason: `"${name}" is already defined.`,
-          at: token.offset,
-          size: token.text.length
-        }
-      ]
-    });
-
-  const [value, newEnv] = _eval(
-    branch.children[1]!,
+  const [name, env1] = _eval(
+    branch.children[0]!,
     env,
     input
   );
-  return [
-    value,
-    { ...newEnv, [name]: value }
-  ] as const;
+  const [value, env2] = _eval(
+    branch.children[1]!,
+    env1,
+    input
+  );
+  return [value, { ...env2, [name]: value }] as const;
 };
 
 const infix = (
-  branch: Readonly<{
-    type: string;
-    children: readonly Tree[];
-  }>,
+  branch: Branch,
   env: Env,
   input: string
 ) => {
@@ -372,23 +413,10 @@ const infix = (
   return [op(rhs)(lhs), env3] as const;
 };
 
-const string = (
-  token: Readonly<{
-    type?: string | undefined;
-    text: string;
-    offset: number;
-  }>,
-  env: Env
-) => [token.text.slice(2, -2), env] as const;
+const string = (token: Token, env: Env) =>
+  [token.text.slice(2, -2), env] as const;
 
-const number = (
-  token: Readonly<{
-    type?: string | undefined;
-    text: string;
-    offset: number;
-  }>,
-  env: Env
-) =>
+const number = (token: Token, env: Env) =>
   [
     parseFloat(token.text.replace(/,/g, "")),
     env
@@ -396,11 +424,7 @@ const number = (
 
 const symbol = (
   env: Env,
-  token: Readonly<{
-    type?: string | undefined;
-    text: string;
-    offset: number;
-  }>,
+  token: Token,
   input: string
 ) => {
   const value = env[token.text];
@@ -415,7 +439,7 @@ const symbol = (
             token.text
           }" is not defined.`,
           at: token.offset,
-          size: token.text.length
+          size: token.size
         }
       ]
     });
@@ -423,10 +447,7 @@ const symbol = (
 };
 
 const program = (
-  branch: Readonly<{
-    type: string;
-    children: readonly Tree[];
-  }>,
+  branch: Branch,
   input: string,
   env: Env
 ) =>

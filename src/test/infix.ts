@@ -8,7 +8,7 @@ test(
   equal(
     parse("a * b * c"),
     parse("(a * b) * c"),
-    ([key]) => key !== "offset"
+    ([key]) => !["offset", "size"].includes(key as any)
   )
 );
 
@@ -17,7 +17,7 @@ test(
   equal(
     parse("a + b * c"),
     parse("(a + b) * c"),
-    ([key]) => key !== "offset"
+    ([key]) => !["offset", "size"].includes(key as any)
   )
 );
 

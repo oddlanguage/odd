@@ -53,6 +53,7 @@ export type Token = Readonly<{
   type?: string | undefined;
   text: string;
   offset: number;
+  size: number;
 }>;
 
 export type Tree = Branch | Token;
@@ -60,6 +61,8 @@ export type Tree = Branch | Token;
 export type Branch = Readonly<{
   type: string;
   children: ReadonlyArray<Tree>;
+  offset: number;
+  size: number;
 }>;
 
 export const run =
@@ -82,7 +85,8 @@ export const string =
             {
               type,
               text: string,
-              offset: state.offset
+              offset: state.offset,
+              size: string.length
             }
           ]
         }
@@ -115,7 +119,12 @@ export const pattern = (
           ok: true,
           offset: state.offset + match.length,
           value: [
-            { type, text: match, offset: state.offset }
+            {
+              type,
+              text: match,
+              offset: state.offset,
+              size: match.length
+            }
           ]
         }
       : {
@@ -370,35 +379,62 @@ export const map =
       : result;
   };
 
-export const node = (type: string) =>
-  map(children => [{ type, children }]);
+export const node =
+  (type: string) =>
+  (parser: Parser): Parser =>
+  state => {
+    const result = parser(state);
+    return result.ok
+      ? map(children => [
+          {
+            type,
+            children,
+            offset: state.offset,
+            size: result.offset - state.offset
+          }
+        ])(() => result)(state)
+      : result;
+  };
 
 export const nodeLeft = (type: string, size = 2) =>
   map(children => {
+    const offset = children[0]!.offset;
+    const nodeSize =
+      children[children.length - 1]!.offset - offset;
     let i = size;
     let node: Branch = {
       type,
-      children: children.slice(0, i)
+      children: children.slice(0, i),
+      offset,
+      size: nodeSize
     };
     const step = Math.max(1, size - 1);
     while (i < children.length) {
+      const sliced = children.slice(i, i + step);
+      const offset = sliced[0]!.offset;
+      const nodeSize =
+        sliced[sliced.length - 1]!.offset - offset;
       node = {
         type,
         children: [
           node,
-          ...children.slice(i, i + step)
-        ] as ReadonlyArray<Branch>
+          ...sliced
+        ] as ReadonlyArray<Branch>,
+        offset,
+        size: nodeSize
       };
       i += step;
     }
     return [node as Branch];
   });
 
+// TODO: This parser consumes all of the internal errors
 export const oneOrMore =
   (parser: Parser): Parser =>
   state =>
     chain([parser, _try(oneOrMore(parser))])(state);
 
+// TODO: This parser consumes all of the internal errors
 export const zeroOrMore = (parser: Parser) =>
   _try(oneOrMore(parser));
 
