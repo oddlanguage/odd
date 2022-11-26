@@ -37,20 +37,27 @@ export const equal = <
   a: T,
   b: T,
   filter: ([key, value]: [
-    keyof any,
+    string,
     any
   ]) => boolean = () => true
-): boolean =>
-  isPrimitive(a)
-    ? a === b
-    : Object.keys(a).length ===
-        Object.keys(b).length &&
-      Object.entries(a)
-        .filter(filter as any)
-        .every(
-          ([key, value]) =>
-            key in b && equal(value, b[key], filter)
-        );
+): boolean => {
+  if ([a, b].some(isPrimitive)) return a === b;
+
+  const entriesA = Object.entries(a).filter(
+    filter as any
+  );
+  const entriesB = Object.entries(b).filter(
+    filter as any
+  );
+
+  return (
+    entriesA.length === entriesB.length &&
+    entriesA.every(
+      ([key, value]) =>
+        key in b && equal(value, b[key], filter)
+    )
+  );
+};
 
 export const unique = <T>(
   items: ReadonlyArray<T>

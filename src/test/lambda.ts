@@ -13,14 +13,12 @@ test("Lambdas do not pollute parent scope", () => {
   return equal(difference(env, defaultEnv), {});
 });
 
-test(
-  "Multiple parameters are desugared",
+test("Multiple parameters are desugared", () =>
   equal(
     parse("a b c -> 1"),
     parse("a -> b -> c -> 1"),
-    ([key]) => !["offset", "size"].includes(key as any)
-  )
-);
+    ([key]) => !["offset", "size"].includes(key)
+  ));
 
 test("First-order record pattern argument destructuring", () => {
   const code = `({a}->a) {a=1}`;

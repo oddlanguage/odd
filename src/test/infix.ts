@@ -3,23 +3,29 @@ import parse, { defaultEnv } from "../odd.js";
 import test from "../test.js";
 import { equal } from "../util.js";
 
-test(
-  "Operators are left-associative",
+test("Infix operators", () => {
+  const code = `1 + 1`;
+  const [result] = _eval(
+    parse(code),
+    defaultEnv,
+    code
+  );
+  return result === 2;
+});
+
+test("Operators are left-associative", () =>
   equal(
     parse("a * b * c"),
     parse("(a * b) * c"),
-    ([key]) => !["offset", "size"].includes(key as any)
-  )
-);
+    ([key]) => !["offset", "size"].includes(key)
+  ));
 
-test(
-  "Operators have the same precedence",
+test("Operators have the same precedence", () =>
   equal(
     parse("a + b * c"),
     parse("(a + b) * c"),
-    ([key]) => !["offset", "size"].includes(key as any)
-  )
-);
+    ([key]) => !["offset", "size"].includes(key)
+  ));
 
 test("Using an undefined operator raises an error", () => {
   try {
@@ -37,7 +43,7 @@ test("Operators can be literally applied", () => {
   const code = `(+) 1 1`;
   const [result] = _eval(
     parse(code),
-    { "+": (b: any) => (a: any) => a + b },
+    defaultEnv,
     code
   );
   return result === 2;
@@ -45,16 +51,8 @@ test("Operators can be literally applied", () => {
 
 test("Literal application follows natural order", () => {
   const code1 = `(/) 9 2`;
-  const [a] = _eval(
-    parse(code1),
-    { "/": (b: any) => (a: any) => a / b },
-    code1
-  );
+  const [a] = _eval(parse(code1), defaultEnv, code1);
   const code2 = `2 / 9`;
-  const [b] = _eval(
-    parse(code2),
-    { "/": (b: any) => (a: any) => a / b },
-    code2
-  );
+  const [b] = _eval(parse(code2), defaultEnv, code2);
   return a === b;
 });

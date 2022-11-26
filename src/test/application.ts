@@ -70,8 +70,7 @@ test("Record access and application", () => {
     equal(
       tree1,
       tree2,
-      ([key]) =>
-        !["offset", "size"].includes(key as any)
+      ([key]) => !["offset", "size"].includes(key)
     ) && result === 2
   );
 });

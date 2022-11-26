@@ -1,33 +1,39 @@
 import _eval from "../eval.js";
 import parse, { defaultEnv } from "../odd.js";
 import test from "../test.js";
-import { equal } from "../util.js";
+import { difference, equal } from "../util.js";
 
-const code = `a = 1`;
-const [result, env] = _eval(
-  parse(code),
-  defaultEnv,
-  code
-);
+test("Declared values are stored in scope", () => {
+  const code = `a = 1`;
+  const [, env] = _eval(parse(code), defaultEnv, code);
+  return env["a"] === 1;
+});
 
-test(
-  "Declared values are stored in scope",
-  env["a"] === 1
-);
+test("Declarations evaluate to rhs", () => {
+  const code = `a = 1`;
+  const [result] = _eval(
+    parse(code),
+    defaultEnv,
+    code
+  );
+  return result === 1;
+});
 
-test("Declarations evaluate to rhs", result === 1);
-
-test(
-  "Function declarations are desugared into lambdas",
+test("Function declarations are desugared into lambdas", () =>
   equal(
     parse("a b c = 1"),
     parse("a = b -> c -> 1"),
-    ([key]) => !["offset", "size"].includes(key as any)
-  )
-);
+    ([key]) => !["offset", "size"].includes(key)
+  ));
 
 test("Only names are assignable", () => {
   try {
+    const code = `a = 1`;
+    const [, env] = _eval(
+      parse(code),
+      defaultEnv,
+      code
+    );
     [`''a'' = 1;`, `1 = 1;`, `true = 1;`].forEach(
       code => _eval(parse(code), env, code)
     );
@@ -58,3 +64,26 @@ test("First-order list pattern destructuring", () => {
   const [value] = _eval(parse(code), defaultEnv, code);
   return value === 1;
 });
+
+test("Custom infix operators", () => {
+  const code = `a %^& b = 7;1 %^& 3`;
+  const [value] = _eval(parse(code), defaultEnv, code);
+  return value === 7;
+});
+
+test("Custom infix operators preserve scope", () => {
+  const code = `a %^& b = 7;1 %^& 3`;
+  const [, env] = _eval(parse(code), defaultEnv, code);
+  return (
+    typeof difference(env, defaultEnv)["%^&"] ===
+      "function" &&
+    equal(env, defaultEnv, ([key]) => key !== "%^&")
+  );
+});
+
+test("Infix declarations are desugared into lambdas", () =>
+  equal(
+    parse("a %^& b = 3"),
+    parse("(%^&) = b -> a -> 3"),
+    ([key]) => !["offset", "size"].includes(key)
+  ));

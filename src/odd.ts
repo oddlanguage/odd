@@ -22,6 +22,7 @@ import {
   run,
   separatedBy,
   string,
+  Token,
   unpack,
   _try
 } from "./parser.js";
@@ -107,12 +108,56 @@ const recordPattern = node("record-pattern")(
   ])
 );
 
-const parameters = separatedBy(ws)(_pattern);
+const infixPattern = node("infix-pattern")(
+  chain([
+    lazy(() => literalPattern),
+    ws,
+    operator,
+    ws,
+    lazy(() => literalPattern)
+  ])
+);
+
+const parameters = choice([
+  infixPattern,
+  separatedBy(ws)(_pattern)
+]);
 
 // TODO: Cleanup
 const declaration = node("declaration")(
   map(children => {
-    if (children.length === 2) return children;
+    if (children.length === 2) {
+      if (children[0]?.type === "infix-pattern") {
+        const body = children[1]!;
+        const [lhs, op, rhs] = (children[0] as Branch)
+          .children as [Token, Token, Token];
+        return [
+          {
+            type: "literal-pattern",
+            children: [op],
+            offset: op.offset,
+            size: op.size
+          },
+          {
+            type: "lambda",
+            children: [
+              rhs,
+              {
+                type: "lambda",
+                children: [lhs, body],
+                offset: rhs.offset,
+                size:
+                  body.offset - rhs.offset + body.size
+              }
+            ],
+            offset: op.offset,
+            size: body.offset - op.offset + body.size
+          }
+        ];
+      } else {
+        return children;
+      }
+    }
     // Wrap multi-param into separate lambdas
     const funPart = children.slice(1);
     const offset = funPart[0]!.offset;
