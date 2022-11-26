@@ -18,7 +18,10 @@ const repl = async () => {
   process.stdout.write(`Odd v0.2.6 repl\n> `);
   let env: Env = defaultEnv;
   for await (const input of process.stdin) {
-    const inputWithoutNewline = input.slice(0, -2);
+    const inputWithoutNewline = input.replace(
+      /\r*\n$/,
+      ""
+    );
     try {
       const [result, newEnv] = _eval(
         parse(inputWithoutNewline),
