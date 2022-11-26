@@ -29,7 +29,7 @@ Odd is highly W.I.P. but these are the main goals of the language:
 
 ## 🤸 Contribute
 
-Feel free to contribute: [create an issue](https://github.com/oddlanguage/odd/issues/new) or [a pull request](https://github.com/oddlanguage/odd/pulls).
+Feel free to contribute. [Please read our contributing guidelines](./CONTRIBUTING.md) and then [create an issue](https://github.com/oddlanguage/odd/issues/new) or [a pull request](https://github.com/oddlanguage/odd/pulls).
 
 <br/>
 <br/>
