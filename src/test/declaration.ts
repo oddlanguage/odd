@@ -87,3 +87,15 @@ test("Infix declarations are desugared into lambdas", () =>
     parse("(%^&) = b -> a -> 3"),
     ([key]) => !["offset", "size"].includes(key)
   ));
+
+test("Second-order list pattern destructuring", () => {
+  const code = `[[a]]=[[1]]`;
+  const [value] = _eval(parse(code), defaultEnv, code);
+  return value === 1;
+});
+
+test("Second-order record pattern destructuring", () => {
+  const code = `{a={b}}={a={b=1}}`;
+  const [value] = _eval(parse(code), defaultEnv, code);
+  return value === 1;
+});

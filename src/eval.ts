@@ -425,12 +425,11 @@ const declaration = (
         value,
         {
           ...env2,
-          ...Object.fromEntries(
-            (names as any[]).map((name, i) => [
-              name,
-              value[i] ?? nothing
-            ])
-          )
+          ...Object.fromEntries([
+            destructureList(names, 0, value).flat(
+              Infinity
+            )
+          ])
         }
       ] as const;
     }
@@ -467,6 +466,17 @@ const declaration = (
     }
   }
 };
+
+const destructureList = (
+  name: any,
+  i: number,
+  value: any
+): any =>
+  Array.isArray(name)
+    ? name.map((name, j) =>
+        destructureList(name, j, value[j])
+      )
+    : [name, value ?? nothing];
 
 const infix = (
   branch: Branch,
