@@ -89,7 +89,7 @@ test("Infix declarations are desugared into lambdas", () =>
   ));
 
 test("Second-order list pattern destructuring", () => {
-  const code = `[[a]]=[[1]]`;
+  const code = `[[a]]=[[1]];a`;
   const [value] = _eval(parse(code), defaultEnv, code);
   return value === 1;
 });
