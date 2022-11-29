@@ -8,7 +8,7 @@ import {
 import {
   capitalise,
   difference,
-  flattenListEntries,
+  flattenEntries,
   log,
   serialise
 } from "./util.js";
@@ -78,6 +78,8 @@ const _eval = (
       return recordPattern(branch, env, input);
     case "field-pattern":
       return fieldPattern(branch, env, input);
+    case "rest-pattern":
+      return restPattern(branch, env);
     default: {
       console.log(serialise(branch));
       throw makeError({
@@ -98,19 +100,23 @@ const _eval = (
 
 export default _eval;
 
+const restPattern = (branch: Branch, env: Env) =>
+  [
+    "..." + (branch.children[0] as Token).text,
+    env
+  ] as const;
+
 const fieldPattern = (
   branch: Branch,
   env: Env,
   input: string
 ) =>
   branch.children.reduce(
-    ([names, env], child) => {
-      const [newNames] = _eval(child, env, input);
-      return [
-        [...names, ...newNames] as any[],
+    ([names, env], child) =>
+      [
+        names.concat(_eval(child, env, input)[0]),
         env
-      ] as const;
-    },
+      ] as const,
     [[] as any[], env] as const
   );
 
@@ -422,7 +428,9 @@ const declaration = (
         ? {
             ...env,
             ...Object.fromEntries(
-              flattenListEntries(
+              // TODO: Throw error on duplicate name
+              // TODO: Check if rest pattern is last
+              flattenEntries(
                 name.map((name, i) =>
                   extractListElements(name, value[i])
                 )
@@ -445,9 +453,15 @@ const extractListElements = (
   value: any
 ): any =>
   Array.isArray(name)
-    ? name.map((name, i) =>
-        extractListElements(name, value[i])
-      )
+    ? name.map((name, i) => {
+        const isRestPattern =
+          typeof name === "string" &&
+          name.startsWith("...");
+        return extractListElements(
+          isRestPattern ? name.slice(3) : name,
+          isRestPattern ? value.slice(i) : value[i]
+        );
+      })
     : [name, value];
 
 const infix = (

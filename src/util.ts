@@ -106,17 +106,17 @@ export const typeOf = (x: any) => typeof x;
 
 export const equals = (b: any) => (a: any) => a === b;
 
-type ListEntry =
+type Entry =
   | readonly [string, any]
-  | ReadonlyArray<ListEntry>;
+  | ReadonlyArray<Entry>;
 
-export const flattenListEntries = (
-  entries: ReadonlyArray<ListEntry>
+export const flattenEntries = (
+  entries: ReadonlyArray<Entry>
 ) => {
   const clone = entries.slice();
   const output = [];
   let i = 0;
-  let target: ListEntry;
+  let target: Entry;
   while (i < clone.length) {
     target = clone[i]!;
     if (typeof target![0] === "string") {

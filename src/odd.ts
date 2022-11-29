@@ -114,11 +114,14 @@ const recordPattern = node("record-pattern")(
 );
 
 const fieldPattern = node("field-pattern")(
-  chain([
-    node("literal-pattern")(name),
-    _try(
-      chain([ws, ignore(string("=")), ws, _pattern])
-    )
+  choice([
+    restPattern,
+    chain([
+      node("literal-pattern")(name),
+      _try(
+        chain([ws, ignore(string("=")), ws, _pattern])
+      )
+    ])
   ])
 );
 
