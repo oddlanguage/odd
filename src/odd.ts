@@ -7,14 +7,12 @@ import {
   chain,
   choice,
   eof,
-  except,
   ignore,
   label,
   lazy,
   map,
   node,
   nodeLeft,
-  notBefore,
   oneOrMore,
   optional,
   Parser,
@@ -80,8 +78,9 @@ const _pattern = choice([
 const literalPattern = node("literal-pattern")(
   choice([
     oddString,
-    except(string("case"))(name),
+    name,
     number,
+    pattern(/_+/),
     parenthesised(operator)
   ])
 );
@@ -90,31 +89,46 @@ const listPattern = node("list-pattern")(
   chain([
     ignore(string("[")),
     ws,
-    // TODO: Destructuring
-    optional(listOf(_pattern)),
+    optional(
+      listOf(
+        choice([_pattern, lazy(() => restPattern)])
+      )
+    ),
     ws,
     ignore(string("]"))
   ])
+);
+
+const restPattern = node("rest-pattern")(
+  chain([ignore(string("...")), name])
 );
 
 const recordPattern = node("record-pattern")(
   chain([
     ignore(string("{")),
     ws,
-    // TODO: Nested fields & destructuring
-    optional(listOf(literalPattern)),
+    listOf(lazy(() => fieldPattern)),
     ws,
     ignore(string("}"))
   ])
 );
 
+const fieldPattern = node("field-pattern")(
+  chain([
+    node("literal-pattern")(name),
+    _try(
+      chain([ws, ignore(string("=")), ws, _pattern])
+    )
+  ])
+);
+
 const infixPattern = node("infix-pattern")(
   chain([
-    lazy(() => literalPattern),
+    lazy(() => _pattern),
     ws,
     operator,
     ws,
-    lazy(() => literalPattern)
+    lazy(() => _pattern)
   ])
 );
 
@@ -203,6 +217,7 @@ const match = node("match")(
   chain([
     ignore(string("case")),
     ws,
+    // TODO: Allow expressions without parentheses
     choice([
       lazy(() => literal),
       parenthesised(lazy(() => expression))
@@ -216,10 +231,7 @@ const match = node("match")(
 
 const matchCase = node("case")(
   chain([
-    choice([
-      lazy(() => expression),
-      pattern(/_+/, "placeholder")
-    ]),
+    _pattern,
     ws,
     ignore(string("=")),
     ws,
@@ -352,11 +364,7 @@ const list = node("list")(
 );
 
 const field = node("field")(
-  choice([
-    destructuring,
-    declaration,
-    notBefore(string("="))(name)
-  ])
+  choice([destructuring, declaration, name])
 );
 
 const record = node("record")(

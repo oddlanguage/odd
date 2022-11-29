@@ -53,18 +53,6 @@ test("Redefining a value raises an error", () => {
   }
 });
 
-test("First-order record pattern destructuring", () => {
-  const code = `{a}={a=1};a`;
-  const [value] = _eval(parse(code), defaultEnv, code);
-  return value === 1;
-});
-
-test("First-order list pattern destructuring", () => {
-  const code = `[a]=[1];a`;
-  const [value] = _eval(parse(code), defaultEnv, code);
-  return value === 1;
-});
-
 test("Custom infix operators", () => {
   const code = `a %^& b = 7;1 %^& 3`;
   const [value] = _eval(parse(code), defaultEnv, code);
@@ -88,14 +76,33 @@ test("Infix declarations are desugared into lambdas", () =>
     ([key]) => !["offset", "size"].includes(key)
   ));
 
-test("Second-order list pattern destructuring", () => {
-  const code = `[[a]]=[[1]];a`;
+test("Infix declarations allow arbitrary patterns", () => {
+  const code = "{a} %^& [b] = a+b;{a=1}%^&[2]";
   const [value] = _eval(parse(code), defaultEnv, code);
-  return value === 1;
+  return value === 3;
 });
 
-test("Second-order record pattern destructuring", () => {
-  const code = `{a={b}}={a={b=1}}`;
+test("Nth-order list pattern destructuring", () => {
+  const code = `[a,[b,[c, d]]]=[1,[2,[3,[4, 5]]]];`;
+  const [, env] = _eval(parse(code), defaultEnv, code);
+  return (
+    env["a"] === 1 &&
+    env["b"] === 2 &&
+    env["c"] === 3 &&
+    equal(env["d"], [4, 5])
+  );
+});
+
+test("Nth-order record pattern destructuring", () => {
+  const code = `{a,b={c,d={e}}}={a=1,b={c=2,d={e=3}}};`;
+  const [, env] = _eval(parse(code), defaultEnv, code);
+  return (
+    env["a"] === 1 && env["c"] === 2 && env["e"] === 3
+  );
+});
+
+test("List destructuring rest pattern", () => {
+  const code = `[[a, ...b]]=[[1, 2, 3]];[a,b]`;
   const [value] = _eval(parse(code), defaultEnv, code);
-  return value === 1;
+  return equal(value, [1, [2, 3]]);
 });

@@ -8,7 +8,8 @@ import {
 import {
   capitalise,
   difference,
-  last,
+  flattenListEntries,
+  log,
   serialise
 } from "./util.js";
 
@@ -19,21 +20,19 @@ import {
 // https://webassembly.github.io/spec/core/index.html
 // https://blog.scottlogic.com/2018/04/26/webassembly-by-hand.html
 
-const firstTokenChild = (branch: any): Token => {
-  if ((branch as Token).text) return branch;
-  for (const child of branch.children) {
-    const token = firstTokenChild(child);
-    if (token) return token;
-  }
-  throw "Unreachable";
-};
-
 export type Env = Readonly<Record<string, any>>;
+
+type Flags = Partial<
+  Readonly<{
+    // TODO: Supply flags
+  }>
+>;
 
 const _eval = (
   tree: Tree,
   env: Env,
-  input: string
+  input: string,
+  flags?: Flags
 ): readonly [any, Env] => {
   // TODO: Optimise: extract errors in a try/catch
   // and wrap it in makeError to prevent passing
@@ -42,10 +41,11 @@ const _eval = (
   const token = tree as Token;
   switch (branch.type) {
     case "program":
-      return program(branch, input, env);
+      return program(branch, env, input);
     case "operator":
+      return symbol(token, env, input);
     case "name":
-      return symbol(env, token, input);
+      return symbol(token, env, input);
     case "number":
       return number(token, env);
     case "string":
@@ -57,9 +57,9 @@ const _eval = (
     case "application":
       return application(branch, env, input);
     case "list":
-      return list(branch, input, env);
+      return list(branch, env, input);
     case "record":
-      return record(branch, input, env);
+      return record(branch, env, input);
     case "field":
       return field(branch, env, input);
     case "destructuring":
@@ -70,14 +70,14 @@ const _eval = (
       return match(branch, env, input);
     case "case":
       return matchCase(branch, env, input);
-    case "placeholder":
-      return [null, env] as const;
     case "literal-pattern":
       return literalPattern(branch, env, input);
     case "list-pattern":
       return listPattern(branch, env, input);
     case "record-pattern":
       return recordPattern(branch, env, input);
+    case "field-pattern":
+      return fieldPattern(branch, env, input);
     default: {
       console.log(serialise(branch));
       throw makeError({
@@ -97,6 +97,22 @@ const _eval = (
 };
 
 export default _eval;
+
+const fieldPattern = (
+  branch: Branch,
+  env: Env,
+  input: string
+) =>
+  branch.children.reduce(
+    ([names, env], child) => {
+      const [newNames] = _eval(child, env, input);
+      return [
+        [...names, ...newNames] as any[],
+        env
+      ] as const;
+    },
+    [[] as any[], env] as const
+  );
 
 const recordPattern = (
   branch: Branch,
@@ -162,7 +178,7 @@ const literalPattern = (
       ]
     });
 
-  return [name, env] as const;
+  return [name, {}] as const;
 };
 
 const matchCase = (
@@ -173,7 +189,8 @@ const matchCase = (
   const [lhs, env1] = _eval(
     branch.children[0]!,
     env,
-    input
+    input,
+    { patternIsCase: true }
   );
   const [rhs, env2] = _eval(
     branch.children[1]!,
@@ -227,14 +244,13 @@ const lambda = (
     input
   );
 
-  const lambda = (arg: any) => {
-    // TODO: non-operator / non-name / record patterns
-    return _eval(
+  const lambda = (arg: any) =>
+    _eval(
       branch.children[1]!,
+      // TODO: Re-use pattern evaluation
       Array.isArray(names)
         ? {
             ...env,
-            // TODO: deep lists
             ...(Array.isArray(arg)
               ? Object.fromEntries(
                   names.map((name, i) => [
@@ -252,7 +268,6 @@ const lambda = (
         : { ...env, [names]: arg },
       input
     )[0];
-  };
 
   return [lambda, env] as const;
 };
@@ -272,21 +287,6 @@ const destructuring = (
       branch.children[0]!.type!
     )
   ) {
-    const at =
-      (branch.children[0] as Token).offset ??
-      (
-        (branch.children[0] as Branch)
-          .children[0] as Token
-      ).offset;
-    const size =
-      ((branch.children[0] as Token).offset ??
-        (
-          last(
-            (branch.children[0] as Branch).children
-          ) as Token
-        ).offset) -
-      at +
-      1;
     throw makeError({
       input,
       offset: 0,
@@ -294,8 +294,8 @@ const destructuring = (
       problems: [
         {
           reason: `Cannot destructure a non-structural value (${result[0]}).`,
-          at,
-          size
+          at: branch.children[0]!.offset,
+          size: branch.children[0]!.size
         }
       ]
     });
@@ -333,8 +333,8 @@ const field = (
 
 const record = (
   branch: Branch,
-  input: string,
-  env: Env
+  env: Env,
+  input: string
 ) =>
   [
     branch.children.reduce(
@@ -358,8 +358,8 @@ const record = (
 
 const list = (
   branch: Branch,
-  input: string,
-  env: Env
+  env: Env,
+  input: string
 ) =>
   branch.children.reduce(
     ([list, env], child) => {
@@ -402,81 +402,53 @@ const declaration = (
   env: Env,
   input: string
 ) => {
-  const [names, env1] = _eval(
+  const [name] = _eval(
     branch.children[0]!,
     env,
     input
   );
-  const [value, env2] = _eval(
+  const [value] = _eval(
     branch.children[1]!,
-    env1,
+    env,
     input
   );
 
-  switch (branch.children[0]!.type) {
-    case "literal-pattern": {
-      return [
-        value,
-        { ...env2, [names]: value }
-      ] as const;
-    }
-    case "list-pattern": {
-      return [
-        value,
-        {
-          ...env2,
-          ...Object.fromEntries([
-            destructureList(names, 0, value).flat(
-              Infinity
+  const isDestructuring = Array.isArray(name);
+
+  return [
+    value,
+    isDestructuring
+      ? Array.isArray(value)
+        ? {
+            ...env,
+            ...Object.fromEntries(
+              flattenListEntries(
+                name.map((name, i) =>
+                  extractListElements(name, value[i])
+                )
+              )
             )
-          ])
-        }
-      ] as const;
-    }
-    case "record-pattern": {
-      return [
-        value,
-        {
-          ...env2,
-          ...Object.fromEntries(
-            (names as any[]).map(name => [
-              name,
-              value[name] ?? nothing
-            ])
-          )
-        }
-      ] as const;
-    }
-    default: {
-      console.log(serialise(branch.children[0]));
-      throw makeError({
-        input,
-        offset: 0,
-        ok: false,
-        problems: [
-          {
-            reason: `DevDidAnOopsieError: unhandled assignment target "${
-              branch.children[0]!.type
-            }".`,
-            at: branch.children[0]!.offset,
-            size: branch.children[0]!.size
           }
-        ]
-      });
-    }
-  }
+        : (() => {
+            log({ name, value });
+            throw "Record destructuring not implemented.";
+          })()
+      : {
+          ...env,
+          [name]: value
+        }
+  ] as const;
 };
 
-const destructureList = (
+const extractListElements = (
   name: any,
-  i: number,
   value: any
 ): any =>
   Array.isArray(name)
-    ? name.map((name, j) =>
-        destructureList(name, j, value[j])
+    ? name.map((name, i) =>
+        extractListElements(name, value[i])
       )
-    : [name, value ?? nothing];
+    : [name, value];
 
 const infix = (
   branch: Branch,
@@ -512,8 +484,8 @@ const number = (token: Token, env: Env) =>
   ] as const;
 
 const symbol = (
-  env: Env,
   token: Token,
+  env: Env,
   input: string
 ) => {
   const value = env[token.text];
@@ -537,8 +509,8 @@ const symbol = (
 
 const program = (
   branch: Branch,
-  input: string,
-  env: Env
+  env: Env,
+  input: string
 ) =>
   branch.children.reduce(
     ([, newEnv], child) => _eval(child, newEnv, input),

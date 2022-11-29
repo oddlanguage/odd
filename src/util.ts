@@ -3,7 +3,12 @@ import { inspect } from "node:util";
 export const serialise = (x: any) =>
   typeof x === "string"
     ? x
-    : inspect(x, false, Infinity, true);
+    : inspect(x, {
+        depth: Infinity,
+        colors: true,
+        compact: 1,
+        breakLength: 110
+      });
 
 export const log = <T>(x: T) => {
   console.log(serialise(x));
@@ -100,3 +105,28 @@ export const difference = (
 export const typeOf = (x: any) => typeof x;
 
 export const equals = (b: any) => (a: any) => a === b;
+
+type ListEntry =
+  | readonly [string, any]
+  | ReadonlyArray<ListEntry>;
+
+export const flattenListEntries = (
+  entries: ReadonlyArray<ListEntry>
+) => {
+  const clone = entries.slice();
+  const output = [];
+  let i = 0;
+  let target: ListEntry;
+  while (i < clone.length) {
+    target = clone[i]!;
+    if (typeof target![0] === "string") {
+      output.push(target);
+      i += 1;
+    } else {
+      clone.splice(i, 1, ...target!);
+    }
+  }
+  return output as ReadonlyArray<
+    readonly [string, any]
+  >;
+};
