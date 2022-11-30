@@ -25,9 +25,11 @@ This document describes the Odd syntax. It is a live document and is not a forma
     - [Lists](#lists)
     - [Records](#records)
     - [Operators](#operators)
+      - [Precedence](#precedence)
+      - [Application](#application)
     - [Lambdas](#lambdas)
   - [Assignment](#assignment)
-  - [Application](#application)
+  - [Application](#application-1)
   - [Pattern matching](#pattern-matching)
     - [Case expressions](#case-expressions)
     - [Patterns in declarations](#patterns-in-declarations)
@@ -381,12 +383,62 @@ An operator is placed between two expressions:
 a + b;
 ```
 
-Operators are values (they are just functions), so they can also be used in application:
+#### Precedence
+
+_All operators have the same precedence and associativity_, **_even common mathematical ones!_**. This means all infix expressions are evaluated left-to-right.
 
 ```hs
-(*) 3 3;
+1 + 2 * 3; -- Forget what shool has taught you, it's 9
+-- because it's the same as
+(1 + 2) * 3; -- also 9
+```
+
+This might cause confusion for some at first, but this actually prevents program errors caused by imperfect knowledge of all operators and their respective precedences/associativities.
+
+To motivate this decision, consider the following example. One might write expressions such as:
+
+```hs
+a @@ b </> c % d;
+```
+
+Can you see — at first glance — in what order this expression is evaluated? Why yes! _left-to-right_, like any other infix expression in Odd. You don't need intimate knowledge of the operators to know how the expression flows.
+
+Mathematical operators hold no special distinction, so they are also stripped of their precedence and associativity rules.
+
+To change the order of operations, you can use parentheses:
+
+```hs
+a @@ b </> c % d;
 -- is the same as
-3 * 3;
+((a @@ b) </> c) % d;
+-- but not the same as
+a @@ (b </> c) % d;
+```
+
+To improve readability, dense infix expressions are often already redundantly parenthesised in programs in other languages. All operators having the same precedence and associativity means that Odd "enforces" readability through parentheses.
+
+#### Application
+
+Because operators are values, they can also be used in application:
+
+```hs
+(-) 2 3;
+-- is the same as
+3 - 2;
+```
+
+Note the order of the operands. This order is more akin to how people think about partial application than if they were reversed:
+
+```hs
+subtract-one = (-) 1;
+subtract-one 3 -- yields 2
+```
+
+Whereas the opposite doesn't make sense unless you use a different function name:
+
+```hs
+subtract-x-from-1 = (-) 1;
+subtract-x-from-1 3 -- would yield -2 if the operands were reversed
 ```
 
 An operator literal requires parentheses (`()`) around it if not in infix notation.
@@ -446,8 +498,6 @@ multiply a b = a * b;
 
 > ℹ️ [We will expand upon function syntax later on](#application).
 
-> ℹ️ [Pattern matching](#pattern-matching) in declarations is a planned feature.
-
 <br/>
 <br/>
 
@@ -492,7 +542,7 @@ two-is-even = case (is-even 2) of
 two-is-even; -- ''yep''
 ```
 
-A case consistof of _a pattern_, followed by _an equals sign_ (`=`), followed by _an expression_.
+A case consists of _a pattern_, followed by _an equals sign_ (`=`), followed by _an expression_.
 
 Here are some valid patterns:
 
@@ -533,8 +583,6 @@ case ''a'' of
 -- final result is 3
 ```
 
-> ℹ️ Complex patterns, such as shapes (records/lists) and application, are a planned feature.
-
 <br/>
 
 ### Patterns in declarations
@@ -570,7 +618,31 @@ head [first] = first;
 head names -- ''Daniel''
 ```
 
-> ℹ️ Complex patterns, such as nested shapes (records/lists) are a planned feature.
+You can destructure specific elements and wrap up the rest into another name:
+
+```hs
+-- lists
+[a, ...b] = [1, 2, 3];
+a -- yields 1
+b -- yields [2, 3]
+
+-- records
+{a, ...b} = {a = 1, x = 2, y = 3};
+a -- yields 1
+b -- yields {x = 2, y = 3}
+```
+
+Patterns work recursively:
+
+```hs
+-- lists
+[[[x]]] = [[[1]]];
+x -- yields 1
+
+-- records
+{a={b={c}}} = {a={b={c=1}}};
+c -- yields 1
+```
 
 <br/>
 

@@ -8,6 +8,7 @@ import {
 import {
   capitalise,
   difference,
+  log,
   serialise
 } from "./util.js";
 
@@ -20,17 +21,10 @@ import {
 
 export type Env = Readonly<Record<string, any>>;
 
-type Flags = Partial<
-  Readonly<{
-    // TODO: Supply flags
-  }>
->;
-
 const _eval = (
   tree: Tree,
   env: Env,
-  input: string,
-  flags?: Flags
+  input: string
 ): readonly [any, Env] => {
   // TODO: Optimise: extract errors in a try/catch
   // and wrap it in makeError to prevent passing
@@ -150,8 +144,7 @@ const matchCase = (
   const [lhs, env1] = _eval(
     branch.children[0]!,
     env,
-    input,
-    { patternIsCase: true }
+    input
   );
   const [rhs, env2] = _eval(
     branch.children[1]!,
@@ -454,20 +447,23 @@ const extractRecordFields = (
   names: any,
   value: any
 ): any => {
+  log(names);
+
   if (!Array.isArray(names))
     return [names, value[names.text]];
 
+  // TODO: Rest patterns
+  const mutableNames = names.slice();
   const results = [];
-  const clone = names.slice();
-  for (let i = 0; i < clone.length; i += 1) {
-    const name = clone[i];
+  for (let i = 0; i < mutableNames.length; i += 1) {
+    const name = mutableNames[i];
     const children = [] as any[];
-    for (const x of clone.slice(i + 1)) {
+    for (const x of mutableNames.slice(i + 1)) {
       if (!Array.isArray(x)) break;
       children.push(x);
     }
     if (children.length) {
-      clone.splice(i, children.length);
+      mutableNames.splice(i, children.length);
       results.push(
         extractRecordFields(
           children.flat(),
