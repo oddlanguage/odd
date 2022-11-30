@@ -8,8 +8,6 @@ import {
 import {
   capitalise,
   difference,
-  flattenEntries,
-  log,
   serialise
 } from "./util.js";
 
@@ -71,7 +69,7 @@ const _eval = (
     case "case":
       return matchCase(branch, env, input);
     case "literal-pattern":
-      return literalPattern(branch, env, input);
+      return literalPattern(branch, env);
     case "list-pattern":
       return listPattern(branch, env, input);
     case "record-pattern":
@@ -101,10 +99,7 @@ const _eval = (
 export default _eval;
 
 const restPattern = (branch: Branch, env: Env) =>
-  [
-    "..." + (branch.children[0] as Token).text,
-    env
-  ] as const;
+  [branch, env] as const;
 
 const fieldPattern = (
   branch: Branch,
@@ -144,48 +139,8 @@ const listPattern = (
     env
   ] as const;
 
-const literalPattern = (
-  branch: Branch,
-  env: Env,
-  input: string
-) => {
-  // TODO: This only handles name and operator patterns.
-  // TODO: Support all types of literal patterns (when not lhs)
-
-  const token = branch.children[0] as Token;
-  if (!["name", "operator"].includes(token.type!))
-    throw makeError({
-      input,
-      offset: 0,
-      ok: false,
-      problems: [
-        {
-          reason: `"${token.type}" is not an assignable pattern.`,
-          at: token.offset,
-          size: token.size
-        }
-      ]
-    });
-
-  const name = token.text;
-  if (name in env)
-    throw makeError({
-      input,
-      offset: 0,
-      ok: false,
-      problems: [
-        {
-          reason: `${capitalise(
-            token.type!
-          )} "${name}" is already defined.`,
-          at: token.offset,
-          size: token.size
-        }
-      ]
-    });
-
-  return [name, {}] as const;
-};
+const literalPattern = (branch: Branch, env: Env) =>
+  [branch.children[0], env] as const;
 
 const matchCase = (
   branch: Branch,
@@ -244,7 +199,7 @@ const lambda = (
   env: Env,
   input: string
 ) => {
-  const [names] = _eval(
+  const [patterns] = _eval(
     branch.children[0]!,
     env,
     input
@@ -253,25 +208,7 @@ const lambda = (
   const lambda = (arg: any) =>
     _eval(
       branch.children[1]!,
-      // TODO: Re-use pattern evaluation
-      Array.isArray(names)
-        ? {
-            ...env,
-            ...(Array.isArray(arg)
-              ? Object.fromEntries(
-                  names.map((name, i) => [
-                    name,
-                    arg[i] ?? nothing
-                  ])
-                )
-              : Object.fromEntries(
-                  names.map(name => [
-                    name,
-                    arg[name] ?? nothing
-                  ])
-                ))
-          }
-        : { ...env, [names]: arg },
+      insertPatternsIntoEnv(patterns, arg, env, input),
       input
     )[0];
 
@@ -345,16 +282,12 @@ const record = (
   [
     branch.children.reduce(
       ([record, env], child) => {
-        const [result, newEnv] = _eval(
-          child,
-          env,
-          input
-        );
+        const [result] = _eval(child, env, input);
         return [
           Array.isArray(result)
             ? { ...record, [result[0]]: result[1] }
             : { ...record, ...result },
-          newEnv
+          env
         ] as const;
       },
       [{}, env] as const
@@ -408,7 +341,7 @@ const declaration = (
   env: Env,
   input: string
 ) => {
-  const [name] = _eval(
+  const [patterns] = _eval(
     branch.children[0]!,
     env,
     input
@@ -419,33 +352,87 @@ const declaration = (
     input
   );
 
-  const isDestructuring = Array.isArray(name);
-
   return [
     value,
-    isDestructuring
-      ? Array.isArray(value)
-        ? {
-            ...env,
-            ...Object.fromEntries(
-              // TODO: Throw error on duplicate name
-              // TODO: Check if rest pattern is last
-              flattenEntries(
-                name.map((name, i) =>
-                  extractListElements(name, value[i])
-                )
-              )
-            )
-          }
-        : (() => {
-            log({ name, value });
-            throw "Record destructuring not implemented.";
-          })()
-      : {
-          ...env,
-          [name]: value
-        }
+    insertPatternsIntoEnv(patterns, value, env, input)
   ] as const;
+};
+
+const insertPatternsIntoEnv = (
+  names: any,
+  value: any,
+  env: Env,
+  input: string
+): ReadonlyArray<readonly [Token, any]> => {
+  const isDestructuring = Array.isArray(names);
+
+  const patterns = (
+    isDestructuring
+      ? flattenExtractedPatternEntries(
+          // TODO: Check if rest patterns are last child
+          Array.isArray(value)
+            ? extractListElements(names, value)
+            : names.map(name =>
+                extractRecordFields(name, value)
+              )
+        )
+      : [[names, value]]
+  ) as (readonly [any, any])[];
+
+  // TODO: Check if names are assignable
+  // TODO: Figure out what it means to be "assignable"?
+
+  const duplicate = patterns.find(
+    ([{ text }]) => text in env
+  )?.[0];
+  if (duplicate)
+    throw makeError({
+      input,
+      offset: 0,
+      ok: false,
+      problems: [
+        {
+          reason: `${capitalise(duplicate.type!)} "${
+            duplicate.text
+          }" is already defined.`,
+          at: duplicate.offset,
+          size: duplicate.size
+        }
+      ]
+    });
+
+  return {
+    ...env,
+    ...Object.fromEntries(
+      patterns.map(([{ text: key }, value]) => [
+        key,
+        value
+      ])
+    )
+  };
+};
+
+type Entry =
+  | readonly [any, any]
+  | ReadonlyArray<Entry>;
+
+const flattenExtractedPatternEntries = (
+  entries: ReadonlyArray<Entry>
+) => {
+  const clone = entries.slice();
+  const output = [];
+  let i = 0;
+  let target: Entry;
+  while (i < clone.length) {
+    target = clone[i]!;
+    if (typeof target[0]?.text === "string") {
+      output.push(target);
+      i += 1;
+    } else {
+      clone.splice(i, 1, ...target);
+    }
+  }
+  return output as ReadonlyArray<readonly [any, any]>;
 };
 
 const extractListElements = (
@@ -455,14 +442,45 @@ const extractListElements = (
   Array.isArray(name)
     ? name.map((name, i) => {
         const isRestPattern =
-          typeof name === "string" &&
-          name.startsWith("...");
+          name.type === "rest-pattern";
         return extractListElements(
-          isRestPattern ? name.slice(3) : name,
+          isRestPattern ? name.children[0] : name,
           isRestPattern ? value.slice(i) : value[i]
         );
       })
     : [name, value];
+
+const extractRecordFields = (
+  names: any,
+  value: any
+): any => {
+  if (!Array.isArray(names))
+    return [names, value[names.text]];
+
+  const results = [];
+  const clone = names.slice();
+  for (let i = 0; i < clone.length; i += 1) {
+    const name = clone[i];
+    const children = [] as any[];
+    for (const x of clone.slice(i + 1)) {
+      if (!Array.isArray(x)) break;
+      children.push(x);
+    }
+    if (children.length) {
+      clone.splice(i, children.length);
+      results.push(
+        extractRecordFields(
+          children.flat(),
+          value[name.text]
+        )
+      );
+    } else {
+      results.push(extractRecordFields(name, value));
+    }
+  }
+
+  return results;
+};
 
 const infix = (
   branch: Branch,

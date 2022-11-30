@@ -105,28 +105,3 @@ export const difference = (
 export const typeOf = (x: any) => typeof x;
 
 export const equals = (b: any) => (a: any) => a === b;
-
-type Entry =
-  | readonly [string, any]
-  | ReadonlyArray<Entry>;
-
-export const flattenEntries = (
-  entries: ReadonlyArray<Entry>
-) => {
-  const clone = entries.slice();
-  const output = [];
-  let i = 0;
-  let target: Entry;
-  while (i < clone.length) {
-    target = clone[i]!;
-    if (typeof target![0] === "string") {
-      output.push(target);
-      i += 1;
-    } else {
-      clone.splice(i, 1, ...target!);
-    }
-  }
-  return output as ReadonlyArray<
-    readonly [string, any]
-  >;
-};
