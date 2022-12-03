@@ -80,7 +80,7 @@ const literalPattern = node("literal-pattern")(
     oddString,
     name,
     number,
-    pattern(/_+/),
+    pattern(/_+/, "wildcard-pattern"),
     parenthesised(operator)
   ])
 );
@@ -216,34 +216,35 @@ const declaration = node("declaration")(
   )
 );
 
-const match = node("match")(
-  chain([
-    ignore(string("case")),
-    ws,
-    // TODO: Allow expressions without parentheses
-    choice([
-      lazy(() => literal),
-      parenthesised(lazy(() => expression))
-    ]),
-    ws,
-    ignore(string("of")),
-    ws,
-    listOf(lazy(() => matchCase))
-  ])
-);
+// TODO: Reimplement match expressions
+// const match = node("match")(
+//   chain([
+//     ignore(string("case")),
+//     ws,
+//     // TODO: Allow expressions without parentheses
+//     choice([
+//       lazy(() => literal),
+//       parenthesised(lazy(() => expression))
+//     ]),
+//     ws,
+//     ignore(string("of")),
+//     ws,
+//     listOf(lazy(() => matchCase))
+//   ])
+// );
 
-const matchCase = node("case")(
-  chain([
-    _pattern,
-    ws,
-    ignore(string("=")),
-    ws,
-    lazy(() => expression)
-  ])
-);
+// const matchCase = node("case")(
+//   chain([
+//     _pattern,
+//     ws,
+//     ignore(string("=")),
+//     ws,
+//     lazy(() => expression)
+//   ])
+// );
 
 const precedenceMatch = choice([
-  match,
+  // match,
   lazy(() => precedenceLambda)
 ]);
 

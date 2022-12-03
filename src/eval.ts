@@ -141,17 +141,7 @@ const matchCase = (
   env: Env,
   input: string
 ) => {
-  const [lhs, env1] = _eval(
-    branch.children[0]!,
-    env,
-    input
-  );
-  const [rhs, env2] = _eval(
-    branch.children[1]!,
-    env1,
-    input
-  );
-  return [[lhs, rhs], env2] as const;
+  throw "Not implemented.";
 };
 
 const match = (
@@ -159,32 +149,7 @@ const match = (
   env: Env,
   input: string
 ) => {
-  const [value, newEnv] = _eval(
-    branch.children[0]!,
-    env,
-    input
-  );
-  let idx = -1;
-  return [
-    branch.children
-      .slice(1)
-      .map((child, i, children) => {
-        const [[lhs, rhs]] = _eval(child, env, input);
-        const isPlaceholder = /_+/.test(
-          (
-            (children[i] as Branch)
-              .children[0] as Token
-          ).text
-        );
-        if (
-          idx === -1 &&
-          (isPlaceholder || lhs === value)
-        )
-          idx = i;
-        return rhs;
-      })[idx],
-    newEnv
-  ] as const;
+  throw "Not implemented.";
 };
 
 const lambda = (
