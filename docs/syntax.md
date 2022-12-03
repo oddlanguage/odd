@@ -530,7 +530,7 @@ Patterns allow you to match data by its value or shape.
 
 ### Case expressions
 
-> ℹ️ Case expressions have been temporarily disabled as of v3.0.0 in favour of declaration destructuring.
+> ℹ️ Case expressions have been temporarily disabled as of v0.3.0 in favour of declaration destructuring.
 
 With a `case` expression, you can couple values together based on any pattern.
 
