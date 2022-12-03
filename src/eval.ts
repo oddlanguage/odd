@@ -8,7 +8,7 @@ import {
 import {
   capitalise,
   difference,
-  log,
+  omit,
   serialise
 } from "./util.js";
 
@@ -365,9 +365,7 @@ const insertPatternsIntoEnv = (
           // TODO: Check if rest patterns are last child
           Array.isArray(value)
             ? extractListElements(names, value)
-            : names.map(name =>
-                extractRecordFields(name, value)
-              )
+            : extractRecordFields(names.flat(), value)
         )
       : [[names, value]]
   ) as (readonly [any, any])[];
@@ -447,12 +445,9 @@ const extractRecordFields = (
   names: any,
   value: any
 ): any => {
-  log(names);
-
   if (!Array.isArray(names))
     return [names, value[names.text]];
 
-  // TODO: Rest patterns
   const mutableNames = names.slice();
   const results = [];
   for (let i = 0; i < mutableNames.length; i += 1) {
@@ -471,7 +466,16 @@ const extractRecordFields = (
         )
       );
     } else {
-      results.push(extractRecordFields(name, value));
+      if (name.type === "rest-pattern") {
+        results.push([
+          name.children[0],
+          omit(
+            names.slice(0, i).map(({ text }) => text)
+          )(value)
+        ]);
+      } else {
+        results.push(extractRecordFields(name, value));
+      }
     }
   }
 

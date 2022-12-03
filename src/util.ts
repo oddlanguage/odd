@@ -105,3 +105,17 @@ export const difference = (
 export const typeOf = (x: any) => typeof x;
 
 export const equals = (b: any) => (a: any) => a === b;
+
+export const omit =
+  <
+    T extends Record<string, any>,
+    K extends keyof T | ReadonlyArray<keyof T>
+  >(
+    key: K
+  ) =>
+  (value: T) => {
+    let keys = [key].flat() as ReadonlyArray<keyof T>;
+    const rest = { ...value };
+    for (const key of keys) delete rest[key];
+    return rest;
+  };

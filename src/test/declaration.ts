@@ -108,9 +108,13 @@ test("List destructuring rest pattern", () => {
 });
 
 test("Record destructuring rest pattern", () => {
-  const code = `{a,...b}={a=1,x=2,y=3}`;
+  const code = `{a,b,c,d,...x}={a=1,b=2,c=3,d=4,y=5,z=6}`;
   const [, env] = _eval(parse(code), defaultEnv, code);
   return (
-    env["a"] === 1 && equal(env["b"], { x: 2, y: 3 })
+    env["a"] === 1 &&
+    env["b"] === 2 &&
+    env["c"] === 3 &&
+    env["d"] === 4 &&
+    equal(env["x"], { y: 5, z: 6 })
   );
 });
