@@ -68,7 +68,7 @@ Some work has yet to be done for odd to release as v1.0. The following is a list
 
 - [x] ⏱️ **0.1**: Runnable programs.
 - [x] ⏱️ **0.2**: Module system.
-- [ ] ⏱️ **0.3**: (Complete) Pattern matching.
+- [x] ⏱️ **0.3**: (Complete) Pattern matching.
 - [ ] ⏱️ **0.4**: Meaningful & readable parse errors.
 - [ ] ⏱️ **0.5**: Odd LSP for proper editor integration.
 - [ ] ⏱️ **0.6**: Type system (HM with row polymorphism).
