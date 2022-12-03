@@ -300,7 +300,7 @@ const infix = nodeLeft(
 )(
   chain([
     choice([
-      lazy(() => match),
+      // lazy(() => match),
       lambda,
       lazy(() => application),
       lazy(() => atom)
@@ -311,7 +311,7 @@ const infix = nodeLeft(
         operator,
         ws,
         choice([
-          lazy(() => match),
+          // lazy(() => match),
           lambda,
           lazy(() => application),
           lazy(() => atom)
@@ -333,7 +333,7 @@ const application = nodeLeft("application")(
       chain([
         ws,
         choice([
-          lazy(() => match),
+          // lazy(() => match),
           lazy(() => atom),
           infix,
           lambda
