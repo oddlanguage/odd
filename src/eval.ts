@@ -167,7 +167,7 @@ const match = (
           input
         )[0],
         env
-      ];
+      ] as const;
     }
   }
 
@@ -397,12 +397,9 @@ const extractPatterns = (
   }
 
   // TODO: Should these be errors instead?
-  const extracted = patterns.filter(
-    ([{ text }, value]) =>
-      !/^(?:\d|''|_)/.test(text) &&
-      ![null, undefined].includes(value)
+  return patterns.filter(
+    ([{ text }]) => !/^(?:\d|''|_)/.test(text)
   );
-  return extracted.length ? extracted : null;
 };
 
 const insertPatterns = (
@@ -413,7 +410,11 @@ const insertPatterns = (
 ) => ({
   ...env,
   ...Object.fromEntries(
-    patterns.map(([{ text: k }, v]) => [k, v])
+    patterns
+      .filter(
+        ([, v]) => ![null, undefined].includes(v)
+      )
+      .map(([{ text: k }, v]) => [k, v])
   )
 });
 

@@ -4,7 +4,7 @@ import test from "../test.js";
 import { equal } from "../util.js";
 
 test("Match expression selects correct case", () => {
-  const code = `case (3) of 1 = nothing, 2 = nothing, 3 = true`;
+  const code = `case (3) of 1 = false, 2 = false, 3 = true`;
   const [result] = _eval(
     parse(code),
     defaultEnv,
@@ -14,7 +14,7 @@ test("Match expression selects correct case", () => {
 });
 
 test("Match expression correctly selects wildcard", () => {
-  const code = `case (2) of 1 = nothing, _ = true`;
+  const code = `case (2) of 1 = false, _ = true`;
   const [result] = _eval(
     parse(code),
     defaultEnv,

@@ -530,8 +530,6 @@ Patterns allow you to match data by its value or shape.
 
 ### Case expressions
 
-> ℹ️ Case expressions have been temporarily disabled as of v0.3.0 in favour of declaration destructuring.
-
 With a `case` expression, you can couple values together based on any pattern.
 
 A case expression consist of the word `case`, followed by _a literal (numbers, strings, names, etc.), or an expression between paretheses_ `()`, followed by the word `of`, followed by one or more _cases_:
