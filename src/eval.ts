@@ -21,6 +21,8 @@ import {
 
 export type Env = Readonly<Record<string, any>>;
 
+const destructionType = Symbol("destructionType");
+
 const _eval = (
   tree: Tree,
   env: Env,
@@ -60,8 +62,6 @@ const _eval = (
       return lambda(branch, env, input);
     case "match":
       return match(branch, env, input);
-    case "case":
-      return matchCase(branch, env, input);
     case "literal-pattern":
       return literalPattern(branch, env);
     case "list-pattern":
@@ -113,43 +113,66 @@ const recordPattern = (
   branch: Branch,
   env: Env,
   input: string
-) =>
-  [
-    branch.children.map(
-      node => _eval(node, env, input)[0]
-    ),
-    env
-  ] as const;
+) => {
+  const pattern = branch.children.map(
+    node => _eval(node, env, input)[0]
+  );
+
+  pattern[destructionType as any] = "record";
+
+  return [pattern, env] as const;
+};
 
 const listPattern = (
   branch: Branch,
   env: Env,
   input: string
-) =>
-  [
-    branch.children.map(
-      node => _eval(node, env, input)[0]
-    ),
-    env
-  ] as const;
+) => {
+  const pattern = branch.children.map(
+    node => _eval(node, env, input)[0]
+  );
+
+  pattern[destructionType as any] = "list";
+
+  return [pattern, env] as const;
+};
 
 const literalPattern = (branch: Branch, env: Env) =>
   [branch.children[0], env] as const;
-
-const matchCase = (
-  branch: Branch,
-  env: Env,
-  input: string
-) => {
-  throw "Not implemented.";
-};
 
 const match = (
   branch: Branch,
   env: Env,
   input: string
 ) => {
-  throw "Not implemented.";
+  const [_case, ...options] =
+    branch.children as Branch[];
+  const [caseValue] = _eval(_case!, env, input);
+
+  for (const option of options) {
+    const [names] = _eval(
+      option.children[0]!,
+      env,
+      input
+    );
+    const extracted = extractPatterns(
+      names,
+      caseValue
+    );
+    if (extracted) {
+      return [
+        _eval(
+          option.children[1]!,
+          insertPatterns(extracted, env),
+          input
+        )[0],
+        env
+      ];
+    }
+  }
+
+  // TODO: Should no match be an error?
+  return [nothing, env] as const;
 };
 
 const lambda = (
@@ -163,12 +186,17 @@ const lambda = (
     input
   );
 
-  const lambda = (arg: any) =>
-    _eval(
-      branch.children[1]!,
-      insertPatternsIntoEnv(patterns, arg, env, input),
-      input
-    )[0];
+  const lambda = (arg: any) => {
+    const extracted = extractPatterns(patterns, arg);
+    return extracted
+      ? _eval(
+          branch.children[1]!,
+          insertPatterns(extracted, env),
+          input
+        )[0]
+      : // TODO: Should this be an error?
+        nothing;
+  };
 
   return [lambda, env] as const;
 };
@@ -310,63 +338,84 @@ const declaration = (
     input
   );
 
+  const extracted = extractPatterns(patterns, value);
+  if (!extracted) return [nothing, env] as const;
+
+  for (const [pattern] of extracted) {
+    if (pattern.text in env) {
+      throw makeError({
+        input,
+        offset: 0,
+        ok: false,
+        problems: [
+          {
+            reason: `${capitalise(pattern.type!)} "${
+              pattern.text
+            }" is already defined.`,
+            at: pattern.offset,
+            size: pattern.size
+          }
+        ]
+      });
+    }
+  }
+
   return [
     value,
-    insertPatternsIntoEnv(patterns, value, env, input)
+    insertPatterns(extracted, env)
   ] as const;
 };
 
-const insertPatternsIntoEnv = (
+const extractPatterns = (
   names: any,
-  value: any,
-  env: Env,
-  input: string
-): ReadonlyArray<readonly [Token, any]> => {
+  value: any
+): ReadonlyArray<readonly [Token, any]> | null => {
   const isDestructuring = Array.isArray(names);
 
-  const patterns = (
-    isDestructuring
-      ? flattenExtractedPatternEntries(
-          // TODO: Check if rest patterns are last child
-          Array.isArray(value)
-            ? extractListElements(names, value)
-            : extractRecordFields(names.flat(), value)
-        )
-      : [[names, value]]
-  ) as (readonly [any, any])[];
+  const patterns = isDestructuring
+    ? flattenExtractedPatternEntries(
+        // TODO: Check if rest patterns are last child
+        names[destructionType as any] === "list"
+          ? extractListElements(names, value)
+          : extractRecordFields(names.flat(), value)
+      )
+    : ([[names, value]] as const);
 
-  // TODO: Check if names are assignable
-  // TODO: Figure out what it means to be "assignable"?
+  for (const [pattern, value] of patterns) {
+    const { text } = pattern;
+    const isNonMatchingStringPattern =
+      text.startsWith("''") &&
+      text.slice(2, -2) !== value;
+    const isNonMatchingNumberPattern =
+      /^\d/.test(text) && parseFloat(text) !== value;
+    if (
+      isNonMatchingStringPattern ||
+      isNonMatchingNumberPattern
+    ) {
+      return null;
+    }
+  }
 
-  const duplicate = patterns.find(
-    ([{ text }]) => text in env
-  )?.[0];
-  if (duplicate)
-    throw makeError({
-      input,
-      offset: 0,
-      ok: false,
-      problems: [
-        {
-          reason: `${capitalise(duplicate.type!)} "${
-            duplicate.text
-          }" is already defined.`,
-          at: duplicate.offset,
-          size: duplicate.size
-        }
-      ]
-    });
-
-  return {
-    ...env,
-    ...Object.fromEntries(
-      patterns.map(([{ text: key }, value]) => [
-        key,
-        value
-      ])
-    )
-  };
+  // TODO: Should these be errors instead?
+  const extracted = patterns.filter(
+    ([{ text }, value]) =>
+      !/^(?:\d|''|_)/.test(text) &&
+      ![null, undefined].includes(value)
+  );
+  return extracted.length ? extracted : null;
 };
+
+const insertPatterns = (
+  patterns: NonNullable<
+    ReturnType<typeof extractPatterns>
+  >,
+  env: Env
+) => ({
+  ...env,
+  ...Object.fromEntries(
+    patterns.map(([{ text: k }, v]) => [k, v])
+  )
+});
 
 type Entry =
   | readonly [any, any]
@@ -486,7 +535,7 @@ const symbol = (
   input: string
 ) => {
   const value = env[token.text];
-  if (value === undefined || value === null)
+  if (value === undefined || value === null) {
     throw makeError({
       input,
       offset: 0,
@@ -501,6 +550,7 @@ const symbol = (
         }
       ]
     });
+  }
   return [value, env] as const;
 };
 

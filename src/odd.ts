@@ -24,7 +24,11 @@ import {
   unpack,
   _try
 } from "./parser.js";
-import { difference, equal } from "./util.js";
+import {
+  difference,
+  equal,
+  serialise
+} from "./util.js";
 
 const comment = pattern(/--[^\n]+/);
 
@@ -216,35 +220,34 @@ const declaration = node("declaration")(
   )
 );
 
-// TODO: Reimplement match expressions
-// const match = node("match")(
-//   chain([
-//     ignore(string("case")),
-//     ws,
-//     // TODO: Allow expressions without parentheses
-//     choice([
-//       lazy(() => literal),
-//       parenthesised(lazy(() => expression))
-//     ]),
-//     ws,
-//     ignore(string("of")),
-//     ws,
-//     listOf(lazy(() => matchCase))
-//   ])
-// );
+const match = node("match")(
+  chain([
+    ignore(string("case")),
+    ws,
+    // TODO: Allow expressions without parentheses
+    choice([
+      lazy(() => literal),
+      parenthesised(lazy(() => expression))
+    ]),
+    ws,
+    ignore(string("of")),
+    ws,
+    listOf(lazy(() => matchCase))
+  ])
+);
 
-// const matchCase = node("case")(
-//   chain([
-//     _pattern,
-//     ws,
-//     ignore(string("=")),
-//     ws,
-//     lazy(() => expression)
-//   ])
-// );
+const matchCase = node("case")(
+  chain([
+    _pattern,
+    ws,
+    ignore(string("=")),
+    ws,
+    lazy(() => expression)
+  ])
+);
 
 const precedenceMatch = choice([
-  // match,
+  match,
   lazy(() => precedenceLambda)
 ]);
 
@@ -300,7 +303,7 @@ const infix = nodeLeft(
 )(
   chain([
     choice([
-      // lazy(() => match),
+      lazy(() => match),
       lambda,
       lazy(() => application),
       lazy(() => atom)
@@ -311,7 +314,7 @@ const infix = nodeLeft(
         operator,
         ws,
         choice([
-          // lazy(() => match),
+          lazy(() => match),
           lambda,
           lazy(() => application),
           lazy(() => atom)
@@ -333,7 +336,7 @@ const application = nodeLeft("application")(
       chain([
         ws,
         choice([
-          // lazy(() => match),
+          lazy(() => match),
           lazy(() => atom),
           infix,
           lambda
@@ -514,7 +517,8 @@ export const defaultEnv = {
   max: (a: any) => (b: any) => Math.max(a, b),
   min: (a: any) => (b: any) => Math.min(a, b),
   show: (x: any) => {
-    console.log(x);
+    // TODO: Serialise as odd values instead of js values
+    console.log(serialise(x));
     return x;
   },
   import: (name: string) => {
