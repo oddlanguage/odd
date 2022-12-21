@@ -119,3 +119,7 @@ export const omit =
     for (const key of keys) delete rest[key];
     return rest;
   };
+
+export type Mutable<T> = {
+  -readonly [K in keyof T]: T[K];
+};

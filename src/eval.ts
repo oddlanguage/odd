@@ -84,7 +84,8 @@ const _eval = (
             at: branch.offset,
             size: branch.size
           }
-        ]
+        ],
+        cache: {}
       });
     }
   }
@@ -226,7 +227,8 @@ const destructuring = (
           at: branch.children[0]!.offset,
           size: branch.children[0]!.size
         }
-      ]
+      ],
+      cache: {}
     });
   }
   return result;
@@ -355,7 +357,8 @@ const declaration = (
             at: pattern.offset,
             size: pattern.size
           }
-        ]
+        ],
+        cache: {}
       });
     }
   }
@@ -549,7 +552,8 @@ const symbol = (
           at: token.offset,
           size: token.size
         }
-      ]
+      ],
+      cache: {}
     });
   }
   return [value, env] as const;

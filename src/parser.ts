@@ -1,6 +1,7 @@
 // https://hackage.haskell.org/package/parsec-3.1.15.1/docs/Text-Parsec.html#v:-60--42-
 
 import {
+  Mutable,
   redUnderline,
   serialise,
   unique
@@ -13,6 +14,12 @@ type Result = State & (Success | Failure);
 type State = Readonly<{
   input: string;
   offset: number;
+  cache: Readonly<
+    Record<
+      number,
+      ReadonlyArray<readonly [Parser, Result]>
+    >
+  >;
 }>;
 
 type Success = Readonly<{
@@ -70,7 +77,8 @@ export const run =
   (input: string, offset = 0) =>
     parser({
       input,
-      offset
+      offset,
+      cache: {}
     });
 
 export const string =
@@ -382,51 +390,56 @@ export const map =
 export const node =
   (type: string) =>
   (parser: Parser): Parser =>
-  state => {
-    const result = parser(state);
-    return result.ok
-      ? map(children => [
-          {
-            type,
-            children,
-            offset: state.offset,
-            size: result.offset - state.offset
-          }
-        ])(() => result)(state)
-      : result;
-  };
+    memo(state => {
+      const result = parser(state);
+      return result.ok
+        ? map(children => [
+            {
+              type,
+              children,
+              offset: state.offset,
+              size: result.offset - state.offset
+            }
+          ])(() => result)(state)
+        : result;
+    });
 
-export const nodeLeft = (type: string, size = 2) =>
-  map(children => {
-    const offset = children[0]!.offset;
-    const nodeSize =
-      children[children.length - 1]!.offset - offset;
-    let i = size;
-    let node: Branch = {
-      type,
-      children: children.slice(0, i),
-      offset,
-      size: nodeSize
-    };
-    const step = Math.max(1, size - 1);
-    while (i < children.length) {
-      const sliced = children.slice(i, i + step);
-      const offset = sliced[0]!.offset;
-      const nodeSize =
-        sliced[sliced.length - 1]!.offset - offset;
-      node = {
-        type,
-        children: [
-          node,
-          ...sliced
-        ] as ReadonlyArray<Branch>,
-        offset,
-        size: nodeSize
-      };
-      i += step;
-    }
-    return [node as Branch];
-  });
+export const nodeLeft =
+  (type: string, size = 2) =>
+  (parser: Parser) =>
+    memo(
+      map(children => {
+        const offset = children[0]!.offset;
+        const nodeSize =
+          children[children.length - 1]!.offset -
+          offset;
+        let i = size;
+        let node: Branch = {
+          type,
+          children: children.slice(0, i),
+          offset,
+          size: nodeSize
+        };
+        const step = Math.max(1, size - 1);
+        while (i < children.length) {
+          const sliced = children.slice(i, i + step);
+          const offset = sliced[0]!.offset;
+          const nodeSize =
+            sliced[sliced.length - 1]!.offset - offset;
+          node = {
+            type,
+            children: [
+              node,
+              ...sliced
+            ] as ReadonlyArray<Branch>,
+            offset,
+            size: nodeSize
+          };
+          i += step;
+        }
+        return [node as Branch];
+      })(parser)
+    );
 
 // TODO: This parser consumes all of the internal errors
 export const oneOrMore =
@@ -507,4 +520,20 @@ export const notBefore =
           ]
         }
       : result;
+  };
+
+export const memo =
+  (parser: Parser): Parser =>
+  state => {
+    const cached = state.cache[state.offset]?.find(
+      ([p]) => p === parser
+    );
+    if (cached) return cached[1];
+    const result = parser(state);
+    (state.cache[state.offset] as Mutable<
+      typeof state["cache"][number]
+    >) = (state.cache[state.offset] ?? []).concat([
+      [parser, result]
+    ]);
+    return result;
   };
