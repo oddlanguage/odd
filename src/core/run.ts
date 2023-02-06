@@ -1,6 +1,6 @@
-import _eval, { Env } from "./eval.js";
+import _eval from "./eval.js";
 import parse, { defaultEnv } from "./odd.js";
-import { serialise } from "./util.js";
+import { log } from "./util.js";
 
 const [target, outfile] = process.argv.slice(2);
 outfile;
@@ -15,20 +15,19 @@ const compile = async (target: string) => {
 
 const repl = async () => {
   process.stdin.setEncoding("utf-8");
-  process.stdout.write(`Odd v0.3.2 repl\n> `);
-  let env: Env = defaultEnv;
+  process.stdout.write(`Odd v0.3.3 repl\n> `);
+  let env = defaultEnv;
   for await (const input of process.stdin) {
     const inputWithoutNewline = input.replace(
       /\r*\n$/,
       ""
     );
     try {
-      const [result, newEnv] = _eval(
+      const [result, , newEnv] = _eval(
         parse(inputWithoutNewline),
-        env,
-        inputWithoutNewline
+        env
       );
-      console.log(serialise(result));
+      log(result);
       env = newEnv;
     } catch (err) {
       console.error(err);

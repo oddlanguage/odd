@@ -1,6 +1,7 @@
 // https://hackage.haskell.org/package/parsec-3.1.15.1/docs/Text-Parsec.html#v:-60--42-
 
 import {
+  formatBytes,
   Mutable,
   redUnderline,
   serialise,
@@ -245,11 +246,15 @@ export const benchmark =
   (parser: Parser): Parser =>
   state => {
     const before = performance.now();
+    const memoryBefore =
+      process.memoryUsage().heapUsed;
     const result = parser(state);
     console.log(
       `Took ${(performance.now() - before).toFixed(
         2
-      )}ms`
+      )}ms and used ${formatBytes(
+        process.memoryUsage().heapUsed - memoryBefore
+      )}`
     );
     return result;
   };
@@ -485,7 +490,9 @@ export const except =
           ok: false,
           problems: [
             {
-              unexpected: state.input[state.offset]!,
+              unexpected: `"${state.input[
+                state.offset
+              ]!}"`,
               at: state.offset
             }
           ]
@@ -514,7 +521,9 @@ export const notBefore =
           ok: false,
           problems: [
             {
-              unexpected: result.input[result.offset]!,
+              unexpected: `"${result.input[
+                result.offset
+              ]!}"`,
               at: result.offset
             }
           ]

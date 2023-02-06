@@ -7,6 +7,7 @@ import {
   chain,
   choice,
   eof,
+  except,
   ignore,
   label,
   lazy,
@@ -25,8 +26,8 @@ import {
   _try
 } from "./parser.js";
 import {
-  difference,
   equal,
+  ReadonlyRecord,
   serialise
 } from "./util.js";
 
@@ -34,21 +35,12 @@ const comment = pattern(/--[^\n]+/);
 
 const spaces = pattern(/\s+/);
 
-const ws = _try(
-  ignore(oneOrMore(choice([spaces, comment])))
-);
+const wildcard = pattern(/_+/, "wildcard");
 
-const listOf = (parser: Parser) =>
-  chain([
-    separatedBy(chain([ws, ignore(string(",")), ws]))(
-      parser
-    ),
-    ws,
-    _try(ignore(string(",")))
-  ]);
-
-const name = label("a name")(
-  pattern(/[a-z]+\w*(?:-\w+)*/i, "name")
+const name = except(string("of"))(
+  label("a name")(
+    pattern(/[a-z]+\w*(?:-\w+)*/i, "name")
+  )
 );
 
 const oddString = label("a string")(
@@ -64,10 +56,23 @@ const number = label("a number")(
 
 const operator = label("an operator")(
   pattern(
-    /[-=!@#$%^&*_+:\|\/\\\.\<\>\?]+(?<!^(?:=|->|\.(?=\d)))/,
+    /[-=!@#$%^&*_+:|/\\.<>?]+(?<!^(?:\.(?=\d)|->|[=:]))/,
     "operator"
   )
 );
+
+const ws = _try(
+  ignore(oneOrMore(choice([spaces, comment])))
+);
+
+const listOf = (parser: Parser) =>
+  chain([
+    separatedBy(chain([ws, ignore(string(",")), ws]))(
+      parser
+    ),
+    ws,
+    _try(ignore(string(",")))
+  ]);
 
 const parenthesised = between(ignore(string("(")))(
   ignore(string(")"))
@@ -82,10 +87,11 @@ const _pattern = choice([
 const literalPattern = node("literal-pattern")(
   choice([
     oddString,
-    name,
+    pattern(/true|false/, "boolean"),
     number,
-    pattern(/_+/, "wildcard-pattern"),
-    parenthesised(operator)
+    parenthesised(operator),
+    name,
+    wildcard
   ])
 );
 
@@ -111,7 +117,7 @@ const recordPattern = node("record-pattern")(
   chain([
     ignore(string("{")),
     ws,
-    listOf(lazy(() => fieldPattern)),
+    optional(listOf(lazy(() => fieldPattern))),
     ws,
     ignore(string("}"))
   ])
@@ -138,11 +144,6 @@ const infixPattern = node("infix-pattern")(
     lazy(() => _pattern)
   ])
 );
-
-const parameters = choice([
-  infixPattern,
-  separatedBy(ws)(_pattern)
-]);
 
 // TODO: Cleanup
 const declaration = node("declaration")(
@@ -184,7 +185,7 @@ const declaration = node("declaration")(
     const offset = funPart[0]!.offset;
     const size =
       funPart[funPart.length - 1]!.offset - offset;
-    let node = {
+    const node = {
       type: "lambda",
       children: funPart,
       offset,
@@ -211,7 +212,10 @@ const declaration = node("declaration")(
     return [children[0]!, node as Branch];
   })(
     chain([
-      parameters,
+      choice([
+        infixPattern,
+        separatedBy(ws)(_pattern)
+      ]),
       ws,
       ignore(string("=")),
       ws,
@@ -224,11 +228,7 @@ const match = node("match")(
   chain([
     ignore(string("case")),
     ws,
-    // TODO: Allow expressions without parentheses
-    choice([
-      lazy(() => literal),
-      parenthesised(lazy(() => expression))
-    ]),
+    lazy(() => expression),
     ws,
     ignore(string("of")),
     ws,
@@ -257,7 +257,7 @@ const lambda = map(children => {
   const offset = children[0]!.offset;
   const size =
     children[children.length - 1]!.offset - offset;
-  let node = {
+  const node = {
     type: "lambda",
     children,
     offset,
@@ -284,7 +284,7 @@ const lambda = map(children => {
   return [node as Branch];
 })(
   chain([
-    parameters,
+    separatedBy(ws)(_pattern),
     ws,
     ignore(string("->")),
     ws,
@@ -431,7 +431,7 @@ export default parse;
 
 export const nothing = Symbol("nothing");
 
-export const defaultEnv = {
+export const defaultEnv: ReadonlyRecord = {
   "/": (b: any) => (a: any) => a / b,
   "*": (b: any) => (a: any) => a * b,
   "+": (b: any) => (a: any) => a + b,
@@ -457,7 +457,7 @@ export const defaultEnv = {
   false: false,
   nothing,
   infinity: Infinity,
-  not: (x: any) => !x,
+  not: (x: any) => [0, nothing, false].includes(x),
   has: (k: string) => (x: any) => k in x,
   map: (f: (x: any) => any) => (xs: any[]) =>
     xs.map(f),
@@ -527,11 +527,7 @@ export const defaultEnv = {
         path.parse(name).ext ? name : name + ".odd",
         "utf8"
       );
-
-      return difference(
-        defaultEnv,
-        _eval(parse(input), defaultEnv, input)[1]
-      );
+      return _eval(parse(input), defaultEnv)[1];
     } catch (err: any) {
       throw err.code === "ENOENT"
         ? `Cannot resolve module "${name}".`

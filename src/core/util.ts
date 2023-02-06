@@ -123,3 +123,35 @@ export const omit =
 export type Mutable<T> = {
   -readonly [K in keyof T]: T[K];
 };
+
+export const formatBytes = (
+  bytes: number,
+  decimals = 2
+) => {
+  if (!+bytes) return "0 Bytes";
+
+  const k = 1024;
+  const dm = decimals < 0 ? 0 : decimals;
+  const sizes = ["Bytes", "KB", "MB", "GB"];
+
+  let i = Math.floor(Math.log(bytes) / Math.log(k));
+  if (Number.isNaN(i)) i = 0;
+
+  return `${parseFloat(
+    (bytes / Math.pow(k, i)).toFixed(dm)
+  )} ${sizes[i]}`;
+};
+
+export const largest = <T>(x: T[], y: T[]) =>
+  x.length >= y.length ? x : y;
+
+export const zip = <T>(x: T[], y: T[]) =>
+  largest(x, y).map(
+    (_, i) => [x[i], y[i]] as const
+  ) as ReadonlyArray<
+    readonly [T | undefined, T | undefined]
+  >;
+
+export type ReadonlyRecord = Readonly<
+  Record<string, any>
+>;

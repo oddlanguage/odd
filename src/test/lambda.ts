@@ -1,15 +1,11 @@
-import _eval from "../eval.js";
-import parse, { defaultEnv } from "../odd.js";
-import test from "../test.js";
-import { difference, equal } from "../util.js";
+import _eval from "../core/eval.js";
+import parse, { defaultEnv } from "../core/odd.js";
+import test from "../core/test.js";
+import { difference, equal } from "../core/util.js";
 
 test("Lambdas do not pollute parent scope", () => {
   const code = `(a -> a) 1`;
-  const [_, env] = _eval(
-    parse(code),
-    defaultEnv,
-    code
-  );
+  const [, , env] = _eval(parse(code), defaultEnv);
   return equal(difference(env, defaultEnv), {});
 });
 
@@ -22,12 +18,12 @@ test("Multiple parameters are desugared", () =>
 
 test("First-order record pattern argument destructuring", () => {
   const code = `({a}->a) {a=1}`;
-  const [value] = _eval(parse(code), defaultEnv, code);
+  const [value] = _eval(parse(code), defaultEnv);
   return value === 1;
 });
 
 test("First-order list pattern argument destructuring", () => {
   const code = `([a]->a) [1]`;
-  const [value] = _eval(parse(code), defaultEnv, code);
+  const [value] = _eval(parse(code), defaultEnv);
   return value === 1;
 });
