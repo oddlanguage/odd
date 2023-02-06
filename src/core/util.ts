@@ -33,7 +33,8 @@ export const isPrimitive = (
     "number",
     "string",
     "boolean",
-    "undefined"
+    "undefined",
+    "function"
   ].includes(typeof value) || value === null;
 
 export const equal = <
