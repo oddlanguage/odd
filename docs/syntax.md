@@ -595,7 +595,7 @@ For example, you can destructure specific properties from a record parameter as 
 daniel = {
   name = ''Daniel'',
   age = 20,
-  occupation: ''Steward'',
+  occupation = ''Steward'',
 };
 
 get-name { name } = name;
@@ -655,22 +655,22 @@ people = [
   {
     name = ''Daniel'',
     age = 20,
-    occupation: ''Steward'',
+    occupation = ''Steward'',
   },
   {
     name = ''Bearnhardt'',
     age = 53,
-    occupation: ''Medieval Knight'',
+    occupation = ''Medieval Knight'',
   },
   {
     name = ''Molly'',
     age = 41,
-    occupation: ''Stewardess'',
+    occupation = ''Stewardess'',
   },
   {
     name = ''Iseabail'',
     age = 19,
-    occupation: ''Nurse'',
+    occupation = ''Nurse'',
   },
 ];
 
