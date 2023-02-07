@@ -84,12 +84,16 @@ infinity > 1 -- true
 
 It's really useful to be able to say something holds no value, instead of crashing and burning. There's a special literal for this case: `nothing`. It behaves somewhat like `null` would in other c-like languages.
 
+> ℹ️ It behaves _only somehwat_ like it. [_The billion dollar mistake_](https://www.infoq.com/presentations/Null-References-The-Billion-Dollar-Mistake-Tony-Hoare/) is not repeated. Only `nothing` can be `nothing`, no other value can inhabit its type.
+
 Nothing is equal to `nothing`, except itself:
 
 ```hs
 nothing == nothing -- true
 1 == nothing -- false
 ```
+
+> ℹ️ When the type system is implemented, union types will allow you to express optionality by unioning the types: `x : Number | Nothing`.
 
 ### Numbers
 

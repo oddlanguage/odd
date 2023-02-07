@@ -198,7 +198,14 @@ const field: Eval = (tree, env) => {
   const field = (tree as Branch).children[0]!;
   switch (field.type) {
     case "declaration":
-      return [_eval(field, env)[1], null, env];
+      return [
+        extractPattern(
+          (field as Branch).children[0] as Branch,
+          _eval((field as Branch).children[1]!, env)[0]
+        ),
+        null,
+        env
+      ];
     case "name":
       return [
         {
