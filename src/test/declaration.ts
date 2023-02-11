@@ -39,7 +39,10 @@ test("Custom infix operators", () => {
 });
 
 test("Custom infix operators preserve scope", () => {
-  const code = `a %^& b = 7;1 %^& 3`;
+  const code = `
+		a %^& b = 7;
+		1 %^& 3;
+	`;
   const [, , env] = _eval(parse(code), defaultEnv);
   return (
     typeof difference(env, defaultEnv)["%^&"] ===
@@ -56,7 +59,10 @@ test("Infix declarations are desugared into lambdas", () =>
   ));
 
 test("Infix declarations allow arbitrary patterns", () => {
-  const code = "{a} %^& [b] = a+b;{a=1}%^&[2]";
+  const code = `
+		{a} %^& [b] = a + b;
+		{a=1} %^& [2];
+	`;
   const [value] = _eval(parse(code), defaultEnv);
   return value === 3;
 });
@@ -73,10 +79,10 @@ test("Nth-order list pattern destructuring", () => {
 });
 
 test("Nth-order record pattern destructuring", () => {
-  const code = `{a,b={c,d={ef}}}={a=1,b={c=2,d={ef=3}}};`;
+  const code = `{a,b={c,d={e}}}={a=1,b={c=2,d={e=3}}};`;
   const [, , env] = _eval(parse(code), defaultEnv);
   return (
-    env["a"] === 1 && env["c"] === 2 && env["ef"] === 3
+    env["a"] === 1 && env["c"] === 2 && env["e"] === 3
   );
 });
 
@@ -99,16 +105,24 @@ test("Record destructuring rest pattern", () => {
 });
 
 test("Self recursion", () => {
-  const code = `fib n = case (n <= 1) of true = n, false = fib (n - 2) + fib (n - 1); fib 10`;
+  const code = `
+		fib n = case (n <= 1) of
+			true = n,
+			false = fib (n - 2) + fib (n - 1);
+		fib 10`;
   const [value] = _eval(parse(code), defaultEnv);
   return value === 55;
 });
 
 test("Mutual recursion", () => {
   const code = `
-		is-odd n = n == 1 | is-even (n - 1);
-		is-even n = n == 0 | is-odd (n - 1);
-		is-odd 10;
+		is-odd n = case (n == 1) of
+			true = true,
+			false = is-even (n - 1);
+		is-even n = case (n == 0) of
+			true = true,
+			false = is-odd (n - 1);
+		is-odd 3;
 	`;
   const [value] = _eval(parse(code), defaultEnv);
   return value === true;

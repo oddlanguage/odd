@@ -34,7 +34,8 @@ export const isPrimitive = (
     "string",
     "boolean",
     "undefined",
-    "function"
+    "function",
+    "symbol"
   ].includes(typeof value) || value === null;
 
 export const equal = <
@@ -45,7 +46,8 @@ export const equal = <
   filter: ([key, value]: [
     string,
     any
-  ]) => boolean = () => true
+  ]) => boolean = () => true,
+  depth = 0
 ): boolean => {
   if ([a, b].some(isPrimitive)) return a === b;
 
@@ -60,7 +62,8 @@ export const equal = <
     entriesA.length === entriesB.length &&
     entriesA.every(
       ([key, value]) =>
-        key in b && equal(value, b[key], filter)
+        key in b &&
+        equal(value, b[key], filter, depth + 1)
     )
   );
 };

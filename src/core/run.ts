@@ -15,16 +15,19 @@ const compile = async (target: string) => {
 
 const repl = async () => {
   process.stdin.setEncoding("utf-8");
-  process.stdout.write(`Odd v0.3.4 repl\n> `);
+  process.stdout.write(`Odd v0.3.5 repl\n> `);
+
   let env = defaultEnv;
+
   for await (const input of process.stdin) {
-    const inputWithoutNewline = input.replace(
+    const inputWithoutFinalNewline = input.replace(
       /\r*\n$/,
       ""
     );
+
     try {
       const [result, , newEnv] = _eval(
-        parse(inputWithoutNewline),
+        parse(inputWithoutFinalNewline),
         env
       );
       log(result);
@@ -32,6 +35,7 @@ const repl = async () => {
     } catch (err) {
       console.error(err);
     }
+
     process.stdout.write("\n> ");
   }
 };

@@ -28,6 +28,7 @@ import {
 import {
   equal,
   ReadonlyRecord,
+  redUnderline,
   serialise
 } from "./util.js";
 
@@ -533,5 +534,8 @@ export const defaultEnv: ReadonlyRecord = {
         ? `Cannot resolve module "${name}".`
         : err.toString();
     }
+  },
+  panic: (reason: string) => {
+    throw redUnderline("Uh oh: " + reason);
   }
 };

@@ -1,6 +1,10 @@
 import { nothing } from "./odd.js";
 import { Branch, Token, Tree } from "./parser.js";
-import { log, ReadonlyRecord } from "./util.js";
+import {
+  log,
+  Mutable,
+  ReadonlyRecord
+} from "./util.js";
 
 // TODO: Skip .wat and go straight to .wasm
 // https://www.youtube.com/watch?v=pkw9USN_Tko
@@ -66,13 +70,16 @@ const program: Eval = (tree, env) =>
         newEnv
       ];
     },
-    [nothing, {}, env] as const
+    [nothing, {}, { ...env }] as const
   );
 
 const declaration: Eval = (tree, env) => {
+  const mutableEnvToAllowRecursion: Mutable<ReadonlyRecord> =
+    env;
+
   const [rhs] = _eval(
     (tree as Branch).children[1]!,
-    env
+    mutableEnvToAllowRecursion
   );
 
   const extracted = extractPattern(
@@ -80,11 +87,15 @@ const declaration: Eval = (tree, env) => {
     rhs
   );
 
-  for (const key of Object.keys(extracted))
+  for (const [key, value] of Object.entries(
+    extracted
+  )) {
     if (key in env)
       throw `"${key}" is already defined.`;
+    mutableEnvToAllowRecursion[key] = value;
+  }
 
-  return [rhs, extracted, { ...env, ...extracted }];
+  return [rhs, extracted, mutableEnvToAllowRecursion];
 };
 
 const number: Eval = (tree, env) => [
@@ -139,6 +150,9 @@ const string: Eval = (tree, env) => [
   env
 ];
 
+// BUG: TODO: If operators evaluate RHS first,
+// it can never short-circuit in case of boolean
+// operators.
 const infix: Eval = (tree, env) => {
   const [lhs] = _eval(
     (tree as Branch).children[0]!,

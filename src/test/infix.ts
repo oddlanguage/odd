@@ -46,3 +46,12 @@ test("Literal application follows natural order", () => {
   const [b] = _eval(parse(code2), defaultEnv);
   return a === b;
 });
+
+test("Boolean operators don't evaluate both sides", () => {
+  [
+    `true | panic ''"|" didn't short-circuit.''`,
+    `false & panic ''"&" didn't short-circuit.''`
+  ].forEach(code => _eval(parse(code), defaultEnv));
+
+  return true;
+});
