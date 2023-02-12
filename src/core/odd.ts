@@ -404,9 +404,7 @@ const statement = choice([
   lazy(() => expression)
 ]);
 
-const expression = label("an expression")(
-  precedenceMatch
-);
+const expression = precedenceMatch;
 
 const statements = chain([
   separatedBy(chain([ws, ignore(string(";")), ws]))(
