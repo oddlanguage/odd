@@ -15,7 +15,7 @@ const compile = async (target: string) => {
 
 const repl = async () => {
   process.stdin.setEncoding("utf-8");
-  process.stdout.write(`Odd v0.3.5 repl\n> `);
+  process.stdout.write(`Odd v0.3.6 repl\n> `);
 
   let env = defaultEnv;
 
@@ -24,18 +24,17 @@ const repl = async () => {
       /\r*\n$/,
       ""
     );
-
     try {
       const [result, , newEnv] = _eval(
         parse(inputWithoutFinalNewline),
-        env
+        env,
+        inputWithoutFinalNewline
       );
       log(result);
       env = newEnv;
     } catch (err) {
       console.error(err);
     }
-
     process.stdout.write("\n> ");
   }
 };

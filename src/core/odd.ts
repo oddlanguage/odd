@@ -526,14 +526,34 @@ export const defaultEnv: ReadonlyRecord = {
         path.parse(name).ext ? name : name + ".odd",
         "utf8"
       );
-      return _eval(parse(input), defaultEnv)[1];
+      return _eval(parse(input), defaultEnv, input)[1];
     } catch (err: any) {
+      // TODO: use `makeError`
       throw err.code === "ENOENT"
         ? `Cannot resolve module "${name}".`
         : err.toString();
     }
   },
   panic: (reason: string) => {
+    // TODO: Use `makeError`
     throw redUnderline("Uh oh: " + reason);
+  },
+  benchmark: (f: Function) => {
+    const times: number[] = [];
+    let result: any;
+    for (let i = 0; i < 100; i++) {
+      const before = performance.now();
+      result = f();
+      times.push(performance.now() - before);
+      if (i === 99) {
+        console.log(
+          `Takes ~${(
+            times.reduce((a, b) => a + b, 0) /
+            times.length
+          ).toFixed(3)}ms on average`
+        );
+        return result;
+      }
+    }
   }
 };

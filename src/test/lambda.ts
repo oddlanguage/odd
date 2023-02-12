@@ -5,7 +5,11 @@ import { difference, equal } from "../core/util.js";
 
 test("Lambdas do not pollute parent scope", () => {
   const code = `(a -> a) 1`;
-  const [, , env] = _eval(parse(code), defaultEnv);
+  const [, , env] = _eval(
+    parse(code),
+    defaultEnv,
+    code
+  );
   return equal(difference(env, defaultEnv), {});
 });
 
@@ -18,12 +22,12 @@ test("Multiple parameters are desugared", () =>
 
 test("First-order record pattern argument destructuring", () => {
   const code = `({a}->a) {a=1}`;
-  const [value] = _eval(parse(code), defaultEnv);
+  const [value] = _eval(parse(code), defaultEnv, code);
   return value === 1;
 });
 
 test("First-order list pattern argument destructuring", () => {
   const code = `([a]->a) [1]`;
-  const [value] = _eval(parse(code), defaultEnv);
+  const [value] = _eval(parse(code), defaultEnv, code);
   return value === 1;
 });

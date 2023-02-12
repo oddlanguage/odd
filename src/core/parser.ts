@@ -1,9 +1,13 @@
 // https://hackage.haskell.org/package/parsec-3.1.15.1/docs/Text-Parsec.html#v:-60--42-
 
 import {
+  Expected,
+  makeError,
+  Problem
+} from "./problem.js";
+import {
   formatBytes,
   Mutable,
-  redUnderline,
   serialise,
   unique
 } from "./util.js";
@@ -26,30 +30,6 @@ type State = Readonly<{
 type Success = Readonly<{
   ok: true;
   value: ReadonlyArray<Tree>;
-}>;
-
-type Problem = ProblemBase &
-  (Expected | Unexpected | EndOfInput | Custom);
-
-type ProblemBase = Readonly<{
-  at: number;
-  size?: number;
-}>;
-
-type Expected = Readonly<{
-  expected: string;
-}>;
-
-type Unexpected = Readonly<{
-  unexpected: string;
-}>;
-
-type EndOfInput = Readonly<{
-  endOfInput: true;
-}>;
-
-type Custom = Readonly<{
-  reason: string;
 }>;
 
 type Failure = Readonly<{
@@ -288,94 +268,9 @@ export const ignore =
       : result;
   };
 
-export const getLineOfProblem =
-  (failure: State & Failure) => (problem: Problem) => {
-    const start =
-      failure.input.lastIndexOf("\n", problem.at) + 1;
-    const maybeEnd = failure.input.indexOf(
-      "\n",
-      problem.at
-    );
-    const end =
-      maybeEnd === -1
-        ? failure.input.length
-        : maybeEnd;
-    const lineContent =
-      failure.input.slice(start, problem.at) +
-      redUnderline(
-        failure.input.slice(
-          problem.at,
-          problem.at + (problem.size ?? 1)
-        ) || " ".repeat(problem.size ?? 1)
-      ) +
-      failure.input.slice(
-        problem.at + (problem.size ?? 1),
-        end
-      );
-    const line =
-      (failure.input.slice(0, start - 1).match(/\n/g)
-        ?.length ?? 0) + 1;
-    const linePrefix = ` ${line} | `;
-
-    return `${linePrefix}${lineContent}`;
-  };
-
-const furthest = (problems: ReadonlyArray<Problem>) =>
-  problems.reduce(
-    (furthest, problem) =>
-      problem.at > (furthest[0]?.at ?? -1)
-        ? problems.filter(
-            ({ at }) => at === problem.at
-          )
-        : furthest,
-    [] as Problem[]
-  );
-
-const weigh = (problem: Problem) => {
-  if ((problem as Expected).expected) {
-    return 1;
-  } else if ((problem as Unexpected).unexpected) {
-    return 2;
-  } else if ((problem as EndOfInput).endOfInput) {
-    return 3;
-  }
-  return 0;
-};
-
-export const makeError = (
-  failure: State & Failure
-) => {
-  const prefix = `❌ Uh oh, something went wrong!`;
-  const problems = furthest(failure.problems);
-  return (
-    prefix +
-    "\n\n" +
-    getLineOfProblem(failure)(problems[0]!) +
-    "\n\n" +
-    problems
-      .sort((a, b) => weigh(a) - weigh(b))
-      .map(problem => `- ${stringifyProblem(problem)}`)
-      .join("\n")
-  );
-};
-
-const stringifyProblem = (problem: Problem) => {
-  if ((problem as Expected).expected) {
-    return `Expected ${
-      (problem as Expected).expected
-    }`;
-  } else if ((problem as Unexpected).unexpected) {
-    return `Unexpected ${
-      (problem as Unexpected).unexpected
-    }`;
-  } else if ((problem as EndOfInput).endOfInput) {
-    return `Unexpected end of input (EOF)`;
-  }
-  return (problem as Custom).reason;
-};
-
 export const unpack = (result: Result) => {
-  if (!result.ok) throw makeError(result);
+  if (!result.ok)
+    throw makeError(result.input, result.problems);
   return result.value;
 };
 
