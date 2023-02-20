@@ -2,8 +2,11 @@ import { readFileSync } from "node:fs";
 import path from "node:path";
 import _eval from "./eval.js";
 import {
-  between,
   Branch,
+  Parser,
+  Token,
+  _try,
+  between,
   chain,
   choice,
   eof,
@@ -16,18 +19,15 @@ import {
   nodeLeft,
   oneOrMore,
   optional,
-  Parser,
   pattern,
   run,
   separatedBy,
   string,
-  Token,
-  unpack,
-  _try
+  unpack
 } from "./parser.js";
 import {
-  equal,
   ReadonlyRecord,
+  equal,
   redUnderline,
   serialise
 } from "./util.js";
@@ -458,6 +458,9 @@ export const defaultEnv: ReadonlyRecord = {
   infinity: Infinity,
   not: (x: any) => [0, nothing, false].includes(x),
   has: (k: string) => (x: any) => k in x,
+  range: (n: number) => [...Array(n).keys()],
+  "range-from": (from: number) => (to: number) =>
+    [...Array(to).keys()].slice(from),
   map: (f: (x: any) => any) => (xs: any[]) =>
     xs.map(f),
   group:
@@ -483,6 +486,20 @@ export const defaultEnv: ReadonlyRecord = {
     (a: any) =>
     (xs: any[]) =>
       xs.reduceRight((a, x) => f(x)(a), a),
+  replace:
+    (key: keyof any) =>
+    (value: any) =>
+    (target: any) => {
+      if (Array.isArray(target)) {
+        const clone = target.slice();
+        clone.splice(key as number, 1, value);
+        return clone;
+      } else {
+        const clone = { ...target };
+        clone[key] = value;
+        return clone;
+      }
+    },
   reverse: (xs: any[]) => xs.slice().reverse(),
   head: (xs: any[]) => xs[0] ?? nothing,
   tail: (xs: any[]) => xs.slice(1),
