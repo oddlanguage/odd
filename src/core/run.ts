@@ -1,19 +1,24 @@
+import { readFileSync } from "node:fs";
+import _compile from "./compile.js";
 import _eval from "./eval.js";
-import parse, { defaultEnv } from "./odd.js";
+import parse, {
+  defaultEnv,
+  defaultTypeEnv
+} from "./odd.js";
+import check, { stringify } from "./type.js";
 import { log } from "./util.js";
 
 const [target, outfile] = process.argv.slice(2);
 outfile;
 
 const compile = async (target: string) => {
-  // TODO: Re-enable when typechecker works
-  // const {
-  //   exports: { program }
-  // } = await WebAssembly.instantiate(
-  //   _compile(parse(readFileSync(target, "utf8"))),
-  //   {}
-  // );
-  // program;
+  const {
+    exports: { program }
+  } = await WebAssembly.instantiate(
+    _compile(parse(readFileSync(target, "utf8"))),
+    {}
+  );
+  program;
   throw "The compiler is not implemented yet.";
 };
 
@@ -22,8 +27,7 @@ const repl = async () => {
   process.stdout.write(`Odd v0.3.6 repl\n> `);
 
   let env = defaultEnv;
-  // TODO: Re-enable when typechecker works
-  // let typeEnv = defaultTypeEnv;
+  let typeEnv = defaultTypeEnv;
 
   for await (const input of process.stdin) {
     const inputWithoutFinalNewline = input.replace(
@@ -32,13 +36,18 @@ const repl = async () => {
     );
     try {
       const ast = parse(inputWithoutFinalNewline);
-      // TODO: Re-enable when typechecker works
-      // const [type, , newTypeEnv] = check(
-      //   ast,
-      //   typeEnv,
-      //   inputWithoutFinalNewline
-      // );
-      // log(stringify(type));
+      try {
+        const [type, , newTypeEnv] = check(
+          ast,
+          typeEnv,
+          inputWithoutFinalNewline
+        );
+        log(stringify(type));
+        typeEnv = newTypeEnv;
+      } catch (err) {
+        console.error(err);
+        console.log("\nSkipping typechecking\n");
+      }
       const [result, , newEnv] = _eval(
         ast,
         env,
@@ -46,8 +55,6 @@ const repl = async () => {
       );
       log(result);
       env = newEnv;
-      // TODO: Re-enable when typechecker works
-      // typeEnv = newTypeEnv;
     } catch (err) {
       console.error(err);
     }
