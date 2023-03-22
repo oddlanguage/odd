@@ -1,5 +1,3 @@
-import { readFileSync } from "node:fs";
-import { default as _compile } from "./compile.js";
 import _eval from "./eval.js";
 import parse, { defaultEnv } from "./odd.js";
 import { log } from "./util.js";
@@ -8,13 +6,14 @@ const [target, outfile] = process.argv.slice(2);
 outfile;
 
 const compile = async (target: string) => {
-  const {
-    exports: { program }
-  } = await WebAssembly.instantiate(
-    _compile(parse(readFileSync(target, "utf8"))),
-    {}
-  );
-  program;
+  // TODO: Re-enable when typechecker works
+  // const {
+  //   exports: { program }
+  // } = await WebAssembly.instantiate(
+  //   _compile(parse(readFileSync(target, "utf8"))),
+  //   {}
+  // );
+  // program;
   throw "The compiler is not implemented yet.";
 };
 
