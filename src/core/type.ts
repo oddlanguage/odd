@@ -3,12 +3,13 @@ import { makeError } from "./problem.js";
 import { ReadonlyRecord } from "./util.js";
 
 export const oddNothing = Symbol("Nothing");
+export const oddNever = Symbol("Never");
 export const oddNumber = Symbol("Number");
 export const oddBoolean = Symbol("Boolean");
 export const oddString = Symbol("String");
-export const oddLambda = Symbol("Lambda");
-export const oddRecord = Symbol("Record");
-export const oddList = Symbol("List");
+const oddLambda = Symbol("Lambda");
+const oddRecord = Symbol("Record");
+const oddList = Symbol("List");
 const oddTuple = Symbol("Tuple");
 const oddRow = Symbol("Row");
 const oddUnion = Symbol("Union");
@@ -24,12 +25,17 @@ type TypeConstructor = Readonly<{
 
 export const newLambdaType = (
   arg: Type,
-  body: Type
+  body: Type,
+  parenthesise?: boolean
 ): TypeConstructor => ({
   name: oddLambda,
   children: [arg, body],
-  stringify: () =>
-    [arg, body].map(stringify).join(" -> ")
+  stringify: () => {
+    const str = [arg, body]
+      .map(stringify)
+      .join(" -> ");
+    return parenthesise ? `(${str})` : str;
+  }
 });
 
 export const newUnionType = (
@@ -70,7 +76,7 @@ export const newRecordType = (
   const rows = Object.entries(types).map(row => ({
     name: oddRow,
     children: row,
-    stringify: () => row.map(stringify).join(" : ")
+    stringify: () => `${row[0]} : ${stringify(row[1])}`
   }));
   return {
     name: oddRecord,
@@ -78,6 +84,37 @@ export const newRecordType = (
     stringify: () => `{ ${rows.map(stringify)} }`
   };
 };
+
+export const newGenericList = (
+  x: number
+): TypeConstructor => ({
+  name: oddList,
+  children: [x]
+});
+
+export const newGenericRecord = (
+  x: number
+): TypeConstructor => ({
+  name: oddRecord,
+  children: [x]
+});
+
+const oddTypeClassConstraint = Symbol(
+  "TypeclassConstraint"
+);
+export const newTypeclassConstraint = (
+  constraints: ReadonlyRecord<string, Type>,
+  type: Type
+): TypeConstructor => ({
+  name: oddTypeClassConstraint,
+  children: [type, ...Object.values(constraints)],
+  stringify: () =>
+    `(${Object.entries(constraints)
+      .map(([name, type]) =>
+        [stringify(type), name].join(" ")
+      )
+      .join(", ")}) => ${stringify(type)}`
+});
 
 const isConstructor = (
   type: Type
@@ -129,6 +166,8 @@ const check: Check = (tree, env, input) => {
       return string(tree, env, input);
     case "boolean":
       return boolean(tree, env, input);
+    case "infix":
+      return infix(tree, env, input);
     default:
       throw makeError(input, [
         {
@@ -321,6 +360,7 @@ const program: Check = (tree, env, input) => {
     return [type, null, env];
   }
 };
+
 const boolean: Check = (_, env) =>
   [oddBoolean, null, env] as const;
 
@@ -329,3 +369,15 @@ const string: Check = (_, env) =>
 
 const number: Check = (_, env) =>
   [oddNumber, null, env] as const;
+
+const infix: Check = (tree, env, input) => {
+  const op = check(
+    (tree as Branch).children[1]!,
+    env,
+    input
+  )[0] as TypeConstructor;
+  const returnType = (
+    op.children[1] as TypeConstructor
+  ).children[1]!;
+  return [returnType, null, env] as const;
+};

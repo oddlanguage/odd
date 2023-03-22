@@ -21,10 +21,10 @@ const enum WASMType {
   ExternRef = 0x6f,
   FunRef = 0x70,
   Vec128 = 0x7b,
-  I32 = 0x7f,
-  I64 = 0x7e,
+  F64 = 0x7c,
   F32 = 0x7d,
-  F64 = 0x7c
+  I64 = 0x7e,
+  I32 = 0x7f
 }
 
 const str2bin = (str: string) =>
