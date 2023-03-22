@@ -1,7 +1,11 @@
 import { readFileSync } from "node:fs";
 import { default as _compile } from "./compile.js";
 import _eval from "./eval.js";
-import parse, { defaultEnv } from "./odd.js";
+import parse, {
+  defaultEnv,
+  defaultTypeEnv
+} from "./odd.js";
+import check, { stringify } from "./type.js";
 import { log } from "./util.js";
 
 const [target, outfile] = process.argv.slice(2);
@@ -23,6 +27,7 @@ const repl = async () => {
   process.stdout.write(`Odd v0.3.6 repl\n> `);
 
   let env = defaultEnv;
+  let typeEnv = defaultTypeEnv;
 
   for await (const input of process.stdin) {
     const inputWithoutFinalNewline = input.replace(
@@ -30,13 +35,21 @@ const repl = async () => {
       ""
     );
     try {
+      const ast = parse(inputWithoutFinalNewline);
+      const [type, , newTypeEnv] = check(
+        ast,
+        typeEnv,
+        inputWithoutFinalNewline
+      );
+      log(stringify(type));
       const [result, , newEnv] = _eval(
-        parse(inputWithoutFinalNewline),
+        ast,
         env,
         inputWithoutFinalNewline
       );
       log(result);
       env = newEnv;
+      typeEnv = newTypeEnv;
     } catch (err) {
       console.error(err);
     }

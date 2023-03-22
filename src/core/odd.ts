@@ -26,6 +26,12 @@ import {
   unpack
 } from "./parser.js";
 import {
+  newLambdaType,
+  oddBoolean,
+  oddNothing,
+  oddNumber
+} from "./type.js";
+import {
   ReadonlyRecord,
   equal,
   redUnderline,
@@ -573,4 +579,51 @@ export const defaultEnv: ReadonlyRecord = {
       }
     }
   }
+};
+
+export const defaultTypeEnv: ReadonlyRecord = {
+  "/": newLambdaType(
+    oddNumber,
+    newLambdaType(oddNumber, oddNumber)
+  ),
+  "*": newLambdaType(
+    oddNumber,
+    newLambdaType(oddNumber, oddNumber)
+  ),
+  "+": newLambdaType(
+    oddNumber,
+    newLambdaType(oddNumber, oddNumber)
+  ),
+  "-": newLambdaType(
+    oddNumber,
+    newLambdaType(oddNumber, oddNumber)
+  ),
+  "%": newLambdaType(
+    oddNumber,
+    newLambdaType(oddNumber, oddNumber)
+  ),
+  "^": newLambdaType(
+    oddNumber,
+    newLambdaType(oddNumber, oddNumber)
+  ),
+  "<": newLambdaType(
+    oddNumber,
+    newLambdaType(oddNumber, oddNumber)
+  ),
+  ">": newLambdaType(
+    oddNumber,
+    newLambdaType(oddNumber, oddNumber)
+  ),
+  "<=": newLambdaType(
+    oddNumber,
+    newLambdaType(oddNumber, oddNumber)
+  ),
+  ">=": newLambdaType(
+    oddNumber,
+    newLambdaType(oddNumber, oddNumber)
+  ),
+  true: oddBoolean,
+  false: oddBoolean,
+  nothing: oddNothing,
+  infinity: oddNumber
 };

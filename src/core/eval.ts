@@ -94,20 +94,8 @@ const declaration: Eval = (tree, env, input) => {
     input
   );
 
-  for (const [key, value] of Object.entries(
-    extracted
-  )) {
-    if (key in env) {
-      throw makeError(input, [
-        {
-          reason: `"${key}" is already defined.`,
-          at: lhsTree.offset,
-          size: lhsTree.size
-        }
-      ]);
-    }
+  for (const [key, value] of Object.entries(extracted))
     mutableEnvToAllowRecursion[key] = value;
-  }
 
   return [rhs, extracted, mutableEnvToAllowRecursion];
 };
@@ -118,37 +106,17 @@ const number: Eval = (tree, env) => [
   env
 ];
 
-const name: Eval = (tree, env, input) => {
-  const { text: name } = tree as Token;
+const name: Eval = (tree, env) => [
+  env[(tree as Token).text],
+  null,
+  env
+];
 
-  if (!(name in env)) {
-    throw makeError(input, [
-      {
-        reason: `Unknown name "${name}".`,
-        at: tree.offset,
-        size: tree.size
-      }
-    ]);
-  }
-
-  return [env[name], null, env];
-};
-
-const operator: Eval = (tree, env, input) => {
-  const { text: op } = tree as Token;
-
-  if (!(op in env)) {
-    throw makeError(input, [
-      {
-        reason: `Unknown operator "${op}".`,
-        at: tree.offset,
-        size: tree.size
-      }
-    ]);
-  }
-
-  return [env[op], null, env];
-};
+const operator: Eval = (tree, env) => [
+  env[(tree as Token).text],
+  null,
+  env
+];
 
 const application: Eval = (tree, env, input) => {
   const lhsTree = (tree as Branch).children[0]!;

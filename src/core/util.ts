@@ -156,6 +156,7 @@ export const zip = <T>(x: T[], y: T[]) =>
     readonly [T | undefined, T | undefined]
   >;
 
-export type ReadonlyRecord = Readonly<
-  Record<string, any>
->;
+export type ReadonlyRecord<
+  K extends keyof any = string,
+  V = any
+> = Readonly<Record<K, V>>;
