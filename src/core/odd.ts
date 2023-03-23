@@ -841,5 +841,5 @@ export const defaultTypeEnv: ReadonlyRecord = {
     Symbol("Module")
   ),
   panic: newLambdaType(oddStringType, oddNever)
-  // benchmark: newLambdaType(oddLambda, oddNothing)
+  // benchmark: newLambdaType(oddLambda, oddNothing),
 };

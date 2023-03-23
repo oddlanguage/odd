@@ -135,15 +135,6 @@ const application: Eval = (tree, env, input) => {
   )
     return [lhs[rhs], null, env];
 
-  if (typeof lhs !== "function")
-    throw makeError(input, [
-      {
-        reason: "Cannot apply a non-function value.",
-        at: lhsTree.offset,
-        size: lhsTree.size
-      }
-    ]);
-
   return [lhs(rhs), null, env];
 };
 

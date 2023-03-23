@@ -1,6 +1,9 @@
 import { Branch, Token, Tree } from "./parser.js";
 import { makeError } from "./problem.js";
-import { ReadonlyRecord } from "./util.js";
+import {
+  ReadonlyRecord,
+  equal as structEqual
+} from "./util.js";
 
 export const oddNothing = Symbol("Nothing");
 export const oddNever = Symbol("Never");
@@ -116,6 +119,14 @@ export const newTypeclassConstraint = (
       .join(", ")}) => ${stringify(type)}`
 });
 
+const equal = (a: Type, b: Type) =>
+  ["number", "symbol", "string"].includes(typeof a)
+    ? a === b
+    : structEqual(
+        a as TypeConstructor,
+        b as TypeConstructor
+      );
+
 const isConstructor = (
   type: Type
 ): type is TypeConstructor =>
@@ -168,6 +179,8 @@ const check: Check = (tree, env, input) => {
       return boolean(tree, env, input);
     case "infix":
       return infix(tree, env, input);
+    case "application":
+      return application(tree, env, input);
     default:
       throw makeError(input, [
         {
@@ -380,4 +393,44 @@ const infix: Check = (tree, env, input) => {
     op.children[1] as TypeConstructor
   ).children[1]!;
   return [returnType, null, env] as const;
+};
+
+const application: Check = (tree, env, input) => {
+  const lhsTree = (tree as Branch).children[0]!;
+  const lhs = check(lhsTree, env, input)[0];
+
+  if (
+    !isConstructor(lhs) ||
+    ![oddLambda, oddRecord, oddList].includes(lhs.name)
+  ) {
+    throw makeError(input, [
+      {
+        reason: "Cannot apply a non-function value.",
+        at: lhsTree.offset,
+        size: lhsTree.size
+      }
+    ]);
+  }
+
+  const rhs = check(
+    (tree as Branch).children[1]!,
+    env,
+    input
+  )[0];
+
+  if (!equal(lhs.children[0]!, rhs)) {
+    throw makeError(input, [
+      {
+        reason: `Type mismatch in application of\n\n  ${stringify(
+          lhs
+        )}\n\nExpected:\n  ${stringify(
+          lhs.children[0]!
+        )}\nGot:\n  ${stringify(rhs)}`,
+        at: tree.offset,
+        size: tree.size
+      }
+    ]);
+  }
+
+  return [lhs.children[1]!, null, env] as const;
 };

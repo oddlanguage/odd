@@ -39,7 +39,7 @@ export const isPrimitive = (
   ].includes(typeof value) || value === null;
 
 export const equal = <
-  T extends Record<keyof any, any>
+  T extends Primitive | Record<keyof any, any>
 >(
   a: T,
   b: T,
@@ -51,19 +51,24 @@ export const equal = <
 ): boolean => {
   if ([a, b].some(isPrimitive)) return a === b;
 
-  const entriesA = Object.entries(a).filter(
-    filter as any
-  );
-  const entriesB = Object.entries(b).filter(
-    filter as any
-  );
+  const entriesA = Object.entries(
+    a as Record<keyof any, any>
+  ).filter(filter as any);
+  const entriesB = Object.entries(
+    b as Record<keyof any, any>
+  ).filter(filter as any);
 
   return (
     entriesA.length === entriesB.length &&
     entriesA.every(
       ([key, value]) =>
-        key in b &&
-        equal(value, b[key], filter, depth + 1)
+        key in b! &&
+        equal(
+          value,
+          (b as any)[key],
+          filter,
+          depth + 1
+        )
     )
   );
 };
