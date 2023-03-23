@@ -23,31 +23,32 @@ const compile = async (target: string) => {
 };
 
 const repl = async () => {
+  const versionString = "Odd v0.3.6 repl";
   process.stdin.setEncoding("utf-8");
-  process.stdout.write(`Odd v0.3.6 repl\n> `);
+  process.stdout.write(`${versionString}\n> `);
 
   let env = defaultEnv;
   let typeEnv = defaultTypeEnv;
+  const history: string[] = [];
 
   for await (const input of process.stdin) {
     const inputWithoutFinalNewline = input.replace(
       /\r*\n$/,
       ""
     );
+    history.push(inputWithoutFinalNewline);
+
     try {
       const ast = parse(inputWithoutFinalNewline);
-      try {
-        const [type, , newTypeEnv] = check(
-          ast,
-          typeEnv,
-          inputWithoutFinalNewline
-        );
-        log(stringify(type));
-        typeEnv = newTypeEnv;
-      } catch (err) {
-        console.error(err);
-        console.log("\nSkipping typechecking\n");
-      }
+
+      const [type, , newTypeEnv] = check(
+        ast,
+        typeEnv,
+        inputWithoutFinalNewline
+      );
+      log(stringify(type));
+      typeEnv = newTypeEnv;
+
       const [result, , newEnv] = _eval(
         ast,
         env,
@@ -55,9 +56,35 @@ const repl = async () => {
       );
       log(result);
       env = newEnv;
-    } catch (err) {
-      console.error(err);
+    } catch (error: any) {
+      console.error(
+        error instanceof Error
+          ? `❌ Uh oh! An internal Javascript error occured.\n\nPlease submit this issue by clicking the following link:\n\nhttps://github.com/oddlanguage/odd/issues/new?${new URLSearchParams(
+              Object.entries({
+                title: `${versionString} internal error`,
+                body: `Given the following input:\n\n\`\`\`\n${history.join(
+                  "\n"
+                )}\n\`\`\`\n\nThe following error occured:\n\n\`\`\`\n${
+                  error.stack
+                    ?.split("\n")
+                    .filter(
+                      line =>
+                        !/node:internal/.test(line)
+                    )
+                    .map(line =>
+                      line.replace(
+                        /file:\/\/.+(?=core)/,
+                        ""
+                      )
+                    )
+                    .join("\n") ?? error.toString()
+                }\n\`\`\``
+              })
+            ).toString()}`
+          : error.toString()
+      );
     }
+
     process.stdout.write("\n> ");
   }
 };
