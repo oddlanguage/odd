@@ -23,7 +23,7 @@ const compile = async (target: string) => {
 };
 
 const repl = async () => {
-  const versionString = "Odd v0.3.6 repl";
+  const versionString = "Odd v0.3.7 repl";
   process.stdin.setEncoding("utf-8");
   process.stdout.write(`${versionString}\n> `);
 
