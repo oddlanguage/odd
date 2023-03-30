@@ -157,7 +157,7 @@ test("Mutual recursion", () => {
   return value === true;
 });
 
-test("Lambdas are folded properly", () => {
+test("Curried declarations are folded properly", () => {
   const expected = {
     type: "program",
     children: [
