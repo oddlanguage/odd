@@ -1,7 +1,12 @@
 import _eval from "../core/eval.js";
 import parse, { defaultEnv } from "../core/odd.js";
 import test from "../core/test.js";
-import { difference, equal } from "../core/util.js";
+import {
+  diff,
+  difference,
+  equal,
+  serialise
+} from "../core/util.js";
 
 test("Declared values are stored in scope", () => {
   const code = `a = 1`;
@@ -150,4 +155,66 @@ test("Mutual recursion", () => {
 	`;
   const [value] = _eval(parse(code), defaultEnv, code);
   return value === true;
+});
+
+test("Lambdas are folded properly", () => {
+  const expected = {
+    type: "program",
+    children: [
+      {
+        type: "declaration",
+        children: [
+          {
+            type: "literal-pattern",
+            children: [
+              {
+                type: "name",
+                text: "a",
+                offset: 0,
+                size: 1
+              }
+            ],
+            offset: 0,
+            size: 1
+          },
+          {
+            type: "lambda",
+            children: [
+              {
+                type: "literal-pattern",
+                children: [
+                  {
+                    type: "name",
+                    text: "b",
+                    offset: 2,
+                    size: 1
+                  }
+                ],
+                offset: 2,
+                size: 1
+              },
+              {
+                type: "number",
+                text: "0",
+                offset: 6,
+                size: 1
+              }
+            ],
+            offset: 2,
+            size: 5
+          }
+        ],
+        offset: 0,
+        size: 7
+      }
+    ],
+    offset: 0,
+    size: 7
+  };
+
+  const a = parse("a b = 0");
+  if (!equal(expected, a))
+    throw serialise(diff(expected, a));
+
+  return true;
 });

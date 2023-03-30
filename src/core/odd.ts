@@ -201,7 +201,9 @@ const declaration = node("declaration")(
     const funPart = children.slice(1);
     const offset = funPart[0]!.offset;
     const size =
-      funPart[funPart.length - 1]!.offset - offset;
+      funPart[funPart.length - 1]!.offset +
+      funPart[funPart.length - 1]!.size -
+      offset;
     const node = {
       type: "lambda",
       children: funPart,
@@ -273,7 +275,9 @@ const lambda = map(children => {
   // Wrap multi-param into separate lambdas
   const offset = children[0]!.offset;
   const size =
-    children[children.length - 1]!.offset - offset;
+    children[children.length - 1]!.offset +
+    children[children.length - 1]!.size -
+    offset;
   const node = {
     type: "lambda",
     children,

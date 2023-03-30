@@ -53,10 +53,10 @@ export const equal = <
 
   const entriesA = Object.entries(
     a as Record<keyof any, any>
-  ).filter(filter as any);
+  ).filter(filter);
   const entriesB = Object.entries(
     b as Record<keyof any, any>
-  ).filter(filter as any);
+  ).filter(filter);
 
   return (
     entriesA.length === entriesB.length &&
@@ -113,8 +113,6 @@ export const difference = (
 
 export const typeOf = (x: any) => typeof x;
 
-export const equals = (b: any) => (a: any) => a === b;
-
 export const omit =
   <
     T extends Record<string, any>,
@@ -165,3 +163,36 @@ export type ReadonlyRecord<
   K extends keyof any = string,
   V = any
 > = Readonly<Record<K, V>>;
+
+type Difference = Readonly<{
+  chain: string;
+  a: any;
+  b: any;
+}>;
+
+export const diff = (
+  a: any,
+  b: any,
+  filter: ([key, value]: [
+    string,
+    any
+  ]) => boolean = () => true,
+  stack = [] as ReadonlyArray<Difference>,
+  chain = ""
+): ReadonlyArray<Difference> => {
+  if ([a, b].some(isPrimitive))
+    return a !== b ? [{ chain, a, b }] : stack;
+
+  return Object.entries(a)
+    .filter(filter)
+    .flatMap(([key, value]) =>
+      diff(
+        value,
+        b[key],
+        filter,
+        stack,
+        [chain, key].filter(Boolean).join(".")
+      )
+    )
+    .reverse();
+};
