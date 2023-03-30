@@ -311,7 +311,8 @@ export const nodeLeft =
       map(children => {
         const offset = children[0]!.offset;
         const nodeSize =
-          children[children.length - 1]!.offset -
+          children[children.length - 1]!.offset +
+          children[children.length - 1]!.size -
           offset;
         let i = size;
         let node: Branch = {
