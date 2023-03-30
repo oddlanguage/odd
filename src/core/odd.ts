@@ -584,16 +584,13 @@ export const defaultEnv: ReadonlyRecord = {
       const before = performance.now();
       result = f();
       times.push(performance.now() - before);
-      if (i === 99) {
-        console.log(
-          `Takes ~${(
-            times.reduce((a, b) => a + b, 0) /
-            times.length
-          ).toFixed(3)}ms on average`
-        );
-        return result;
-      }
     }
+    console.log(
+      `Takes ~${(
+        times.reduce((a, b) => a + b, 0) / times.length
+      ).toFixed(3)}ms on average`
+    );
+    return result;
   }
 };
 
