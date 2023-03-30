@@ -5,6 +5,7 @@ import parse, {
   defaultEnv,
   defaultTypeEnv
 } from "./odd.js";
+import check, { stringify } from "./type.js";
 import { log } from "./util.js";
 
 const [target, outfile] = process.argv.slice(2);
@@ -40,13 +41,13 @@ const repl = async () => {
     try {
       const ast = parse(inputWithoutFinalNewline);
 
-      // const [type, , newTypeEnv] = check(
-      //   ast,
-      //   typeEnv,
-      //   inputWithoutFinalNewline
-      // );
-      // log(stringify(type));
-      // typeEnv = newTypeEnv;
+      const [type, , newTypeEnv] = check(
+        ast,
+        typeEnv,
+        inputWithoutFinalNewline
+      );
+      log(stringify(type));
+      typeEnv = newTypeEnv;
 
       const [result, , newEnv] = _eval(
         ast,
