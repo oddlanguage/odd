@@ -46,15 +46,6 @@ npx tsc; # compile source
 node dist/run.js; # start a repl
 ```
 
-You can also compile files:
-
-> ℹ️ As of v0.1.3, the compiler is temporarily disabled because of work being done on the underlying infrastructure.
-
-```sh
-node dist/run.js path/to/file.odd; # Compile path/to/file.odd and emit to stdout
-node dist/run.js path/to/file.odd out/file.ext; # Compile path/to/file.odd and write to out/file.ext
-```
-
 When Odd is finished, it will be a standalone executable requiring no separate Node installation, or any other dependency.
 
 For a more in-depth look at how Odd works, [have a look at the documentation](docs/syntax.md).
