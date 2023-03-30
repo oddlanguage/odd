@@ -1,7 +1,7 @@
 # Odd Language
 
 <div align="center">
-<img src="./logo.svg" height="150" alt="A yellowish-grey square with a thin, faint red — almost pink — grid. In the centre of this square is the word 'odd', written with an industrial design typeface with no holes in the letters, rotated to the left by 45 degrees from the centre. Every letter of the word is composed of four separated coloured parts, going from yellow-orange, to orange, to soft-red to dark crimson. Both D's of the word have ascenders that extend to the end of the square.">
+<img src="./logo.svg" height="150" alt="An orange square with rounded corners and a thick, fat, darker orange outline. Within the square, the name of the language is carved out and outlined identically. The ascenders of the two d's extend out of the square's outline.">
 
 _Hmm, that's **odd**..._
 
