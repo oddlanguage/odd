@@ -1,25 +1,18 @@
-import { readFileSync } from "node:fs";
-import _compile from "./compile.js";
 import _eval from "./eval.js";
-import parse, {
-  defaultEnv,
-  defaultTypeEnv
-} from "./odd.js";
-import check, { stringify } from "./type.js";
+import parse, { defaultEnv } from "./odd.js";
+import { Branch } from "./parser.js";
+import {
+  defaultTypeEnv,
+  infer,
+  stringify
+} from "./type.js";
 import { log } from "./util.js";
 
 const [target, outfile] = process.argv.slice(2);
 outfile;
 
 const compile = async (target: string) => {
-  const {
-    exports: { program }
-  } = await WebAssembly.instantiate(
-    _compile(parse(readFileSync(target, "utf8"))),
-    {}
-  );
-  program;
-  throw "The compiler is not implemented yet.";
+  throw `Cannot compile "${target}": the compiler is not implemented yet.`;
 };
 
 const repl = async () => {
@@ -41,14 +34,12 @@ const repl = async () => {
     try {
       const ast = parse(inputWithoutFinalNewline);
 
-      const [type, , newTypeEnv] = check(
-        ast,
-        typeEnv,
-        inputWithoutFinalNewline
+      const [type, newTypeEnv] = infer(
+        // TODO: Actually infer program types instead of yoinking it here
+        (ast as Branch).children[0]!,
+        typeEnv
       );
       log(stringify(type));
-      typeEnv = newTypeEnv;
-
       const [result, , newEnv] = _eval(
         ast,
         env,
@@ -56,6 +47,7 @@ const repl = async () => {
       );
       log(result);
       env = newEnv;
+      typeEnv = newTypeEnv;
     } catch (error: any) {
       console.error(
         error instanceof Error

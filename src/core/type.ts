@@ -1,131 +1,40 @@
 import { Branch, Token, Tree } from "./parser.js";
-import { makeError } from "./problem.js";
-import {
-  ReadonlyRecord,
-  equal as structEqual
-} from "./util.js";
-
-export const oddNothing = Symbol("Nothing");
-export const oddNever = Symbol("Never");
-export const oddNumber = Symbol("Number");
-export const oddBoolean = Symbol("Boolean");
-export const oddString = Symbol("String");
-const oddLambda = Symbol("Lambda");
-const oddRecord = Symbol("Record");
-const oddList = Symbol("List");
-const oddTuple = Symbol("Tuple");
-const oddRow = Symbol("Row");
-const oddUnion = Symbol("Union");
-const oddIntersection = Symbol("Intersection");
-
-type Type = number | string | symbol | TypeConstructor;
+import { ReadonlyRecord } from "./util.js";
 
 type TypeConstructor = Readonly<{
   name: symbol;
   children: ReadonlyArray<Type>;
-  stringify?: () => string;
+  stringify?: (
+    children: ReadonlyArray<Type>
+  ) => string;
 }>;
 
-export const newLambdaType = (
+type Type = number | symbol | TypeConstructor;
+
+const lambdaSymbol = Symbol("Lambda");
+const lambdaType = (
   arg: Type,
-  body: Type,
-  parenthesise?: boolean
+  body: Type
 ): TypeConstructor => ({
-  name: oddLambda,
+  name: lambdaSymbol,
   children: [arg, body],
-  stringify: () => {
-    const str = [arg, body]
-      .map(stringify)
-      .join(" -> ");
-    return parenthesise ? `(${str})` : str;
-  }
+  stringify: children =>
+    children.map(stringify).join(" -> ")
 });
 
-export const newUnionType = (
-  types: ReadonlyArray<Type>
-): TypeConstructor => ({
-  name: oddUnion,
-  children: types,
-  stringify: () => types.map(stringify).join(" | ")
-});
+let lastTypeVar = 0;
+const freshTypeVar = () => lastTypeVar++;
 
-export const newIntersectionType = (
-  types: ReadonlyArray<Type>
-): TypeConstructor => ({
-  name: oddIntersection,
-  children: types,
-  stringify: () => types.map(stringify).join(" & ")
-});
-
-export const newListType = (
-  type: Type
-): TypeConstructor => ({
-  name: oddList,
-  children: [type]
-});
-
-export const newTupleType = (
-  types: ReadonlyArray<Type>
-): TypeConstructor => ({
-  name: oddTuple,
-  children: types,
-  stringify: () =>
-    `[ ${types.map(stringify).join(", ")} ]`
-});
-
-export const newRecordType = (
-  types: ReadonlyRecord<string, Type>
-): TypeConstructor => {
-  const rows = Object.entries(types).map(row => ({
-    name: oddRow,
-    children: row,
-    stringify: () => `${row[0]} : ${stringify(row[1])}`
-  }));
-  return {
-    name: oddRecord,
-    children: rows,
-    stringify: () => `{ ${rows.map(stringify)} }`
-  };
+const numberType = Symbol("Number");
+export const defaultTypeEnv: ReadonlyRecord<
+  string,
+  Type
+> = {
+  "+": lambdaType(
+    numberType,
+    lambdaType(numberType, numberType)
+  )
 };
-
-export const newGenericList = (
-  x: number
-): TypeConstructor => ({
-  name: oddList,
-  children: [x]
-});
-
-export const newGenericRecord = (
-  x: number
-): TypeConstructor => ({
-  name: oddRecord,
-  children: [x]
-});
-
-const oddTypeClassConstraint = Symbol(
-  "TypeclassConstraint"
-);
-export const newTypeclassConstraint = (
-  constraints: ReadonlyRecord<string, Type>,
-  type: Type
-): TypeConstructor => ({
-  name: oddTypeClassConstraint,
-  children: [type, ...Object.values(constraints)],
-  stringify: () =>
-    `(${Object.entries(constraints)
-      .map(([name, type]) =>
-        [stringify(type), name].join(" ")
-      )
-      .join(", ")}) => ${stringify(type)}`
-});
-
-const equal = (a: Type, b: Type) =>
-  ["number", "symbol", "string"].includes(typeof a)
-    ? a === b
-    : structEqual(
-        a as TypeConstructor,
-        b as TypeConstructor
-      );
 
 const isConstructor = (
   type: Type
@@ -133,304 +42,173 @@ const isConstructor = (
   !!(type as TypeConstructor).children;
 
 const alphabet = "αβγδεζηθικλμνξοπρστυφχψω";
-
 export const stringify = (type: Type): string =>
   typeof type === "number"
-    ? alphabet[type] || `t${type}`
+    ? alphabet[type] ??
+      alphabet[type % alphabet.length]! + type
     : !isConstructor(type)
     ? typeof type === "symbol"
       ? type.description!
       : `''${type}''`
-    : type.stringify?.() ??
+    : type.stringify?.(type.children) ??
       [type.name, ...type.children]
         .map(stringify)
         .join(" ");
 
-// https://gist.github.com/oxyflour/f98432aa400daa225d04
-// https://github.com/cdiggins/type-inference/blob/master/type-system.ts
-
-type Env = ReadonlyRecord<string, Type>;
-
-type Check = (
-  tree: Tree,
-  env: Env,
-  input: string
-) => readonly [
-  Type, // Type
-  ReadonlyRecord<string, Type> | null, // Exports
-  Env // Type env
-];
-
-const check: Check = (tree, env, input) => {
-  switch (tree.type) {
-    case "program":
-      return program(tree, env, input);
-    case "name":
-      return name(tree, env, input);
-    case "operator":
-      return operator(tree, env, input);
-    case "declaration":
-      return declaration(tree, env, input);
-    case "number":
-      return number(tree, env, input);
-    case "string":
-      return string(tree, env, input);
-    case "boolean":
-      return boolean(tree, env, input);
-    case "infix":
-      return infix(tree, env, input);
-    case "application":
-      return application(tree, env, input);
-    default:
-      throw makeError(input, [
-        {
-          reason: `Unhandled node type "${tree.type}".`,
-          at: tree.offset,
-          size: tree.size
-        }
-      ]);
+const occurs = (a: Type, b: Type): boolean => {
+  if (isConstructor(a)) {
+    return a.children.some(child => occurs(child, b));
+  } else if (isConstructor(b)) {
+    return b.children.some(child => occurs(child, a));
+  } else {
+    return false;
   }
 };
 
-export default check;
+type Substitutions = ReadonlyArray<
+  readonly [number, Type]
+>;
+const unify = (a: Type, b: Type): Substitutions => {
+  if (typeof a === "number" || typeof b === "number") {
+    if (occurs(a, b)) {
+      throw `Recursive types:\n  ${[a, b]
+        .map(stringify)
+        .join("\n  ")}`;
+    }
+    return [
+      (typeof a === "number"
+        ? [a, b]
+        : [b, a]) as readonly [number, Type]
+    ];
+  } else if (
+    typeof a === "symbol" &&
+    typeof b === "symbol"
+  ) {
+    return [];
+  } else if (
+    (a as TypeConstructor).name ===
+      (b as TypeConstructor).name &&
+    (a as TypeConstructor).children.length ===
+      (b as TypeConstructor).children.length
+  ) {
+    return (a as TypeConstructor).children.flatMap(
+      (a, i) =>
+        unify(a, (b as TypeConstructor).children[i]!)
+    );
+  }
+
+  throw `Can't unify:\n  ${[a, b]
+    .map(stringify)
+    .join("\n  ")}`;
+};
+
+const apply = (
+  type: Type,
+  subs: Substitutions
+): Type => {
+  if (typeof type === "symbol") {
+    return type;
+  } else if (typeof type === "number") {
+    return subs.find(([t]) => t === type)?.[1] ?? type;
+  } else if (isConstructor(type)) {
+    return {
+      ...type,
+      children: type.children.map(type =>
+        apply(type, subs)
+      )
+    };
+  }
+
+  throw `Can't apply "${stringify(type)}"`;
+};
+
+export const infer = (
+  tree: Tree,
+  env: ReadonlyRecord<string, Type>
+): readonly [
+  Type,
+  ReadonlyRecord<string, Type>,
+  Substitutions | null
+] => {
+  switch (tree.type) {
+    case "lambda": {
+      const argVar = freshTypeVar();
+      const bodyVar = freshTypeVar();
+      const lambda = lambdaType(argVar, bodyVar);
+      const [body, _, subs] = infer(
+        (tree as Branch).children[1]!,
+        {
+          ...env,
+          ...extractPatterns(
+            (tree as Branch).children[0]!,
+            argVar
+          )
+        }
+      );
+      const moreSubs = unify(body, bodyVar).concat(
+        subs ?? []
+      );
+      const result = apply(lambda, moreSubs);
+      return [result, env, moreSubs];
+    }
+    case "name": {
+      const name = (tree as Token).text;
+      if (!(name in env))
+        throw `Unknown name "${name}".`;
+      return [env[name]!, env, null];
+    }
+    case "operator": {
+      const name = (tree as Token).text;
+      if (!(name in env))
+        throw `Unknown operator "${name}".`;
+      return [env[name]!, env, null];
+    }
+    case "infix": {
+      const [lhs, op, rhs] = (tree as Branch)
+        .children as [Tree, Token, Tree];
+      const [opType] = infer(op, env) as [
+        TypeConstructor,
+        any,
+        any
+      ];
+      const [lhsType] = infer(lhs, env);
+      const [rhsType] = infer(rhs, env);
+      const opReturnType = freshTypeVar();
+      const newType = lambdaType(
+        lhsType,
+        lambdaType(rhsType, opReturnType)
+      );
+      const subs = unify(opType, newType);
+      const applied = apply(newType, subs);
+      const returnType = (
+        (applied as TypeConstructor)
+          .children[1] as TypeConstructor
+      ).children[1]!;
+      return [returnType, env, subs];
+    }
+    case "number":
+      return [numberType, env, null];
+    default:
+      throw `Can't infer type for "${tree.type}" nodes`;
+  }
+};
 
 const extractPatterns = (
-  pattern: Branch,
-  type: Type | ReadonlyArray<Type>,
-  input: string
-): ReadonlyRecord => {
+  pattern: Tree,
+  type: Type
+): ReadonlyRecord<string, Type> => {
   switch (pattern.type) {
-    case "rest-pattern": {
-      const literal = pattern.children[0] as Token;
-      return { [literal.text]: type };
-    }
     case "literal-pattern": {
-      const literal = pattern.children[0] as Token;
+      const literal = (pattern as Branch)
+        .children[0] as Token;
       switch (literal.type) {
         case "name":
-        case "operator":
           return { [literal.text]: type };
-        case "number":
-        case "string":
-        case "boolean":
-        case "wildcard":
-          return {};
         default:
-          throw makeError(input, [
-            {
-              reason: `Unhandled extractor for literal pattern type "${literal?.type}".`,
-              at: literal.offset,
-              size: literal.size
-            }
-          ]);
+          throw `Can't extract literal patterns from "${literal.type}" nodes`;
       }
     }
-    case "list-pattern":
-      return (pattern.children as Branch[]).reduce(
-        (extracted, pattern, i) => ({
-          ...extracted,
-          ...extractPatterns(
-            pattern,
-            pattern.type === "rest-pattern"
-              ? (
-                  type as TypeConstructor
-                ).children.slice(i)
-              : (type as TypeConstructor).children[i]!,
-            input
-          )
-        }),
-        {}
-      );
-    case "record-pattern":
-      return (pattern.children as Branch[]).reduce(
-        (extracted, pattern, i, patterns) => {
-          const field = pattern.children[0] as Branch;
-          return {
-            ...extracted,
-            ...extractPatterns(
-              pattern.children.length === 2
-                ? (pattern.children[1] as Branch)
-                : field,
-              field.type === "rest-pattern"
-                ? newRecordType(
-                    Object.fromEntries(
-                      (() => {
-                        const names = patterns
-                          .slice(0, i)
-                          .map(
-                            pattern =>
-                              (
-                                (
-                                  pattern
-                                    .children[0] as Branch
-                                ).children[0] as Token
-                              ).text
-                          );
-                        return Object.entries(
-                          type
-                        ).filter(
-                          ([name]) =>
-                            !names.includes(name)
-                        );
-                      })()
-                    )
-                  )
-                : (
-                    type as TypeConstructor
-                  ).children.find(
-                    row =>
-                      (row as TypeConstructor)
-                        .children[0] ===
-                      (field.children[0] as Token).text
-                  )!,
-              input
-            )
-          };
-        },
-        {}
-      );
     default:
-      throw makeError(input, [
-        {
-          reason: `Unhandled extractor for pattern type "${pattern?.type}".`,
-          at: pattern.offset,
-          size: pattern.size
-        }
-      ]);
+      throw `Can't extract patterns from "${pattern.type}" nodes`;
   }
-};
-
-const name: Check = (tree, env, input) => {
-  {
-    const name = (tree as Token).text;
-    if (!(name in env)) {
-      throw makeError(input, [
-        {
-          reason: `Unknown name "${name}".`,
-          at: tree.offset,
-          size: tree.size
-        }
-      ]);
-    }
-    return [env[name]!, null, env];
-  }
-};
-
-const operator: Check = (tree, env, input) => {
-  {
-    const { text: op } = tree as Token;
-    if (!(op in env)) {
-      throw makeError(input, [
-        {
-          reason: `Unknown operator "${op}".`,
-          at: tree.offset,
-          size: tree.size
-        }
-      ]);
-    }
-    return [env[op]!, null, env];
-  }
-};
-
-const declaration: Check = (tree, env, input) => {
-  {
-    const [type] = check(
-      (tree as Branch).children[1]!,
-      env,
-      input
-    );
-    const lhsTree = (tree as Branch)
-      .children[0] as Branch;
-    const extracted = extractPatterns(
-      lhsTree,
-      type,
-      input
-    );
-
-    const duplicateKey = Object.keys(extracted).find(
-      key => key in env
-    );
-    if (duplicateKey) {
-      throw makeError(input, [
-        {
-          reason: `"${duplicateKey}" is already defined.`,
-          at: lhsTree.offset,
-          size: lhsTree.size
-        }
-      ]);
-    }
-
-    return [type, extracted, { ...env, ...extracted }];
-  }
-};
-
-const program: Check = (tree, env, input) => {
-  {
-    let type: Type = oddNothing;
-    for (const branch of (tree as Branch).children) {
-      [type, , env] = check(branch, env, input);
-    }
-    return [type, null, env];
-  }
-};
-
-const boolean: Check = (_, env) =>
-  [oddBoolean, null, env] as const;
-
-const string: Check = (_, env) =>
-  [oddString, null, env] as const;
-
-const number: Check = (_, env) =>
-  [oddNumber, null, env] as const;
-
-const infix: Check = (tree, env, input) => {
-  const op = check(
-    (tree as Branch).children[1]!,
-    env,
-    input
-  )[0] as TypeConstructor;
-  const returnType = (
-    op.children[1] as TypeConstructor
-  ).children[1]!;
-  return [returnType, null, env] as const;
-};
-
-const application: Check = (tree, env, input) => {
-  const lhsTree = (tree as Branch).children[0]!;
-  const lhs = check(lhsTree, env, input)[0];
-
-  if (
-    !isConstructor(lhs) ||
-    ![oddLambda, oddRecord, oddList].includes(lhs.name)
-  ) {
-    throw makeError(input, [
-      {
-        reason: "Cannot apply a non-function value.",
-        at: lhsTree.offset,
-        size: lhsTree.size
-      }
-    ]);
-  }
-
-  const rhs = check(
-    (tree as Branch).children[1]!,
-    env,
-    input
-  )[0];
-
-  if (!equal(lhs.children[0]!, rhs)) {
-    throw makeError(input, [
-      {
-        reason: `Type mismatch in application of\n\n  ${stringify(
-          lhs
-        )}\n\nExpected:\n  ${stringify(
-          lhs.children[0]!
-        )}\nGot:\n  ${stringify(rhs)}`,
-        at: tree.offset,
-        size: tree.size
-      }
-    ]);
-  }
-
-  return [lhs.children[1]!, null, env] as const;
 };
