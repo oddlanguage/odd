@@ -145,11 +145,10 @@ export const infer = (
           )
         }
       );
-      const moreSubs = unify(body, bodyVar).concat(
-        subs ?? []
-      );
-      const result = apply(lambda, moreSubs);
-      return [result, env, moreSubs];
+      const bodySubs = unify(body, bodyVar);
+      const allSubs = bodySubs.concat(subs ?? []);
+      const finalType = apply(lambda, allSubs);
+      return [finalType, env, allSubs];
     }
     case "name": {
       const name = (tree as Token).text;
@@ -166,12 +165,12 @@ export const infer = (
     case "infix": {
       const [lhs, op, rhs] = (tree as Branch)
         .children as [Tree, Token, Tree];
+      const [lhsType] = infer(lhs, env);
       const [opType] = infer(op, env) as [
         TypeConstructor,
         any,
         any
       ];
-      const [lhsType] = infer(lhs, env);
       const [rhsType] = infer(rhs, env);
       const opReturnType = freshTypeVar();
       const newType = lambdaType(
@@ -179,15 +178,36 @@ export const infer = (
         lambdaType(rhsType, opReturnType)
       );
       const subs = unify(opType, newType);
-      const applied = apply(newType, subs);
+      const finalType = apply(newType, subs);
       const returnType = (
-        (applied as TypeConstructor)
+        (finalType as TypeConstructor)
           .children[1] as TypeConstructor
       ).children[1]!;
+      // TODO: Should the subs be exposed like this?
+      // Or should env be extended with concrete substitutions?
       return [returnType, env, subs];
     }
     case "number":
       return [numberType, env, null];
+    case "application": {
+      const [lhs, rhs] = (tree as Branch).children as [
+        Tree,
+        Tree
+      ];
+      const argVar = freshTypeVar();
+      const bodyVar = freshTypeVar();
+      const lambda = lambdaType(argVar, bodyVar);
+      const [lhsType] = infer(lhs, env);
+      const subs = unify(lambda, lhsType);
+      const [rhsType] = infer(rhs, env);
+      const rhsSubs = unify(argVar, rhsType);
+      const allSubs = subs.concat(rhsSubs);
+      const applied = apply(
+        lambda,
+        allSubs
+      ) as TypeConstructor;
+      return [applied.children[1]!, env, allSubs];
+    }
     default:
       throw `Can't infer type for "${tree.type}" nodes`;
   }
