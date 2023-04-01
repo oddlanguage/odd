@@ -26,6 +26,7 @@ let lastTypeVar = 0;
 const freshTypeVar = () => lastTypeVar++;
 
 const numberType = Symbol("Number");
+const stringType = Symbol("String");
 export const defaultTypeEnv: ReadonlyRecord<
   string,
   Type
@@ -76,9 +77,7 @@ const unify = (a: Type, b: Type): Substitutions => {
         .join("\n  ")}`;
     }
     return [
-      (typeof a === "number"
-        ? [a, b]
-        : [b, a]) as readonly [number, Type]
+      typeof a === "number" ? [a, b] : [b as number, a]
     ];
   } else if (
     typeof a === "symbol" &&
@@ -100,6 +99,27 @@ const unify = (a: Type, b: Type): Substitutions => {
   throw `Can't unify:\n  ${[a, b]
     .map(stringify)
     .join("\n  ")}`;
+};
+
+const compose = (
+  a: Substitutions | null,
+  b: Substitutions | null
+): Substitutions => {
+  const duplicateA = a?.find(([ka, va]) =>
+    b?.find(([kb, vb]) => ka === kb && va !== vb)
+  );
+  if (duplicateA) {
+    const duplicateB = b?.find(([kb, vb]) =>
+      a?.find(([ka, va]) => kb === ka && vb !== va)
+    )!;
+    throw `Cannot compose:\n  ${[
+      duplicateA,
+      duplicateB
+    ]
+      .map(dup => dup.map(stringify).join(" : "))
+      .join("\n  ")}`;
+  }
+  return a?.concat(b ?? []) ?? [];
 };
 
 const apply = (
@@ -146,7 +166,7 @@ export const infer = (
         }
       );
       const bodySubs = unify(body, bodyVar);
-      const allSubs = bodySubs.concat(subs ?? []);
+      const allSubs = compose(subs, bodySubs);
       const finalType = apply(lambda, allSubs);
       return [finalType, env, allSubs];
     }
@@ -189,6 +209,8 @@ export const infer = (
     }
     case "number":
       return [numberType, env, null];
+    case "string":
+      return [stringType, env, null];
     case "application": {
       const [lhs, rhs] = (tree as Branch).children as [
         Tree,
@@ -201,7 +223,7 @@ export const infer = (
       const subs = unify(lambda, lhsType);
       const [rhsType] = infer(rhs, env);
       const rhsSubs = unify(argVar, rhsType);
-      const allSubs = subs.concat(rhsSubs);
+      const allSubs = compose(subs, rhsSubs);
       const applied = apply(
         lambda,
         allSubs
