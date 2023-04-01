@@ -1,4 +1,5 @@
 import { Branch, Token, Tree } from "./parser.js";
+import { makeError } from "./problem.js";
 import { ReadonlyRecord } from "./util.js";
 
 type TypeConstructor = Readonly<{
@@ -11,12 +12,12 @@ type TypeConstructor = Readonly<{
 
 type Type = number | symbol | TypeConstructor;
 
-const lambdaSymbol = Symbol("Lambda");
-const lambdaType = (
+const lambdaType = Symbol("Lambda");
+const newLambda = (
   arg: Type,
   body: Type
 ): TypeConstructor => ({
-  name: lambdaSymbol,
+  name: lambdaType,
   children: [arg, body],
   stringify: children =>
     children.map(stringify).join(" -> ")
@@ -27,14 +28,64 @@ const freshTypeVar = () => lastTypeVar++;
 
 const numberType = Symbol("Number");
 const stringType = Symbol("String");
+const booleanType = Symbol("Boolean");
+const nothingType = Symbol("Nothing");
 export const defaultTypeEnv: ReadonlyRecord<
   string,
   Type
 > = {
-  "+": lambdaType(
+  "+": newLambda(
     numberType,
-    lambdaType(numberType, numberType)
-  )
+    newLambda(numberType, numberType)
+  ),
+  "-": newLambda(
+    numberType,
+    newLambda(numberType, numberType)
+  ),
+  "*": newLambda(
+    numberType,
+    newLambda(numberType, numberType)
+  ),
+  "/": newLambda(
+    numberType,
+    newLambda(numberType, numberType)
+  ),
+  "%": newLambda(
+    numberType,
+    newLambda(numberType, numberType)
+  ),
+  "^": newLambda(
+    numberType,
+    newLambda(numberType, numberType)
+  ),
+  "<": newLambda(
+    numberType,
+    newLambda(numberType, numberType)
+  ),
+  ">": newLambda(
+    numberType,
+    newLambda(numberType, numberType)
+  ),
+  "<=": newLambda(
+    numberType,
+    newLambda(numberType, numberType)
+  ),
+  ">=": newLambda(
+    numberType,
+    newLambda(numberType, numberType)
+  ),
+  "|": newLambda(
+    booleanType,
+    newLambda(booleanType, booleanType)
+  ),
+  "&": newLambda(
+    booleanType,
+    newLambda(booleanType, booleanType)
+  ),
+  true: booleanType,
+  false: booleanType,
+  infinity: numberType,
+  nothing: nothingType
 };
 
 const isConstructor = (
@@ -43,14 +94,20 @@ const isConstructor = (
   !!(type as TypeConstructor).children;
 
 const alphabet = "αβγδεζηθικλμνξοπρστυφχψω";
+const subscript = "₀₁₂₃₄₅₆₇₈₉";
 export const stringify = (type: Type): string =>
   typeof type === "number"
     ? alphabet[type] ??
-      alphabet[type % alphabet.length]! + type
-    : !isConstructor(type)
-    ? typeof type === "symbol"
-      ? type.description!
-      : `''${type}''`
+      alphabet[type % alphabet.length]! +
+        [
+          ...Math.floor(
+            type / alphabet.length
+          ).toString()
+        ]
+          .map(x => subscript[Number(x)])
+          .join("")
+    : typeof type === "symbol"
+    ? type.description!
     : type.stringify?.(type.children) ??
       [type.name, ...type.children]
         .map(stringify)
@@ -69,12 +126,23 @@ const occurs = (a: Type, b: Type): boolean => {
 type Substitutions = ReadonlyArray<
   readonly [number, Type]
 >;
-const unify = (a: Type, b: Type): Substitutions => {
+const unify = (
+  a: Type,
+  b: Type,
+  tree: Tree,
+  input: string
+): Substitutions => {
   if (typeof a === "number" || typeof b === "number") {
     if (occurs(a, b)) {
-      throw `Recursive types:\n  ${[a, b]
-        .map(stringify)
-        .join("\n  ")}`;
+      throw makeError(input, [
+        {
+          reason: `Recursive types:\n  ${[a, b]
+            .map(stringify)
+            .join("\n  ")}`,
+          at: tree.offset,
+          size: tree.size
+        }
+      ]);
     }
     return [
       typeof a === "number" ? [a, b] : [b as number, a]
@@ -92,18 +160,31 @@ const unify = (a: Type, b: Type): Substitutions => {
   ) {
     return (a as TypeConstructor).children.flatMap(
       (a, i) =>
-        unify(a, (b as TypeConstructor).children[i]!)
+        unify(
+          a,
+          (b as TypeConstructor).children[i]!,
+          tree,
+          input
+        )
     );
   }
 
-  throw `Can't unify:\n  ${[a, b]
-    .map(stringify)
-    .join("\n  ")}`;
+  throw makeError(input, [
+    {
+      reason: `Can't unify:\n  ${[a, b]
+        .map(stringify)
+        .join("\n  ")}`,
+      at: tree.offset,
+      size: tree.size
+    }
+  ]);
 };
 
 const compose = (
   a: Substitutions | null,
-  b: Substitutions | null
+  b: Substitutions | null,
+  tree: Tree,
+  input: string
 ): Substitutions => {
   const duplicateA = a?.find(([ka, va]) =>
     b?.find(([kb, vb]) => ka === kb && va !== vb)
@@ -112,12 +193,18 @@ const compose = (
     const duplicateB = b?.find(([kb, vb]) =>
       a?.find(([ka, va]) => kb === ka && vb !== va)
     )!;
-    throw `Cannot compose:\n  ${[
-      duplicateA,
-      duplicateB
-    ]
-      .map(dup => dup.map(stringify).join(" : "))
-      .join("\n  ")}`;
+    throw makeError(input, [
+      {
+        reason: `Cannot compose:\n  ${[
+          duplicateA,
+          duplicateB
+        ]
+          .map(dup => dup.map(stringify).join(" : "))
+          .join("\n  ")}`,
+        at: tree.offset,
+        size: tree.size
+      }
+    ]);
   }
   return a?.concat(b ?? []) ?? [];
 };
@@ -144,29 +231,50 @@ const apply = (
 
 export const infer = (
   tree: Tree,
-  env: ReadonlyRecord<string, Type>
+  env: ReadonlyRecord<string, Type>,
+  input: string
 ): readonly [
   Type,
   ReadonlyRecord<string, Type>,
   Substitutions | null
 ] => {
   switch (tree.type) {
+    case "program": {
+      // TODO: infer all exprs, not just the first
+      return infer(
+        (tree as Branch).children[0]!,
+        env,
+        input
+      );
+    }
     case "lambda": {
       const argVar = freshTypeVar();
       const bodyVar = freshTypeVar();
-      const lambda = lambdaType(argVar, bodyVar);
+      const lambda = newLambda(argVar, bodyVar);
       const [body, _, subs] = infer(
         (tree as Branch).children[1]!,
         {
           ...env,
           ...extractPatterns(
             (tree as Branch).children[0]!,
-            argVar
+            argVar,
+            input
           )
-        }
+        },
+        input
       );
-      const bodySubs = unify(body, bodyVar);
-      const allSubs = compose(subs, bodySubs);
+      const bodySubs = unify(
+        body,
+        bodyVar,
+        tree,
+        input
+      );
+      const allSubs = compose(
+        subs,
+        bodySubs,
+        tree,
+        input
+      );
       const finalType = apply(lambda, allSubs);
       return [finalType, env, allSubs];
     }
@@ -185,26 +293,24 @@ export const infer = (
     case "infix": {
       const [lhs, op, rhs] = (tree as Branch)
         .children as [Tree, Token, Tree];
-      const [lhsType] = infer(lhs, env);
-      const [opType] = infer(op, env) as [
+      const [lhsType] = infer(lhs, env, input);
+      const [opType] = infer(op, env, input) as [
         TypeConstructor,
         any,
         any
       ];
-      const [rhsType] = infer(rhs, env);
+      const [rhsType] = infer(rhs, env, input);
       const opReturnType = freshTypeVar();
-      const newType = lambdaType(
+      const newType = newLambda(
         lhsType,
-        lambdaType(rhsType, opReturnType)
+        newLambda(rhsType, opReturnType)
       );
-      const subs = unify(opType, newType);
+      const subs = unify(opType, newType, tree, input);
       const finalType = apply(newType, subs);
       const returnType = (
         (finalType as TypeConstructor)
           .children[1] as TypeConstructor
       ).children[1]!;
-      // TODO: Should the subs be exposed like this?
-      // Or should env be extended with concrete substitutions?
       return [returnType, env, subs];
     }
     case "number":
@@ -218,26 +324,70 @@ export const infer = (
       ];
       const argVar = freshTypeVar();
       const bodyVar = freshTypeVar();
-      const lambda = lambdaType(argVar, bodyVar);
-      const [lhsType] = infer(lhs, env);
-      const subs = unify(lambda, lhsType);
-      const [rhsType] = infer(rhs, env);
-      const rhsSubs = unify(argVar, rhsType);
-      const allSubs = compose(subs, rhsSubs);
+      const lambda = newLambda(argVar, bodyVar);
+      const [lhsType] = infer(lhs, env, input);
+      const subs = unify(lambda, lhsType, tree, input);
+      const [rhsType] = infer(rhs, env, input);
+      const rhsSubs = unify(
+        argVar,
+        rhsType,
+        tree,
+        input
+      );
+      const allSubs = compose(
+        subs,
+        rhsSubs,
+        tree,
+        input
+      );
       const applied = apply(
         lambda,
         allSubs
       ) as TypeConstructor;
       return [applied.children[1]!, env, allSubs];
     }
+    case "declaration": {
+      const lhs = (tree as Branch).children[0]!;
+      const patterns = extractPatterns(
+        lhs,
+        freshTypeVar(),
+        input
+      );
+      for (const key of Object.keys(patterns)) {
+        if (key in env) {
+          throw makeError(input, [
+            {
+              reason: `Can't redeclare "${key}"`,
+              at: lhs.offset,
+              size: lhs.size
+            }
+          ]);
+        }
+      }
+      return infer(
+        (tree as Branch).children[1]!,
+        {
+          ...env,
+          ...patterns
+        },
+        input
+      );
+    }
     default:
-      throw `Can't infer type for "${tree.type}" nodes`;
+      throw makeError(input, [
+        {
+          reason: `Can't infer type for "${tree.type}" nodes`,
+          at: tree.offset,
+          size: tree.size
+        }
+      ]);
   }
 };
 
 const extractPatterns = (
   pattern: Tree,
-  type: Type
+  type: Type,
+  input: string
 ): ReadonlyRecord<string, Type> => {
   switch (pattern.type) {
     case "literal-pattern": {
@@ -247,10 +397,22 @@ const extractPatterns = (
         case "name":
           return { [literal.text]: type };
         default:
-          throw `Can't extract literal patterns from "${literal.type}" nodes`;
+          throw makeError(input, [
+            {
+              reason: `Can't extract literal patterns from "${literal.type}" nodes`,
+              at: literal.offset,
+              size: literal.size
+            }
+          ]);
       }
     }
     default:
-      throw `Can't extract patterns from "${pattern.type}" nodes`;
+      throw makeError(input, [
+        {
+          reason: `Can't extract patterns from "${pattern.type}" nodes`,
+          at: pattern.offset,
+          size: pattern.size
+        }
+      ]);
   }
 };

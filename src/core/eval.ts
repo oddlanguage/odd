@@ -3,21 +3,14 @@ import { Branch, Token, Tree } from "./parser.js";
 import { makeError } from "./problem.js";
 import { Mutable, ReadonlyRecord } from "./util.js";
 
-// TODO: Skip .wat and go straight to .wasm
-// https://www.youtube.com/watch?v=pkw9USN_Tko
-// https://github.com/btzy/wasm-codegen/blob/master/wasm32-codewriter.js
-// https://blog.ttulka.com/learning-webassembly-2-wasm-binary-format/
-// https://webassembly.github.io/spec/core/index.html
-// https://blog.scottlogic.com/2018/04/26/webassembly-by-hand.html
-
 type Eval = (
   tree: Tree,
   env: ReadonlyRecord,
   input: string
 ) => readonly [
-  any, // result
-  ReadonlyRecord | null, // exports
-  ReadonlyRecord // env
+  any,
+  ReadonlyRecord | null,
+  ReadonlyRecord
 ];
 
 const _eval: Eval = (tree, env, input) => {

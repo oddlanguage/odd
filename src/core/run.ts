@@ -1,7 +1,6 @@
 import { readFile } from "fs/promises";
 import _eval from "./eval.js";
 import parse, { defaultEnv } from "./odd.js";
-import { Branch } from "./parser.js";
 import {
   defaultTypeEnv,
   infer,
@@ -38,9 +37,9 @@ const repl = async () => {
     try {
       const ast = parse(inputWithoutFinalNewline);
       const [type, newTypeEnv] = infer(
-        // TODO: Actually infer program types instead of yoinking it here
-        (ast as Branch).children[0]!,
-        typeEnv
+        ast,
+        typeEnv,
+        inputWithoutFinalNewline
       );
       const [result, , newEnv] = _eval(
         ast,

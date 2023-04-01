@@ -27,8 +27,8 @@ import {
 } from "./parser.js";
 import {
   ReadonlyRecord,
+  ansi,
   equal,
-  redUnderline,
   serialise
 } from "./util.js";
 
@@ -559,7 +559,7 @@ export const defaultEnv: ReadonlyRecord = {
   },
   panic: (reason: string) => {
     // TODO: Use `makeError`
-    throw redUnderline("Uh oh: " + reason);
+    throw ansi.red(ansi.underline("Uh oh: " + reason));
   },
   benchmark: (f: Function) => {
     const times: number[] = [];

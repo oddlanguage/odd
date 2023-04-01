@@ -15,8 +15,28 @@ export const log = <T>(x: T) => {
   return x;
 };
 
-export const redUnderline = (string: string) =>
-  "\x1b[31;4m" + string + "\x1b[0m";
+export const ansi = {
+  red: (string: string) =>
+    "\x1b[31m" + string + "\x1b[0m",
+  green: (string: string) =>
+    "\x1b[32m" + string + "\x1b[0m",
+  yellow: (string: string) =>
+    "\x1b[33m" + string + "\x1b[0m",
+  blue: (string: string) =>
+    "\x1b[34m" + string + "\x1b[0m",
+  magenta: (string: string) =>
+    "\x1b[35m" + string + "\x1b[0m",
+  cyan: (string: string) =>
+    "\x1b[36m" + string + "\x1b[0m",
+  bold: (string: string) =>
+    "\x1b[1m" + string + "\x1b[0m",
+  dim: (string: string) =>
+    "\x1b[2m" + string + "\x1b[0m",
+  italic: (string: string) =>
+    "\x1b[3m" + string + "\x1b[0m",
+  underline: (string: string) =>
+    "\x1b[4m" + string + "\x1b[0m"
+};
 
 type Primitive =
   | string
