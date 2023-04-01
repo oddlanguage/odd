@@ -1,3 +1,4 @@
+import { readFile } from "fs/promises";
 import _eval from "./eval.js";
 import parse, { defaultEnv } from "./odd.js";
 import { Branch } from "./parser.js";
@@ -6,7 +7,7 @@ import {
   infer,
   stringify
 } from "./type.js";
-import { log } from "./util.js";
+import { serialise } from "./util.js";
 
 const [target, outfile] = process.argv.slice(2);
 outfile;
@@ -16,7 +17,10 @@ const compile = async (target: string) => {
 };
 
 const repl = async () => {
-  const versionString = "Odd v0.3.7 repl";
+  const { version } = JSON.parse(
+    await readFile("package.json", "utf-8")
+  );
+  const versionString = `Odd v${version} repl`;
   process.stdin.setEncoding("utf-8");
   process.stdout.write(`${versionString}\n> `);
 
@@ -33,19 +37,21 @@ const repl = async () => {
 
     try {
       const ast = parse(inputWithoutFinalNewline);
-
       const [type, newTypeEnv] = infer(
         // TODO: Actually infer program types instead of yoinking it here
         (ast as Branch).children[0]!,
         typeEnv
       );
-      log(stringify(type));
       const [result, , newEnv] = _eval(
         ast,
         env,
         inputWithoutFinalNewline
       );
-      log(result);
+      console.log(
+        serialise(result) +
+          " : " +
+          serialise(stringify(type))
+      );
       env = newEnv;
       typeEnv = newTypeEnv;
     } catch (error: any) {
