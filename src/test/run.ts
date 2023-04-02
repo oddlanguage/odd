@@ -1,6 +1,6 @@
 import { exec } from "node:child_process";
 import { readdir, stat } from "node:fs/promises";
-import path from "node:path";
+import path from "node:path/posix";
 
 const run = (file: string) => {
   let resolve: Function;
@@ -9,12 +9,17 @@ const run = (file: string) => {
     resolve = res;
     reject = rej;
   });
-  console.log(`Running test/${file}`);
-  exec(`node dist/test/${file}`, (err, stdout) => {
+  const base = "/dist/test/";
+  console.log(
+    `Running ${file.slice(
+      file.indexOf(base) + base.length
+    )}`
+  );
+  exec(`node ${file}`, (err, stdout) => {
     process.stdout.write(stdout + "\n");
 
-    if (err || stdout.includes("❌")) {
-      reject(err);
+    if (err ?? stdout.includes("❌")) {
+      reject(err ?? stdout);
     } else {
       resolve();
     }
@@ -34,7 +39,7 @@ const walk = async (
       (
         await readdir(dir)
       ).map(async file => {
-        const fullPath = path.posix.resolve(dir, file);
+        const fullPath = path.resolve(dir, file);
         return (await stat(fullPath)).isDirectory()
           ? await walk(fullPath, depth + 1)
           : fullPath;
