@@ -1,5 +1,6 @@
 import { exec } from "node:child_process";
-import { readdir } from "node:fs/promises";
+import { readdir, stat } from "node:fs/promises";
+import path from "node:path";
 
 const run = (file: string) => {
   let resolve: Function;
@@ -22,12 +23,28 @@ const run = (file: string) => {
   return promise;
 };
 
-const files = (await readdir("dist/test")).filter(
-  file =>
-    file !==
-    import.meta.url.slice(
-      import.meta.url.lastIndexOf("/") + 1
+const walk = async (
+  dir: string,
+  depth = 0
+): Promise<ReadonlyArray<string>> => {
+  if (depth > 100)
+    throw `Maximum walk depth exceeded.`;
+  return (
+    await Promise.all(
+      (
+        await readdir(dir)
+      ).map(async file => {
+        const fullPath = path.posix.resolve(dir, file);
+        return (await stat(fullPath)).isDirectory()
+          ? await walk(fullPath, depth + 1)
+          : fullPath;
+      })
     )
+  ).flat();
+};
+
+const files = (await walk("dist/test")).filter(
+  file => !import.meta.url.endsWith(file)
 );
 
 let succeeded = 0;
