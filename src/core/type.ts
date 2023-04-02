@@ -98,7 +98,7 @@ const subscript = "₀₁₂₃₄₅₆₇₈₉";
 export const stringify = (type: Type): string =>
   typeof type === "number"
     ? alphabet[type] ??
-      alphabet[type % alphabet.length]! +
+      alphabet[type % alphabet.length] +
         [
           ...Math.floor(
             type / alphabet.length
@@ -211,7 +211,9 @@ const compose = (
 
 const apply = (
   type: Type,
-  subs: Substitutions
+  subs: Substitutions,
+  tree: Tree,
+  input: string
 ): Type => {
   if (typeof type === "symbol") {
     return type;
@@ -221,12 +223,18 @@ const apply = (
     return {
       ...type,
       children: type.children.map(type =>
-        apply(type, subs)
+        apply(type, subs, tree, input)
       )
     };
   }
 
-  throw `Can't apply "${stringify(type)}"`;
+  throw makeError(input, [
+    {
+      reason: `Can't apply "${stringify(type)}"`,
+      at: tree.offset,
+      size: tree.size
+    }
+  ]);
 };
 
 export const infer = (
@@ -275,19 +283,38 @@ export const infer = (
         tree,
         input
       );
-      const finalType = apply(lambda, allSubs);
+      const finalType = apply(
+        lambda,
+        allSubs,
+        tree,
+        input
+      );
       return [finalType, env, allSubs];
     }
     case "name": {
-      const name = (tree as Token).text;
+      const token = tree as Token;
+      const { text: name } = token;
       if (!(name in env))
-        throw `Unknown name "${name}".`;
+        throw makeError(input, [
+          {
+            reason: `Unknown name "${name}".`,
+            at: token.offset,
+            size: token.size
+          }
+        ]);
       return [env[name]!, env, null];
     }
     case "operator": {
-      const name = (tree as Token).text;
+      const token = tree as Token;
+      const { text: name } = token;
       if (!(name in env))
-        throw `Unknown operator "${name}".`;
+        throw makeError(input, [
+          {
+            reason: `Unknown operator "${name}".`,
+            at: token.offset,
+            size: token.size
+          }
+        ]);
       return [env[name]!, env, null];
     }
     case "infix": {
@@ -306,7 +333,12 @@ export const infer = (
         newLambda(rhsType, opReturnType)
       );
       const subs = unify(opType, newType, tree, input);
-      const finalType = apply(newType, subs);
+      const finalType = apply(
+        newType,
+        subs,
+        tree,
+        input
+      );
       const returnType = (
         (finalType as TypeConstructor)
           .children[1] as TypeConstructor
@@ -342,7 +374,9 @@ export const infer = (
       );
       const applied = apply(
         lambda,
-        allSubs
+        allSubs,
+        tree,
+        input
       ) as TypeConstructor;
       return [applied.children[1]!, env, allSubs];
     }
