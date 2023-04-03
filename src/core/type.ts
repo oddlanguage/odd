@@ -10,7 +10,50 @@ type TypeConstructor = Readonly<{
   ) => string;
 }>;
 
-type Type = number | symbol | TypeConstructor;
+type TypeScheme = Readonly<{
+  vars: ReadonlyArray<number>;
+  type: Type;
+}>;
+
+type Type =
+  | number
+  | symbol
+  | TypeConstructor
+  | TypeScheme;
+
+const isConstructor = (
+  type: Type
+): type is TypeConstructor =>
+  !!(type as TypeConstructor).children;
+
+const isScheme = (type: Type): type is TypeScheme =>
+  !!(type as TypeScheme).vars;
+
+const alphabet = "αβγδεζηθικλμνξοπρστυφχψω";
+const subscript = "₀₁₂₃₄₅₆₇₈₉";
+export const stringify = (type: Type): string =>
+  typeof type === "number"
+    ? alphabet[type] ??
+      alphabet[type % alphabet.length] +
+        [
+          ...Math.floor(
+            type / alphabet.length
+          ).toString()
+        ]
+          .map(x => subscript[Number(x)])
+          .join("")
+    : typeof type === "symbol"
+    ? type.description!
+    : isScheme(type)
+    ? `∀${type.vars
+        .map(stringify)
+        .join(",")}.${stringify(type.type)}`
+    : type.stringify?.(type.children) ??
+      [type.name, ...type.children]
+        .map(stringify)
+        .join(" ");
+
+// =============================================================
 
 const lambdaType = Symbol("Lambda");
 const newLambda = (
@@ -88,30 +131,19 @@ export const defaultTypeEnv: ReadonlyRecord<
   nothing: nothingType
 };
 
-const isConstructor = (
-  type: Type
-): type is TypeConstructor =>
-  !!(type as TypeConstructor).children;
-
-const alphabet = "αβγδεζηθικλμνξοπρστυφχψω";
-const subscript = "₀₁₂₃₄₅₆₇₈₉";
-export const stringify = (type: Type): string =>
-  typeof type === "number"
-    ? alphabet[type] ??
-      alphabet[type % alphabet.length] +
-        [
-          ...Math.floor(
-            type / alphabet.length
-          ).toString()
-        ]
-          .map(x => subscript[Number(x)])
-          .join("")
-    : typeof type === "symbol"
-    ? type.description!
-    : type.stringify?.(type.children) ??
-      [type.name, ...type.children]
-        .map(stringify)
-        .join(" ");
+const free = (type: Type): ReadonlyArray<number> => {
+  if (typeof type === "symbol") {
+    return [];
+  } else if (typeof type === "number") {
+    return [type];
+  } else if (isConstructor(type)) {
+    return type.children.flatMap(free);
+  } else {
+    return free(type.type).filter(
+      freeVar => !type.vars.includes(freeVar)
+    );
+  }
+};
 
 const occurs = (a: Type, b: Type): boolean => {
   if (isConstructor(a)) {

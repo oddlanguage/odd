@@ -1,7 +1,7 @@
 {
   "type": "module",
   "name": "odd",
-  "version": "0.3.7",
+  "version": "0.3.8",
   "scripts": {
     "test": "npx tsc && node dist/test/run.js"
   },

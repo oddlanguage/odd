@@ -57,16 +57,16 @@ For a more in-depth look at how Odd works, [have a look at the documentation](do
 
 Some work has yet to be done for odd to release as v1.0. The following is a list of development milestones to get to **v1.0**:
 
-- [x] ⏱️ **0.1**: Runnable programs.
-- [x] ⏱️ **0.2**: Module system.
-- [x] ⏱️ **0.3**: (Complete) Pattern matching.
-- [ ] ⏱️ **0.4**: Improved parsing speed & errors.
-- [ ] ⏱️ **0.5**: Damas-Hindley-Milner type system with typeclasses and row polymorphism.
-- [ ] ⏱️ **0.6**: Odd LSP for proper editor integration.
+- [x] **0.1**: CLI REPL
+- [x] **0.2**: Module system
+- [x] **0.3**: (Complete) pattern matching
+- [ ] **0.4**: Damas-Hindley-Milner type system
+- [ ] **0.5**: Odd LSP for proper editor integration
+- [ ] **0.6**: (More) intelligble and helpful errors
 
 > ...
 
-- [ ] 🏁 **1.0**: Standalone executable for real-world use.
+- [ ] **1.0**: 🏁 Standalone executable for real-world use.
 
 <br/>
 <br/>
