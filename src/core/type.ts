@@ -78,6 +78,9 @@ const newList = (
       : `List ${stringify(children[0]!)}`,
 });
 
+let __LAST_TYPE_VAR = 0;
+const newVar = () => __LAST_TYPE_VAR++;
+
 const numberType = Symbol("Number");
 const stringType = Symbol("String");
 const booleanType = Symbol("Boolean");
@@ -149,8 +152,8 @@ export const defaultTypeEnv: ReadonlyRecord<
   // map: (a -> b) -> List a -> List b,
   // group: (a -> b) -> { a : c } -> { b : a };
   // filter: (a -> Boolean) -> List a -> List a,
-  // fold: a -> (a -> b -> a) -> List b -> a,
-  // foldr: a -> (a -> b -> a) -> List b -> a,
+  // fold: (a -> b -> a) -> a -> List b -> a,
+  // foldr: (a -> b -> a) -> a -> List b -> a,
   // replace: a -> b -> { a : c } -> { a : b };
   // reverse: List a -> List a,
   // head: List a -> a | Nothing,
@@ -160,7 +163,7 @@ export const defaultTypeEnv: ReadonlyRecord<
   // sort: (a -> a -> Number) -> List a -> List a,
   // "sort-by": (a -> Number) -> List a -> List a
   // partition: (a -> Boolean) -> List a -> [List a, List a],
-  // size: a -> Number,
+  // size: Container a => a -> Number,
   max: newLambda(
     numberType,
     newLambda(numberType, numberType)
@@ -169,7 +172,7 @@ export const defaultTypeEnv: ReadonlyRecord<
     numberType,
     newLambda(numberType, numberType)
   ),
-  // show: a -> a,
+  // show: Serialisable a => a -> a,
   // import: String -> {},
   panic: newLambda(stringType, neverType),
   // benchmark: (a -> b) -> Number,
@@ -330,9 +333,6 @@ const applyEnv = (
     ])
   );
 
-let __LAST_TYPE_VAR: number;
-const newVar = () => __LAST_TYPE_VAR++;
-
 type Infer = (
   tree: Tree,
   env: ReadonlyRecord<string, Type>,
@@ -345,7 +345,6 @@ type Infer = (
 export const infer: Infer = (tree, env, input) => {
   switch (tree.type) {
     case "program": {
-      __LAST_TYPE_VAR = 0;
       return program(tree, env, input);
     }
     case "lambda":
