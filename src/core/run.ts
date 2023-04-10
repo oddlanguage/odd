@@ -4,7 +4,7 @@ import parse, { defaultEnv } from "./odd.js";
 import {
   defaultTypeEnv,
   infer,
-  stringify
+  stringify,
 } from "./type.js";
 import { serialise } from "./util.js";
 
@@ -75,7 +75,7 @@ const repl = async () => {
                       )
                     )
                     .join("\n") ?? error.toString()
-                }\n\`\`\``
+                }\n\`\`\``,
               })
             ).toString()}`
           : error.toString()

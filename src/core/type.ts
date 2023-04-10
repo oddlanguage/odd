@@ -38,7 +38,7 @@ export const stringify = (type: Type): string =>
         [
           ...Math.floor(
             type / alphabet.length
-          ).toString()
+          ).toString(),
         ]
           .map(x => subscript[Number(x)])
           .join("")
@@ -63,11 +63,8 @@ const newLambda = (
   name: lambdaType,
   children: [arg, body],
   stringify: children =>
-    children.map(stringify).join(" -> ")
+    children.map(stringify).join(" -> "),
 });
-
-let lastTypeVar = 0;
-const freshTypeVar = () => lastTypeVar++;
 
 const numberType = Symbol("Number");
 const stringType = Symbol("String");
@@ -128,7 +125,7 @@ export const defaultTypeEnv: ReadonlyRecord<
   true: booleanType,
   false: booleanType,
   infinity: numberType,
-  nothing: nothingType
+  nothing: nothingType,
 };
 
 const free = (type: Type): ReadonlyArray<number> => {
@@ -172,12 +169,14 @@ const unify = (
             .map(stringify)
             .join("\n  ")}`,
           at: tree.offset,
-          size: tree.size
-        }
+          size: tree.size,
+        },
       ]);
     }
     return [
-      typeof a === "number" ? [a, b] : [b as number, a]
+      typeof a === "number"
+        ? [a, b]
+        : [b as number, a],
     ];
   } else if (
     typeof a === "symbol" &&
@@ -207,8 +206,8 @@ const unify = (
         .map(stringify)
         .join("\n  ")}`,
       at: tree.offset,
-      size: tree.size
-    }
+      size: tree.size,
+    },
   ]);
 };
 
@@ -229,13 +228,13 @@ const compose = (
       {
         reason: `Cannot compose:\n  ${[
           duplicateA,
-          duplicateB
+          duplicateB,
         ]
           .map(dup => dup.map(stringify).join(" : "))
           .join("\n  ")}`,
         at: tree.offset,
-        size: tree.size
-      }
+        size: tree.size,
+      },
     ]);
   }
   return a?.concat(b ?? []) ?? [];
@@ -256,7 +255,7 @@ const apply = (
       ...type,
       children: type.children.map(type =>
         apply(type, subs, tree, input)
-      )
+      ),
     };
   }
 
@@ -264,10 +263,13 @@ const apply = (
     {
       reason: `Can't apply "${stringify(type)}"`,
       at: tree.offset,
-      size: tree.size
-    }
+      size: tree.size,
+    },
   ]);
 };
+
+let lastTypeVar: number;
+const freshTypeVar = () => lastTypeVar++;
 
 export const infer = (
   tree: Tree,
@@ -280,12 +282,14 @@ export const infer = (
 ] => {
   switch (tree.type) {
     case "program": {
-      // TODO: infer all exprs, not just the first
-      return infer(
-        (tree as Branch).children[0]!,
-        env,
-        input
-      );
+      lastTypeVar = 0;
+      let type: Type = nothingType;
+      let env: ReadonlyRecord<string, Type> =
+        defaultTypeEnv;
+      for (const child of (tree as Branch).children) {
+        [type, env] = infer(child, env, input);
+      }
+      return [type, env, null];
     }
     case "lambda": {
       const argVar = freshTypeVar();
@@ -299,7 +303,7 @@ export const infer = (
             (tree as Branch).children[0]!,
             argVar,
             input
-          )
+          ),
         },
         input
       );
@@ -331,8 +335,8 @@ export const infer = (
           {
             reason: `Unknown name "${name}".`,
             at: token.offset,
-            size: token.size
-          }
+            size: token.size,
+          },
         ]);
       return [env[name]!, env, null];
     }
@@ -344,8 +348,8 @@ export const infer = (
           {
             reason: `Unknown operator "${name}".`,
             at: token.offset,
-            size: token.size
-          }
+            size: token.size,
+          },
         ]);
       return [env[name]!, env, null];
     }
@@ -353,11 +357,7 @@ export const infer = (
       const [lhs, op, rhs] = (tree as Branch)
         .children as [Tree, Token, Tree];
       const [lhsType] = infer(lhs, env, input);
-      const [opType] = infer(op, env, input) as [
-        TypeConstructor,
-        any,
-        any
-      ];
+      const [opType] = infer(op, env, input);
       const [rhsType] = infer(rhs, env, input);
       const opReturnType = freshTypeVar();
       const newType = newLambda(
@@ -425,8 +425,8 @@ export const infer = (
             {
               reason: `Can't redeclare "${key}"`,
               at: lhs.offset,
-              size: lhs.size
-            }
+              size: lhs.size,
+            },
           ]);
         }
       }
@@ -434,7 +434,7 @@ export const infer = (
         (tree as Branch).children[1]!,
         {
           ...env,
-          ...patterns
+          ...patterns,
         },
         input
       );
@@ -444,8 +444,8 @@ export const infer = (
         {
           reason: `Can't infer type for "${tree.type}" nodes`,
           at: tree.offset,
-          size: tree.size
-        }
+          size: tree.size,
+        },
       ]);
   }
 };
@@ -467,8 +467,8 @@ const extractPatterns = (
             {
               reason: `Can't extract literal patterns from "${literal.type}" nodes`,
               at: literal.offset,
-              size: literal.size
-            }
+              size: literal.size,
+            },
           ]);
       }
     }
@@ -477,8 +477,8 @@ const extractPatterns = (
         {
           reason: `Can't extract patterns from "${pattern.type}" nodes`,
           at: pattern.offset,
-          size: pattern.size
-        }
+          size: pattern.size,
+        },
       ]);
   }
 };

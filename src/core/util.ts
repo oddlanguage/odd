@@ -7,7 +7,7 @@ export const serialise = (x: any) =>
         depth: Infinity,
         colors: true,
         compact: 1,
-        breakLength: 110
+        breakLength: 110,
       });
 
 export const log = <T>(x: T) => {
@@ -35,7 +35,7 @@ export const ansi = {
   italic: (string: string) =>
     "\x1b[3m" + string + "\x1b[0m",
   underline: (string: string) =>
-    "\x1b[4m" + string + "\x1b[0m"
+    "\x1b[4m" + string + "\x1b[0m",
 };
 
 type Primitive =
@@ -55,7 +55,7 @@ export const isPrimitive = (
     "boolean",
     "undefined",
     "function",
-    "symbol"
+    "symbol",
   ].includes(typeof value) || value === null;
 
 export const equal = <
@@ -128,7 +128,7 @@ export const difference = (
     Object.keys(b)
       .filter(key => !(key in a))
       .map(key => [key, b[key]])
-  )
+  ),
 });
 
 export const typeOf = (x: any) => typeof x;

@@ -5,7 +5,7 @@ import {
   diff,
   difference,
   equal,
-  serialise
+  serialise,
 } from "../core/util.js";
 
 test("Declared values are stored in scope", () => {
@@ -171,11 +171,11 @@ test("Curried declarations are folded properly", () => {
                 type: "name",
                 text: "a",
                 offset: 0,
-                size: 1
-              }
+                size: 1,
+              },
             ],
             offset: 0,
-            size: 1
+            size: 1,
           },
           {
             type: "lambda",
@@ -187,29 +187,29 @@ test("Curried declarations are folded properly", () => {
                     type: "name",
                     text: "b",
                     offset: 2,
-                    size: 1
-                  }
+                    size: 1,
+                  },
                 ],
                 offset: 2,
-                size: 1
+                size: 1,
               },
               {
                 type: "number",
                 text: "0",
                 offset: 6,
-                size: 1
-              }
+                size: 1,
+              },
             ],
             offset: 2,
-            size: 5
-          }
+            size: 5,
+          },
         ],
         offset: 0,
-        size: 7
-      }
+        size: 7,
+      },
     ],
     offset: 0,
-    size: 7
+    size: 7,
   };
 
   const a = parse("a b = 0");

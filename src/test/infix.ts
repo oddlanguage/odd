@@ -58,7 +58,7 @@ test("Literal application follows natural order", () => {
 test("Boolean operators don't evaluate both sides", () => {
   [
     `true | panic ''"|" didn't short-circuit.''`,
-    `false & panic ''"&" didn't short-circuit.''`
+    `false & panic ''"&" didn't short-circuit.''`,
   ].forEach(code =>
     _eval(parse(code), defaultEnv, code)
   );

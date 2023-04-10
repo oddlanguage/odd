@@ -3,13 +3,13 @@
 import {
   Expected,
   makeError,
-  Problem
+  Problem,
 } from "./problem.js";
 import {
   formatBytes,
   Mutable,
   serialise,
-  unique
+  unique,
 } from "./util.js";
 
 export type Parser = (input: State) => Result;
@@ -59,7 +59,7 @@ export const run =
     parser({
       input,
       offset,
-      cache: {}
+      cache: {},
     });
 
 export const string =
@@ -75,9 +75,9 @@ export const string =
               type,
               text: string,
               offset: state.offset,
-              size: string.length
-            }
-          ]
+              size: string.length,
+            },
+          ],
         }
       : {
           ...state,
@@ -85,9 +85,9 @@ export const string =
           problems: [
             {
               expected: `"${string}"`,
-              at: state.offset
-            }
-          ]
+              at: state.offset,
+            },
+          ],
         };
 
 export const pattern = (
@@ -112,9 +112,9 @@ export const pattern = (
               type,
               text: match,
               offset: state.offset,
-              size: match.length
-            }
-          ]
+              size: match.length,
+            },
+          ],
         }
       : {
           ...state,
@@ -125,13 +125,13 @@ export const pattern = (
                   unexpected: `"${
                     state.input[state.offset]
                   }"`,
-                  at: state.offset
+                  at: state.offset,
                 }
               : {
                   endOfInput: true,
-                  at: state.offset
-                }
-          ]
+                  at: state.offset,
+                },
+          ],
         };
   };
 };
@@ -152,9 +152,9 @@ export const label =
             ),
             {
               expected: label,
-              at: state.offset
-            }
-          ]
+              at: state.offset,
+            },
+          ],
         };
   };
 
@@ -167,7 +167,7 @@ export const pair =
     return second.ok
       ? {
           ...second,
-          value: result.value.concat(second.value)
+          value: result.value.concat(second.value),
         }
       : second;
   };
@@ -194,9 +194,9 @@ export const fail =
     problems: [
       {
         reason,
-        at: state.offset
-      }
-    ]
+        at: state.offset,
+      },
+    ],
   });
 
 export const either =
@@ -213,7 +213,7 @@ export const either =
             [result.problems]
               .concat(second.problems)
               .flat()
-          )
+          ),
         };
   };
 
@@ -244,7 +244,7 @@ export const eof: Parser = state =>
     ? {
         ...state,
         ok: true,
-        value: []
+        value: [],
       }
     : {
         ...state,
@@ -254,9 +254,9 @@ export const eof: Parser = state =>
             unexpected: `"${state.input[
               state.offset
             ]!}"`,
-            at: state.offset
-          }
-        ]
+            at: state.offset,
+          },
+        ],
       };
 
 export const ignore =
@@ -282,7 +282,7 @@ export const map =
     return result.ok
       ? {
           ...result,
-          value: f(result.value)
+          value: f(result.value),
         }
       : result;
   };
@@ -298,8 +298,8 @@ export const node =
               type,
               children,
               offset: state.offset,
-              size: result.offset - state.offset
-            }
+              size: result.offset - state.offset,
+            },
           ])(() => result)(state)
         : result;
     });
@@ -319,7 +319,7 @@ export const nodeLeft =
           type,
           children: children.slice(0, i),
           offset,
-          size: nodeSize
+          size: nodeSize,
         };
         const step = Math.max(1, size - 1);
         while (i < children.length) {
@@ -331,10 +331,10 @@ export const nodeLeft =
             type,
             children: [
               node,
-              ...sliced
+              ...sliced,
             ] as ReadonlyArray<Branch>,
             offset,
-            size: nodeSize
+            size: nodeSize,
           };
           i += step;
         }
@@ -389,9 +389,9 @@ export const except =
               unexpected: `"${state.input[
                 state.offset
               ]!}"`,
-              at: state.offset
-            }
-          ]
+              at: state.offset,
+            },
+          ],
         }
       : parser(state);
   };
@@ -420,9 +420,9 @@ export const notBefore =
               unexpected: `"${result.input[
                 result.offset
               ]!}"`,
-              at: result.offset
-            }
-          ]
+              at: result.offset,
+            },
+          ],
         }
       : result;
   };
@@ -436,9 +436,9 @@ export const memo =
     if (cached) return cached[1];
     const result = parser(state);
     (state.cache[state.offset] as Mutable<
-      typeof state["cache"][number]
+      (typeof state)["cache"][number]
     >) = (state.cache[state.offset] ?? []).concat([
-      [parser, result]
+      [parser, result],
     ]);
     return result;
   };
