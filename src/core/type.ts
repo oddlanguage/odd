@@ -29,13 +29,6 @@ const isConstructor = (
 const isScheme = (type: Type): type is TypeScheme =>
   !!(type as TypeScheme).vars;
 
-const isEnv = (
-  type: Type | ReadonlyRecord<string, Type>
-): type is ReadonlyRecord<string, Type> =>
-  !isScheme(type as any) &&
-  !isConstructor(type as any) &&
-  type.constructor === Object;
-
 const alphabet = "αβγδεζηθικλμνξοπρστυφχψω";
 const subscript = "₀₁₂₃₄₅₆₇₈₉";
 export const stringify = (type: Type): string =>
