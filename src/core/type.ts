@@ -29,6 +29,13 @@ const isConstructor = (
 const isScheme = (type: Type): type is TypeScheme =>
   !!(type as TypeScheme).vars;
 
+const isEnv = (
+  type: Type | ReadonlyRecord<string, Type>
+): type is ReadonlyRecord<string, Type> =>
+  !isScheme(type as any) &&
+  !isConstructor(type as any) &&
+  type.constructor === Object;
+
 const alphabet = "αβγδεζηθικλμνξοπρστυφχψω";
 const subscript = "₀₁₂₃₄₅₆₇₈₉";
 export const stringify = (type: Type): string =>
@@ -289,14 +296,16 @@ const compose = (
 
 const apply = (
   type: Type,
-  subs: Substitutions,
+  subs: Substitutions | null,
   tree: Tree,
   input: string
 ): Type => {
   if (typeof type === "symbol") {
     return type;
   } else if (typeof type === "number") {
-    return subs.find(([t]) => t === type)?.[1] ?? type;
+    return (
+      subs?.find(([t]) => t === type)?.[1] ?? type
+    );
   } else if (isConstructor(type)) {
     return {
       ...type,
@@ -315,199 +324,55 @@ const apply = (
   ]);
 };
 
+const applyEnv = (
+  env: ReadonlyRecord<string, Type>,
+  subs: Substitutions | null,
+  tree: Tree,
+  input: string
+) =>
+  Object.fromEntries(
+    Object.entries(env).map(([k, t]) => [
+      k,
+      apply(t, subs, tree, input),
+    ])
+  );
+
 let __LAST_TYPE_VAR: number;
 const newVar = () => __LAST_TYPE_VAR++;
 
-export const infer = (
+type Infer = (
   tree: Tree,
   env: ReadonlyRecord<string, Type>,
   input: string
-): readonly [
+) => readonly [
   Type,
   ReadonlyRecord<string, Type>,
   Substitutions | null
-] => {
+];
+export const infer: Infer = (tree, env, input) => {
   switch (tree.type) {
     case "program": {
       __LAST_TYPE_VAR = 0;
-      let type: Type = nothingType;
-      let env: ReadonlyRecord<string, Type> =
-        defaultTypeEnv;
-      for (const child of (tree as Branch).children) {
-        [type, env] = infer(child, env, input);
-      }
-      return [type, env, null];
+      return program(tree, env, input);
     }
-    case "lambda": {
-      const argTree = (tree as Branch).children[0]!;
-      const argVar =
-        argTree.type === "list-pattern"
-          ? newList(
-              (argTree as Branch).children.map(newVar)
-            )
-          : newVar();
-      const bodyVar = newVar();
-      const lambda = newLambda(argVar, bodyVar);
-      const [body, _, subs] = infer(
-        (tree as Branch).children[1]!,
-        {
-          ...env,
-          ...extractPatterns(argTree, argVar, input),
-        },
-        input
-      );
-      const bodySubs = unify(
-        bodyVar,
-        body,
-        tree,
-        input
-      );
-      const allSubs = compose(
-        subs,
-        bodySubs,
-        tree,
-        input
-      );
-      const finalType = apply(
-        lambda,
-        allSubs,
-        tree,
-        input
-      );
-      return [finalType, env, allSubs];
-    }
-    case "name": {
-      const token = tree as Token;
-      const name = token.text;
-      if (!(name in env))
-        throw makeError(input, [
-          {
-            reason: `Unknown name "${name}".`,
-            at: token.offset,
-            size: token.size,
-          },
-        ]);
-      return [env[name]!, env, null];
-    }
-    case "operator": {
-      const token = tree as Token;
-      const op = token.text;
-      if (!(op in env))
-        throw makeError(input, [
-          {
-            reason: `Unknown operator "${op}".`,
-            at: token.offset,
-            size: token.size,
-          },
-        ]);
-      return [env[op]!, env, null];
-    }
-    case "infix": {
-      const [lhs, op, rhs] = (tree as Branch)
-        .children as [Tree, Token, Tree];
-      const [lhsType, _, lhsSubs] = infer(
-        lhs,
-        env,
-        input
-      );
-      const [opType] = infer(op, env, input);
-      const [rhsType] = infer(rhs, env, input);
-      const opReturnType = newVar();
-      const newType = newLambda(
-        lhsType,
-        newLambda(rhsType, opReturnType)
-      );
-      const subs = unify(opType, newType, tree, input);
-      const allSubs = compose(
-        subs,
-        lhsSubs,
-        tree,
-        input
-      );
-      const finalType = apply(
-        newType,
-        allSubs,
-        tree,
-        input
-      );
-      const returnType = (
-        (finalType as TypeConstructor)
-          .children[1] as TypeConstructor
-      ).children[1]!;
-      return [returnType, env, allSubs];
-    }
+    case "lambda":
+      return lambda(tree, env, input);
+    case "name":
+      return name(tree, env, input);
+    case "operator":
+      return operator(tree, env, input);
+    case "infix":
+      return infix(tree, env, input);
     case "number":
       return [numberType, env, null];
     case "string":
       return [stringType, env, null];
-    case "application": {
-      const [lhs, rhs] = (tree as Branch).children as [
-        Tree,
-        Tree
-      ];
-      const argVar = newVar();
-      const bodyVar = newVar();
-      const lambda = newLambda(argVar, bodyVar);
-      const [lhsType] = infer(lhs, env, input);
-      const subs = unify(lambda, lhsType, tree, input);
-      const [rhsType] = infer(rhs, env, input);
-      const rhsSubs = unify(
-        argVar,
-        rhsType,
-        tree,
-        input
-      );
-      const allSubs = compose(
-        subs,
-        rhsSubs,
-        tree,
-        input
-      );
-      const applied = apply(
-        lambda,
-        allSubs,
-        tree,
-        input
-      ) as TypeConstructor;
-      return [applied.children[1]!, env, allSubs];
-    }
-    case "declaration": {
-      const lhs = (tree as Branch).children[0]!;
-      const patterns = extractPatterns(
-        lhs,
-        newVar(),
-        input
-      );
-      for (const key of Object.keys(patterns)) {
-        if (key in env) {
-          throw makeError(input, [
-            {
-              reason: `Cannot redeclare "${key}"`,
-              at: lhs.offset,
-              size: lhs.size,
-            },
-          ]);
-        }
-      }
-      return infer(
-        (tree as Branch).children[1]!,
-        {
-          ...env,
-          ...patterns,
-        },
-        input
-      );
-    }
+    case "application":
+      return application(tree, env, input);
+    case "declaration":
+      return declaration(tree, env, input);
     case "list":
-      return [
-        newList(
-          (tree as Branch).children.map(
-            child => infer(child, env, input)[0]!
-          )
-        ),
-        env,
-        null,
-      ];
+      return list(tree, env, input);
     default:
       throw makeError(input, [
         {
@@ -576,3 +441,165 @@ const extractPatterns = (
       ]);
   }
 };
+
+const program: Infer = (tree, env, input) => {
+  let type: Type = nothingType;
+  for (const child of (tree as Branch).children) {
+    [type, env] = infer(child, env, input);
+  }
+  return [type, env, null];
+};
+
+const lambda: Infer = (tree, env, input) => {
+  const argTree = (tree as Branch).children[0]!;
+  const argVar =
+    argTree.type === "list-pattern"
+      ? newList(
+          (argTree as Branch).children.map(newVar)
+        )
+      : newVar();
+  const bodyVar = newVar();
+  const lambda = newLambda(argVar, bodyVar);
+  const [body, _, subs] = infer(
+    (tree as Branch).children[1]!,
+    {
+      ...env,
+      ...extractPatterns(argTree, argVar, input),
+    },
+    input
+  );
+  const bodySubs = unify(bodyVar, body, tree, input);
+  const allSubs = compose(subs, bodySubs, tree, input);
+  const finalType = apply(
+    lambda,
+    allSubs,
+    tree,
+    input
+  );
+  return [finalType, env, allSubs];
+};
+
+const name: Infer = (tree, env, input) => {
+  const token = tree as Token;
+  const name = token.text;
+  if (!(name in env))
+    throw makeError(input, [
+      {
+        reason: `Unknown name "${name}".`,
+        at: token.offset,
+        size: token.size,
+      },
+    ]);
+  return [env[name]!, env, null];
+};
+
+const operator: Infer = (tree, env, input) => {
+  const token = tree as Token;
+  const op = token.text;
+  if (!(op in env))
+    throw makeError(input, [
+      {
+        reason: `Unknown operator "${op}".`,
+        at: token.offset,
+        size: token.size,
+      },
+    ]);
+  return [env[op]!, env, null];
+};
+
+const infix: Infer = (tree, env, input) => {
+  const [lhs, op, rhs] = (tree as Branch).children as [
+    Tree,
+    Token,
+    Tree
+  ];
+  const [lhsType, _, lhsSubs] = infer(lhs, env, input);
+  const [opType] = infer(op, env, input);
+  const [rhsType] = infer(rhs, env, input);
+  const opReturnType = newVar();
+  const newType = newLambda(
+    lhsType,
+    newLambda(rhsType, opReturnType)
+  );
+  const subs = unify(opType, newType, tree, input);
+  const allSubs = compose(subs, lhsSubs, tree, input);
+  const finalType = apply(
+    newType,
+    allSubs,
+    tree,
+    input
+  );
+  const returnType = (
+    (finalType as TypeConstructor)
+      .children[1] as TypeConstructor
+  ).children[1]!;
+  return [returnType, env, allSubs];
+};
+
+const application: Infer = (tree, env, input) => {
+  const [lhs, rhs] = (tree as Branch).children as [
+    Tree,
+    Tree
+  ];
+  const argVar = newVar();
+  const bodyVar = newVar();
+  const lambda = newLambda(argVar, bodyVar);
+  const [lhsType] = infer(lhs, env, input);
+  const subs = unify(lambda, lhsType, tree, input);
+  const [rhsType] = infer(rhs, env, input);
+  const rhsSubs = unify(argVar, rhsType, tree, input);
+  const allSubs = compose(subs, rhsSubs, tree, input);
+  const applied = apply(
+    lambda,
+    allSubs,
+    tree,
+    input
+  ) as TypeConstructor;
+  return [applied.children[1]!, env, allSubs];
+};
+
+const declaration: Infer = (tree, env, input) => {
+  const lhs = (tree as Branch).children[0]!;
+  const lhsVar =
+    lhs.type === "list-pattern"
+      ? newList((lhs as Branch).children.map(newVar))
+      : newVar();
+  const patterns = extractPatterns(lhs, lhsVar, input);
+  for (const key of Object.keys(patterns)) {
+    if (key in env) {
+      throw makeError(input, [
+        {
+          reason: `Cannot redeclare "${key}"`,
+          at: lhs.offset,
+          size: lhs.size,
+        },
+      ]);
+    }
+  }
+  const [rhsType, newEnv] = infer(
+    (tree as Branch).children[1]!,
+    {
+      ...env,
+      ...patterns,
+    },
+    input
+  );
+  const subs = unify(lhsVar, rhsType, tree, input);
+  const appliedEnv = applyEnv(
+    newEnv,
+    subs,
+    tree,
+    input
+  );
+  return [rhsType, appliedEnv, null];
+};
+
+const list: Infer = (tree, env, input) => [
+  newList(
+    (tree as Branch).children.map(
+      child => infer(child, env, input)[0]!
+    )
+  ),
+  env,
+  null,
+];
