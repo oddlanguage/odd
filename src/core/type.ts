@@ -214,7 +214,7 @@ const unify = (
 
   throw makeError(input, [
     {
-      reason: `Can't unify:\n  ${[a, b]
+      reason: `Cannot unify:\n  ${[a, b]
         .map(stringify)
         .join("\n  ")}`,
       at: tree.offset,
@@ -273,7 +273,7 @@ const apply = (
 
   throw makeError(input, [
     {
-      reason: `Can't apply "${stringify(type)}"`,
+      reason: `Cannot apply "${stringify(type)}"`,
       at: tree.offset,
       size: tree.size,
     },
@@ -447,7 +447,7 @@ export const infer = (
         if (key in env) {
           throw makeError(input, [
             {
-              reason: `Can't redeclare "${key}"`,
+              reason: `Cannot redeclare "${key}"`,
               at: lhs.offset,
               size: lhs.size,
             },
@@ -463,10 +463,20 @@ export const infer = (
         input
       );
     }
+    case "list":
+      return [
+        newList(
+          (tree as Branch).children.map(
+            child => infer(child, env, input)[0]!
+          )
+        ),
+        env,
+        null,
+      ];
     default:
       throw makeError(input, [
         {
-          reason: `Can't infer type for "${tree.type}" nodes`,
+          reason: `Cannot infer type for "${tree.type}" nodes`,
           at: tree.offset,
           size: tree.size,
         },
@@ -486,10 +496,16 @@ const extractPatterns = (
       switch (literal.type) {
         case "name":
           return { [literal.text]: type };
+        case "number":
+        case "number":
+        case "string":
+        case "boolean":
+        case "wildcard":
+          return {};
         default:
           throw makeError(input, [
             {
-              reason: `Can't extract literal patterns from "${literal.type}" nodes`,
+              reason: `Cannot extract literal patterns from "${literal.type}" nodes`,
               at: literal.offset,
               size: literal.size,
             },
@@ -518,7 +534,7 @@ const extractPatterns = (
     default:
       throw makeError(input, [
         {
-          reason: `Can't extract patterns from "${pattern.type}" nodes`,
+          reason: `Cannot extract patterns from "${pattern.type}" nodes`,
           at: pattern.offset,
           size: pattern.size,
         },

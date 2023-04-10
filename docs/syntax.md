@@ -491,7 +491,7 @@ Odd values are immutable:
 
 ```hs
 a = b;
-a = c; -- ERROR! Can't redeclare `a`.
+a = c; -- ERROR! Cannot redeclare `a`.
 ```
 
 A function can be declared with the same syntax:
