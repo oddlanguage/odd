@@ -66,6 +66,18 @@ const newLambda = (
     children.map(stringify).join(" -> "),
 });
 
+const listType = Symbol("List");
+const newList = (
+  type: Type | ReadonlyArray<Type>
+): TypeConstructor => ({
+  name: listType,
+  children: [type].flat(),
+  stringify: children =>
+    children.length > 1
+      ? `[ ${children.map(stringify).join(", ")} ]`
+      : `List ${stringify(children[0]!)}`,
+});
+
 const numberType = Symbol("Number");
 const stringType = Symbol("String");
 const booleanType = Symbol("Boolean");
@@ -237,7 +249,7 @@ const compose = (
       },
     ]);
   }
-  return a?.concat(b ?? []) ?? [];
+  return (a ?? []).concat(b ?? []);
 };
 
 const apply = (
@@ -268,8 +280,8 @@ const apply = (
   ]);
 };
 
-let lastTypeVar: number;
-const freshTypeVar = () => lastTypeVar++;
+let __LAST_TYPE_VAR: number;
+const newVar = () => __LAST_TYPE_VAR++;
 
 export const infer = (
   tree: Tree,
@@ -282,7 +294,7 @@ export const infer = (
 ] => {
   switch (tree.type) {
     case "program": {
-      lastTypeVar = 0;
+      __LAST_TYPE_VAR = 0;
       let type: Type = nothingType;
       let env: ReadonlyRecord<string, Type> =
         defaultTypeEnv;
@@ -292,24 +304,26 @@ export const infer = (
       return [type, env, null];
     }
     case "lambda": {
-      const argVar = freshTypeVar();
-      const bodyVar = freshTypeVar();
+      const argTree = (tree as Branch).children[0]!;
+      const argVar =
+        argTree.type === "list-pattern"
+          ? newList(
+              (argTree as Branch).children.map(newVar)
+            )
+          : newVar();
+      const bodyVar = newVar();
       const lambda = newLambda(argVar, bodyVar);
       const [body, _, subs] = infer(
         (tree as Branch).children[1]!,
         {
           ...env,
-          ...extractPatterns(
-            (tree as Branch).children[0]!,
-            argVar,
-            input
-          ),
+          ...extractPatterns(argTree, argVar, input),
         },
         input
       );
       const bodySubs = unify(
-        body,
         bodyVar,
+        body,
         tree,
         input
       );
@@ -329,7 +343,7 @@ export const infer = (
     }
     case "name": {
       const token = tree as Token;
-      const { text: name } = token;
+      const name = token.text;
       if (!(name in env))
         throw makeError(input, [
           {
@@ -342,32 +356,42 @@ export const infer = (
     }
     case "operator": {
       const token = tree as Token;
-      const { text: name } = token;
-      if (!(name in env))
+      const op = token.text;
+      if (!(op in env))
         throw makeError(input, [
           {
-            reason: `Unknown operator "${name}".`,
+            reason: `Unknown operator "${op}".`,
             at: token.offset,
             size: token.size,
           },
         ]);
-      return [env[name]!, env, null];
+      return [env[op]!, env, null];
     }
     case "infix": {
       const [lhs, op, rhs] = (tree as Branch)
         .children as [Tree, Token, Tree];
-      const [lhsType] = infer(lhs, env, input);
+      const [lhsType, _, lhsSubs] = infer(
+        lhs,
+        env,
+        input
+      );
       const [opType] = infer(op, env, input);
       const [rhsType] = infer(rhs, env, input);
-      const opReturnType = freshTypeVar();
+      const opReturnType = newVar();
       const newType = newLambda(
         lhsType,
         newLambda(rhsType, opReturnType)
       );
       const subs = unify(opType, newType, tree, input);
+      const allSubs = compose(
+        subs,
+        lhsSubs,
+        tree,
+        input
+      );
       const finalType = apply(
         newType,
-        subs,
+        allSubs,
         tree,
         input
       );
@@ -375,7 +399,7 @@ export const infer = (
         (finalType as TypeConstructor)
           .children[1] as TypeConstructor
       ).children[1]!;
-      return [returnType, env, subs];
+      return [returnType, env, allSubs];
     }
     case "number":
       return [numberType, env, null];
@@ -386,8 +410,8 @@ export const infer = (
         Tree,
         Tree
       ];
-      const argVar = freshTypeVar();
-      const bodyVar = freshTypeVar();
+      const argVar = newVar();
+      const bodyVar = newVar();
       const lambda = newLambda(argVar, bodyVar);
       const [lhsType] = infer(lhs, env, input);
       const subs = unify(lambda, lhsType, tree, input);
@@ -416,7 +440,7 @@ export const infer = (
       const lhs = (tree as Branch).children[0]!;
       const patterns = extractPatterns(
         lhs,
-        freshTypeVar(),
+        newVar(),
         input
       );
       for (const key of Object.keys(patterns)) {
@@ -472,6 +496,25 @@ const extractPatterns = (
           ]);
       }
     }
+    case "list-pattern":
+      return (
+        (pattern as Branch).children as Branch[]
+      ).reduce(
+        (extracted, pattern, i) => ({
+          ...extracted,
+          ...extractPatterns(
+            pattern,
+            isConstructor(type) &&
+              type.name === listType
+              ? pattern.type === "rest-pattern"
+                ? newList(type.children.slice(i))
+                : type.children[i]!
+              : type,
+            input
+          ),
+        }),
+        {}
+      );
     default:
       throw makeError(input, [
         {
