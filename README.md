@@ -41,7 +41,7 @@ Feel free to contribute. [Please read our contributing guidelines](./CONTRIBUTIN
 To try out Odd, download the repo and run it through NodeJS:
 
 ```sh
-npm i; # install types for development
+npm i; # install dependencies
 npx tsc; # compile source
 node dist/run.js; # start a repl
 ```
