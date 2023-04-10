@@ -81,7 +81,7 @@ const declaration: Eval = (tree, env, input) => {
 
   const lhsTree = (tree as Branch)
     .children[0] as Branch;
-  const extracted = extractPattern(
+  const extracted = extractPatterns(
     lhsTree,
     rhs,
     input
@@ -165,7 +165,7 @@ const lambda: Eval = (tree, env, input) => [
       (tree as Branch).children[1]!,
       {
         ...env,
-        ...extractPattern(
+        ...extractPatterns(
           (tree as Branch).children[0] as Branch,
           arg,
           input
@@ -209,7 +209,7 @@ const field: Eval = (tree, env, input) => {
   switch (field.type) {
     case "declaration":
       return [
-        extractPattern(
+        extractPatterns(
           (field as Branch).children[0] as Branch,
           _eval(
             (field as Branch).children[1]!,
@@ -280,7 +280,7 @@ const match: Eval = (tree, env, input) => {
       match[1],
       {
         ...env,
-        ...extractPattern(match[0], value, input),
+        ...extractPatterns(match[0], value, input),
       },
       input
     )[0],
@@ -390,7 +390,7 @@ const matchPattern = (
   }
 };
 
-const extractPattern = (
+const extractPatterns = (
   pattern: Branch,
   value: any,
   input: string
@@ -425,7 +425,7 @@ const extractPattern = (
       return (pattern.children as Branch[]).reduce(
         (extracted, pattern, i) => ({
           ...extracted,
-          ...extractPattern(
+          ...extractPatterns(
             pattern,
             pattern.type === "rest-pattern"
               ? value.slice(i)
@@ -441,7 +441,7 @@ const extractPattern = (
           const field = pattern.children[0] as Branch;
           return {
             ...extracted,
-            ...extractPattern(
+            ...extractPatterns(
               pattern.children.length === 2
                 ? (pattern.children[1] as Branch)
                 : field,
