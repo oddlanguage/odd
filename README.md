@@ -43,8 +43,10 @@ To try out Odd, download the repo and run it through NodeJS:
 ```sh
 npm i; # install dependencies
 npx tsc; # compile source
-node dist/run.js; # start a repl
+node dist/core/run.js; # start a repl
 ```
+
+> ℹ️ Consider using the node option `--enable-source-maps` to get direct error stack translations when creating an issue.
 
 When Odd is finished, it will be a standalone executable requiring no separate Node installation, or any other dependency.
 
