@@ -273,7 +273,18 @@ const match: Eval = (tree, env, input) => {
     );
   const match = cases.find(([pattern]) =>
     matchPattern(pattern, value, input)
-  )!;
+  );
+
+  // TODO: This should be impossible after semantic analysis
+  if (!match) {
+    throw makeError(input, [
+      {
+        reason: "No matching case found.",
+        at: tree.offset,
+        size: tree.size,
+      },
+    ]);
+  }
 
   return [
     _eval(

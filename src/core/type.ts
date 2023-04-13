@@ -114,22 +114,12 @@ export const defaultTypeEnv: ReadonlyRecord<
     numberType,
     newLambda(numberType, numberType)
   ),
-  "<": newLambda(
-    numberType,
-    newLambda(numberType, numberType)
-  ),
-  ">": newLambda(
-    numberType,
-    newLambda(numberType, numberType)
-  ),
-  "<=": newLambda(
-    numberType,
-    newLambda(numberType, numberType)
-  ),
-  ">=": newLambda(
-    numberType,
-    newLambda(numberType, numberType)
-  ),
+  // "<": (Ord a) => a -> a -> Boolean,
+  // ">": (Ord a) => a -> a -> Boolean,
+  // "<=": (Ord a) => a -> a -> Boolean,
+  // ">=": (Ord a) => a -> a -> Boolean,
+  // "==": (Eq a) => a -> a -> Boolean,
+  // "!=": (Eq a) => a -> a -> Boolean,
   "|": newLambda(
     booleanType,
     newLambda(booleanType, booleanType)
@@ -143,7 +133,7 @@ export const defaultTypeEnv: ReadonlyRecord<
   nothing: nothingType,
   infinity: numberType,
   not: newLambda(booleanType, booleanType),
-  // has: (k: string) => (x: any) => k in x,
+  // has: String -> Record -> Boolean,
   range: newLambda(numberType, newList(numberType)),
   "range-from": newLambda(
     numberType,

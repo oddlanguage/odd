@@ -1,11 +1,6 @@
 import { readFile } from "fs/promises";
 import _eval from "./eval.js";
 import parse, { defaultEnv } from "./odd.js";
-import {
-  defaultTypeEnv,
-  infer,
-  stringify,
-} from "./type.js";
 import { serialise } from "./util.js";
 
 const [target, outfile] = process.argv.slice(2);
@@ -24,7 +19,7 @@ const repl = async () => {
   process.stdout.write(`${versionString}\n> `);
 
   let env = defaultEnv;
-  let typeEnv = defaultTypeEnv;
+  // let typeEnv = defaultTypeEnv;
   const history: string[] = [];
 
   for await (const input of process.stdin) {
@@ -36,23 +31,24 @@ const repl = async () => {
 
     try {
       const ast = parse(inputWithoutFinalNewline);
-      const [type, newTypeEnv] = infer(
-        ast,
-        typeEnv,
-        inputWithoutFinalNewline
-      );
+      // const [type, newTypeEnv] = infer(
+      //   ast,
+      //   typeEnv,
+      //   inputWithoutFinalNewline
+      // );
       const [result, , newEnv] = _eval(
         ast,
         env,
         inputWithoutFinalNewline
       );
       console.log(
-        serialise(result) +
-          " : " +
-          serialise(stringify(type))
+        serialise(result)
+        // +
+        //   " : " +
+        //   serialise(stringify(type))
       );
       env = newEnv;
-      typeEnv = newTypeEnv;
+      // typeEnv = newTypeEnv;
     } catch (error: any) {
       console.error(
         error instanceof Error
@@ -62,19 +58,24 @@ const repl = async () => {
                 body: `Given the following input:\n\n\`\`\`\n${history.join(
                   "\n"
                 )}\n\`\`\`\n\nThe following error occured:\n\n\`\`\`\n${
-                  error.stack
-                    ?.split("\n")
-                    .filter(
-                      line =>
-                        !/node:internal/.test(line)
-                    )
-                    .map(line =>
-                      line.replace(
-                        /file:\/\/.+(?=core)/,
-                        ""
+                  error.message +
+                    "\n" +
+                    error.stack
+                      ?.split("\n")
+                      .slice(5)
+                      .filter(
+                        line =>
+                          !/node:internal/.test(
+                            line
+                          ) && line.match(/\d\)?\s*$/)
                       )
-                    )
-                    .join("\n") ?? error.toString()
+                      .map(line =>
+                        line.replace(
+                          /\([a-zA-Z]+:[/\\]{1,2}.+(?=core)|(?<=at )null\.|(?:\(<anonymous>)?\)$/g,
+                          ""
+                        )
+                      )
+                      .join("\n") ?? error.toString()
                 }\n\`\`\``,
               })
             ).toString()}`
