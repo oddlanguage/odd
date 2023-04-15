@@ -18,12 +18,13 @@ type TypeScheme = Readonly<{
 type Type =
   | number
   | symbol
-  | TypeConstructor
+  | ListType
+  | RecordType
   | TypeScheme;
 
 const isConstructor = (
   type: Type
-): type is TypeConstructor =>
+): type is TypeConstructor | ListType | RecordType =>
   !!(type as TypeConstructor).children;
 
 const isScheme = (type: Type): type is TypeScheme =>
@@ -48,7 +49,10 @@ export const stringify = (type: Type): string =>
     ? `∀${type.vars
         .map(stringify)
         .join(",")}.${stringify(type.type)}`
-    : type.stringify?.(type.children) ??
+    : type.stringify?.(
+        type.children,
+        (type as RecordType).labels
+      ) ??
       [type.name, ...type.children]
         .map(stringify)
         .join(" ");
@@ -67,15 +71,41 @@ const newLambda = (
 });
 
 const listType = Symbol("List");
+type ListType = TypeConstructor;
 const newList = (
   type: Type | ReadonlyArray<Type>
-): TypeConstructor => ({
+): ListType => ({
   name: listType,
   children: [type].flat(),
   stringify: children =>
     children.length > 1
       ? `[ ${children.map(stringify).join(", ")} ]`
       : `List ${stringify(children[0]!)}`,
+});
+
+const recordType = Symbol("Record");
+type RecordType = Omit<TypeConstructor, "stringify"> &
+  Readonly<{
+    labels: ReadonlyArray<string>;
+    stringify?: (
+      children: ReadonlyArray<Type>,
+      labels: ReadonlyArray<string>
+    ) => string;
+  }>;
+const newRecord = (
+  // TODO: Records should map values to values (thus types to types)
+  rows: ReadonlyArray<readonly [string, Type]>
+): RecordType => ({
+  name: recordType,
+  labels: rows.map(([label]) => label),
+  children: rows.map(([, type]) => type),
+  stringify: (children, labels) =>
+    `{ ${children
+      .map(
+        (type, i) =>
+          labels[i]! + " : " + stringify(type)
+      )
+      .join(", ")} }`,
 });
 
 let __LAST_TYPE_VAR = 0;
@@ -334,9 +364,8 @@ type Infer = (
 ];
 export const infer: Infer = (tree, env, input) => {
   switch (tree.type) {
-    case "program": {
+    case "program":
       return program(tree, env, input);
-    }
     case "lambda":
       return lambda(tree, env, input);
     case "name":
@@ -355,6 +384,8 @@ export const infer: Infer = (tree, env, input) => {
       return declaration(tree, env, input);
     case "list":
       return list(tree, env, input);
+    case "record":
+      return record(tree, env, input);
     default:
       throw makeError(input, [
         {
@@ -439,6 +470,10 @@ const lambda: Infer = (tree, env, input) => {
       ? newList(
           (argTree as Branch).children.map(newVar)
         )
+      : argTree.type === "record-pattern"
+      ? (() => {
+          throw "Cannot destructure records yet.";
+        })()
       : newVar();
   const bodyVar = newVar();
   const lambda = newLambda(argVar, bodyVar);
@@ -545,6 +580,10 @@ const declaration: Infer = (tree, env, input) => {
   const lhsVar =
     lhs.type === "list-pattern"
       ? newList((lhs as Branch).children.map(newVar))
+      : lhs.type === "record-pattern"
+      ? (() => {
+          throw "Cannot destructure records yet.";
+        })()
       : newVar();
   const patterns = extractPatterns(lhs, lhsVar, input);
   for (const key of Object.keys(patterns)) {
@@ -585,3 +624,64 @@ const list: Infer = (tree, env, input) => [
   env,
   null,
 ];
+
+const record: Infer = (tree, env, input) => {
+  const record = newRecord(
+    ((tree as Branch).children as Branch[]).flatMap(
+      ({ children: [row] }) => {
+        switch (row!.type) {
+          case "name":
+            return [
+              [
+                (row as Token).text,
+                infer(row!, env, input)[0],
+              ],
+            ];
+          case "declaration": {
+            // TODO: This is the same code as infer "declaration" except for
+            // checking wether variables are overwritten
+            const lhs = (row as Branch).children[0]!;
+            const lhsVar =
+              lhs.type === "list-pattern"
+                ? newList(
+                    (lhs as Branch).children.map(
+                      newVar
+                    )
+                  )
+                : lhs.type === "record-pattern"
+                ? (() => {
+                    throw "Cannot destructure records yet.";
+                  })()
+                : newVar();
+            const patterns = extractPatterns(
+              lhs,
+              lhsVar,
+              input
+            );
+            const [rhsType] = infer(
+              (row as Branch).children[1]!,
+              {
+                ...env,
+                ...patterns,
+              },
+              input
+            );
+            const subs = unify(
+              lhsVar,
+              rhsType,
+              row!,
+              input
+            );
+            return Object.entries(
+              applyEnv(patterns, subs, row!, input)
+            );
+          }
+          default:
+            throw `Unhandled row type "${row!.type}".`;
+        }
+      }
+    )
+  );
+
+  return [record, env, null];
+};
