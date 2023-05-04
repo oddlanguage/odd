@@ -1,13 +1,11 @@
 import { Branch, Token, Tree } from "./parser.js";
 import { makeError } from "./problem.js";
-import { ReadonlyRecord } from "./util.js";
+import { Mutable, ReadonlyRecord } from "./util.js";
 
-type TypeConstructor = Readonly<{
+export type TypeConstructor = Readonly<{
   name: symbol;
   children: ReadonlyArray<Type>;
-  stringify?: (
-    children: ReadonlyArray<Type>
-  ) => string;
+  stringify?: (self: TypeConstructor) => string;
 }>;
 
 type TypeScheme = Readonly<{
@@ -32,6 +30,7 @@ const isScheme = (type: Type): type is TypeScheme =>
 
 const alphabet = "αβγδεζηθικλμνξοπρστυφχψω";
 const subscript = "₀₁₂₃₄₅₆₇₈₉";
+// TODO: parenthesise when ambiguous such as (a->b)->c etc.
 export const stringify = (type: Type): string =>
   typeof type === "number"
     ? alphabet[type] ??
@@ -49,48 +48,36 @@ export const stringify = (type: Type): string =>
     ? `∀${type.vars
         .map(stringify)
         .join(",")}.${stringify(type.type)}`
-    : type.stringify?.(
-        type.children,
-        (type as RecordType).labels
-      ) ??
+    : type.stringify?.(type as any) ??
       [type.name, ...type.children]
         .map(stringify)
         .join(" ");
 
 // =============================================================
 
-const lambdaType = Symbol("Lambda");
-const newLambda = (
+export const lambdaType = Symbol("Lambda");
+export const newLambda = (
   arg: Type,
   body: Type
 ): TypeConstructor => ({
   name: lambdaType,
   children: [arg, body],
-  stringify: children =>
-    children.map(stringify).join(" -> "),
+  stringify: self =>
+    self.children.map(stringify).join(" -> "),
 });
 
-const listType = Symbol("List");
+export const listType = Symbol("List");
 type ListType = TypeConstructor;
-const newList = (
-  type: Type | ReadonlyArray<Type>
-): ListType => ({
+const newList = (type: Type): ListType => ({
   name: listType,
-  children: [type].flat(),
-  stringify: children =>
-    children.length > 1
-      ? `[ ${children.map(stringify).join(", ")} ]`
-      : `List ${stringify(children[0]!)}`,
+  children: [type],
 });
 
-const recordType = Symbol("Record");
+export const recordType = Symbol("Record");
 type RecordType = Omit<TypeConstructor, "stringify"> &
   Readonly<{
     labels: ReadonlyArray<string>;
-    stringify?: (
-      children: ReadonlyArray<Type>,
-      labels: ReadonlyArray<string>
-    ) => string;
+    stringify?: (self: RecordType) => string;
   }>;
 const newRecord = (
   // TODO: Records should map values to values (thus types to types)
@@ -99,11 +86,11 @@ const newRecord = (
   name: recordType,
   labels: rows.map(([label]) => label),
   children: rows.map(([, type]) => type),
-  stringify: (children, labels) =>
-    `{ ${children
+  stringify: self =>
+    `{ ${self.children
       .map(
         (type, i) =>
-          labels[i]! + " : " + stringify(type)
+          self.labels[i]! + " : " + stringify(type)
       )
       .join(", ")} }`,
 });
@@ -111,11 +98,11 @@ const newRecord = (
 let __LAST_TYPE_VAR = 0;
 const newVar = () => __LAST_TYPE_VAR++;
 
-const numberType = Symbol("Number");
-const stringType = Symbol("String");
-const booleanType = Symbol("Boolean");
-const nothingType = Symbol("Nothing");
-const neverType = Symbol("Never");
+export const numberType = Symbol("Number");
+export const stringType = Symbol("String");
+export const booleanType = Symbol("Boolean");
+export const nothingType = Symbol("Nothing");
+export const neverType = Symbol("Never");
 export const defaultTypeEnv: ReadonlyRecord<
   string,
   Type
@@ -170,6 +157,14 @@ export const defaultTypeEnv: ReadonlyRecord<
     newLambda(numberType, newList(numberType))
   ),
   // map: (a -> b) -> List a -> List b,
+  map: (() => {
+    const a = newVar();
+    const b = newVar();
+    return newLambda(
+      newLambda(a, b),
+      newLambda(newList(a), newList(b))
+    );
+  })(),
   // group: (a -> b) -> { a : c } -> { b : a };
   // filter: (a -> Boolean) -> List a -> List a,
   // fold: (a -> b -> a) -> a -> List b -> a,
@@ -287,27 +282,38 @@ const compose = (
   tree: Tree,
   input: string
 ): Substitutions => {
-  const duplicateA = a?.find(([ka, va]) =>
-    b?.find(([kb, vb]) => ka === kb && va !== vb)
-  );
-  if (duplicateA) {
-    const duplicateB = b?.find(([kb, vb]) =>
-      a?.find(([ka, va]) => kb === ka && vb !== va)
-    )!;
-    throw makeError(input, [
-      {
-        reason: `Cannot compose:\n  ${[
-          duplicateA,
-          duplicateB,
-        ]
-          .map(dup => dup.map(stringify).join(" : "))
-          .join("\n  ")}`,
-        at: tree.offset,
-        size: tree.size,
-      },
-    ]);
+  const subs = (a ?? []) as Mutable<Substitutions>;
+  if (b) {
+    for (const sub of b) {
+      const duplicateIndex = subs?.findIndex(
+        ([tvar]) => tvar === sub[0]
+      );
+      if (duplicateIndex !== -1) {
+        const extraSubs = unify(
+          sub[1],
+          subs[duplicateIndex]![1],
+          tree,
+          input
+        );
+        subs.splice(duplicateIndex, 1, [
+          sub[0],
+          apply(sub[1], extraSubs, tree, input),
+        ] as const);
+        subs.unshift(...extraSubs);
+      } else {
+        subs.push(sub);
+      }
+    }
   }
-  return (a ?? []).concat(b ?? []);
+
+  // TODO: Figure out how to do this in the earlier loop
+  for (let i = 0; i < subs.length; i++) {
+    const [tvar, sub] = subs[i]!;
+    const applied = apply(sub, subs, tree, input);
+    subs.splice(i, 1, [tvar, applied]);
+  }
+
+  return subs;
 };
 
 const apply = (
@@ -325,8 +331,8 @@ const apply = (
   } else if (isConstructor(type)) {
     return {
       ...type,
-      children: type.children.map(type =>
-        apply(type, subs, tree, input)
+      children: type.children.map(child =>
+        apply(child, subs, tree, input)
       ),
     };
   }
@@ -436,7 +442,7 @@ const extractPatterns = (
             isConstructor(type) &&
               type.name === listType
               ? pattern.type === "rest-pattern"
-                ? newList(type.children.slice(i))
+                ? newList(type.children[i]!)
                 : type.children[i]!
               : type,
             input
@@ -464,35 +470,38 @@ const program: Infer = (tree, env, input) => {
 };
 
 const lambda: Infer = (tree, env, input) => {
-  const argTree = (tree as Branch).children[0]!;
-  const argVar =
-    argTree.type === "list-pattern"
-      ? newList(
-          (argTree as Branch).children.map(newVar)
-        )
-      : argTree.type === "record-pattern"
+  const param = (tree as Branch).children[0]!;
+  const paramVar =
+    param.type === "list-pattern"
+      ? newList(newVar())
+      : param.type === "record-pattern"
       ? (() => {
+          // TODO: Implement
           throw "Cannot destructure records yet.";
         })()
       : newVar();
+
   const bodyVar = newVar();
-  const lambda = newLambda(argVar, bodyVar);
-  const [body, _, subs] = infer(
+  const lambda = newLambda(paramVar, bodyVar);
+
+  const [body, , subs] = infer(
     (tree as Branch).children[1]!,
     {
       ...env,
-      ...extractPatterns(argTree, argVar, input),
+      ...extractPatterns(param, paramVar, input),
     },
     input
   );
   const bodySubs = unify(bodyVar, body, tree, input);
   const allSubs = compose(subs, bodySubs, tree, input);
+
   const finalType = apply(
     lambda,
     allSubs,
     tree,
     input
   );
+
   return [finalType, env, allSubs];
 };
 
@@ -530,9 +539,10 @@ const infix: Infer = (tree, env, input) => {
     Token,
     Tree
   ];
-  const [lhsType, _, lhsSubs] = infer(lhs, env, input);
+  const [lhsType, , lhsSubs] = infer(lhs, env, input);
   const [opType] = infer(op, env, input);
   const [rhsType] = infer(rhs, env, input);
+
   const opReturnType = newVar();
   const newType = newLambda(
     lhsType,
@@ -540,6 +550,7 @@ const infix: Infer = (tree, env, input) => {
   );
   const subs = unify(opType, newType, tree, input);
   const allSubs = compose(subs, lhsSubs, tree, input);
+
   const finalType = apply(
     newType,
     allSubs,
@@ -550,38 +561,73 @@ const infix: Infer = (tree, env, input) => {
     (finalType as TypeConstructor)
       .children[1] as TypeConstructor
   ).children[1]!;
+
   return [returnType, env, allSubs];
 };
 
 const application: Infer = (tree, env, input) => {
-  const [lhs, rhs] = (tree as Branch).children as [
+  const [fun, arg] = (tree as Branch).children as [
     Tree,
     Tree
   ];
+
   const argVar = newVar();
-  const bodyVar = newVar();
-  const lambda = newLambda(argVar, bodyVar);
-  const [lhsType] = infer(lhs, env, input);
-  const subs = unify(lambda, lhsType, tree, input);
-  const [rhsType] = infer(rhs, env, input);
-  const rhsSubs = unify(argVar, rhsType, tree, input);
-  const allSubs = compose(subs, rhsSubs, tree, input);
-  const applied = apply(
-    lambda,
+  const returnVar = newVar();
+  const funVar = newLambda(argVar, returnVar);
+
+  const [funType, , funSubs] = infer(fun, env, input);
+  const moreFunSubs = unify(
+    funVar,
+    funType,
+    tree,
+    input
+  );
+  const allFunSubs = compose(
+    funSubs,
+    moreFunSubs,
+    tree,
+    input
+  );
+
+  const [argType, , argSubs] = infer(arg, env, input);
+  const moreArgSubs = unify(
+    argVar,
+    argType,
+    tree,
+    input
+  );
+  const allArgSubs = compose(
+    argSubs,
+    moreArgSubs,
+    tree,
+    input
+  );
+
+  const allSubs = compose(
+    allFunSubs,
+    allArgSubs,
+    tree,
+    input
+  );
+  const appliedFun = apply(
+    funVar,
     allSubs,
     tree,
     input
   ) as TypeConstructor;
-  return [applied.children[1]!, env, allSubs];
+  const returnType = appliedFun.children[1]!;
+
+  return [returnType, env, allSubs];
 };
 
 const declaration: Infer = (tree, env, input) => {
   const lhs = (tree as Branch).children[0]!;
   const lhsVar =
     lhs.type === "list-pattern"
-      ? newList((lhs as Branch).children.map(newVar))
+      ? newList(newVar())
       : lhs.type === "record-pattern"
       ? (() => {
+          // TODO: Implement
           throw "Cannot destructure records yet.";
         })()
       : newVar();
@@ -617,9 +663,11 @@ const declaration: Infer = (tree, env, input) => {
 
 const list: Infer = (tree, env, input) => [
   newList(
-    (tree as Branch).children.map(
-      child => infer(child, env, input)[0]!
-    )
+    infer(
+      (tree as Branch).children[0]!,
+      env,
+      input
+    )[0]!
   ),
   env,
   null,
@@ -639,17 +687,14 @@ const record: Infer = (tree, env, input) => {
             ];
           case "declaration": {
             // TODO: This is the same code as infer "declaration" except for
-            // checking wether variables are overwritten
+            // checking whether variables are overwritten
             const lhs = (row as Branch).children[0]!;
             const lhsVar =
               lhs.type === "list-pattern"
-                ? newList(
-                    (lhs as Branch).children.map(
-                      newVar
-                    )
-                  )
+                ? newList(newVar())
                 : lhs.type === "record-pattern"
                 ? (() => {
+                    // TODO: Implement
                     throw "Cannot destructure records yet.";
                   })()
                 : newVar();

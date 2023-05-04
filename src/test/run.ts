@@ -3,6 +3,8 @@ import { readdir, stat } from "node:fs/promises";
 import path from "node:path/posix";
 
 const run = (file: string) => {
+  // TODO: Show results in order
+  // TODO: Don't check errors with ❌, that's dumb
   let resolve: Function;
   let reject: Function;
   const promise = new Promise((res, rej) => {
@@ -49,7 +51,9 @@ const walk = async (
 };
 
 const files = (await walk("dist/test")).filter(
-  file => !import.meta.url.endsWith(file)
+  file =>
+    !import.meta.url.endsWith(file) &&
+    !file.endsWith(".map")
 );
 
 let succeeded = 0;
