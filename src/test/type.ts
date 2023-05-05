@@ -45,7 +45,7 @@ test("Higher order inference", () => {
 });
 
 test("Stringification parentheses", () => {
-  const input = "flip f a b = f b a";
+  const input = "f a b -> f b a";
   const [type] = infer(
     parse(input),
     defaultTypeEnv,
@@ -99,4 +99,14 @@ test("List lambda parameter", () => {
     input
   );
   return stringify(type) === "List Number -> Number";
+});
+
+test("Polymorphic lists", () => {
+  const input = "[1, ''a'']";
+  const [type] = infer(
+    parse(input),
+    defaultTypeEnv,
+    input
+  );
+  return stringify(type) === "List (Number | String)";
 });
