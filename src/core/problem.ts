@@ -1,4 +1,4 @@
-import { redUnderline } from "./util.js";
+import { ansi } from "./util.js";
 
 export type Problem = ProblemBase &
   (Expected | Unexpected | EndOfInput | Custom);
@@ -23,6 +23,9 @@ export type EndOfInput = Readonly<{
 export type Custom = Readonly<{
   reason: string;
 }>;
+
+const redUnderline = (string: string) =>
+  ansi.red(ansi.underline(string));
 
 export const getLineOfProblem = (
   input: string,

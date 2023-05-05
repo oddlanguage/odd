@@ -405,21 +405,21 @@ To motivate this decision, consider the following example. One might write expre
 a @@ b </> c % d;
 ```
 
-Can you see — at first glance — in what order this expression is evaluated? Why yes! _left-to-right_, like any other infix expression in Odd. You don't need intimate knowledge of the operators to know how the expression flows.
+Can you see — at first glance — in what order this expression is evaluated? Why, yes! _Left-to-right_, like any other infix expression in Odd. You don't need intimate knowledge of the operators to know how the expression flows.
 
 Mathematical operators hold no special distinction, so they are also stripped of their precedence and associativity rules.
 
 To change the order of operations, you can use parentheses:
 
 ```hs
-a @@ b </> c % d;
+a @@ b </> c ## d;
 -- is the same as
-((a @@ b) </> c) % d;
+((a @@ b) </> c) ## d;
 -- but not the same as
-a @@ (b </> c) % d;
+a @@ (b </> c) ## d;
 ```
 
-To improve readability, dense infix expressions are often already redundantly parenthesised in programs in other languages. All operators having the same precedence and associativity means that Odd "enforces" readability through parentheses.
+To improve reading comprehension, dense infix expressions are often already redundantly parenthesised in programs in other languages. All operators having the same precedence and associativity means that Odd "enforces" clarity through parentheses.
 
 #### Application
 
@@ -491,7 +491,7 @@ Odd values are immutable:
 
 ```hs
 a = b;
-a = c; -- ERROR! Can't redeclare `a`.
+a = c; -- ERROR! Cannot redeclare `a`.
 ```
 
 A function can be declared with the same syntax:

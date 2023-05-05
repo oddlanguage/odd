@@ -62,7 +62,7 @@ test("Record access and application", () => {
     tree1,
     {
       ...defaultEnv,
-      numbers: { a: 1, b: 1 }
+      numbers: { a: 1, b: 1 },
     },
     code1
   );

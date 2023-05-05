@@ -23,29 +23,13 @@ import {
   run,
   separatedBy,
   string,
-  unpack
+  unpack,
 } from "./parser.js";
 import {
-  newGenericList,
-  newGenericRecord,
-  newLambdaType,
-  newListType,
-  newRecordType,
-  newTupleType,
-  newTypeclassConstraint,
-  newUnionType,
-  oddBoolean,
-  oddNever,
-  oddNothing,
-  oddNumber,
-  oddString as oddStringType,
-  stringify
-} from "./type.js";
-import {
   ReadonlyRecord,
+  ansi,
   equal,
-  redUnderline,
-  serialise
+  serialise,
 } from "./util.js";
 
 const comment = pattern(/--[^\n]+/);
@@ -88,7 +72,7 @@ const listOf = (parser: Parser) =>
       parser
     ),
     ws,
-    _try(ignore(string(",")))
+    _try(ignore(string(","))),
   ]);
 
 const parenthesised = between(ignore(string("(")))(
@@ -98,7 +82,7 @@ const parenthesised = between(ignore(string("(")))(
 const _pattern = choice([
   lazy(() => literalPattern),
   lazy(() => listPattern),
-  lazy(() => recordPattern)
+  lazy(() => recordPattern),
 ]);
 
 const literalPattern = node("literal-pattern")(
@@ -108,7 +92,7 @@ const literalPattern = node("literal-pattern")(
     number,
     parenthesised(operator),
     name,
-    wildcard
+    wildcard,
   ])
 );
 
@@ -122,7 +106,7 @@ const listPattern = node("list-pattern")(
       )
     ),
     ws,
-    ignore(string("]"))
+    ignore(string("]")),
   ])
 );
 
@@ -136,7 +120,7 @@ const recordPattern = node("record-pattern")(
     ws,
     optional(listOf(lazy(() => fieldPattern))),
     ws,
-    ignore(string("}"))
+    ignore(string("}")),
   ])
 );
 
@@ -147,8 +131,8 @@ const fieldPattern = node("field-pattern")(
       node("literal-pattern")(name),
       _try(
         chain([ws, ignore(string("=")), ws, _pattern])
-      )
-    ])
+      ),
+    ]),
   ])
 );
 
@@ -158,7 +142,7 @@ const infixPattern = node("infix-pattern")(
     ws,
     operator,
     ws,
-    lazy(() => _pattern)
+    lazy(() => _pattern),
   ])
 );
 
@@ -175,7 +159,7 @@ const declaration = node("declaration")(
             type: "literal-pattern",
             children: [op],
             offset: op.offset,
-            size: op.size
+            size: op.size,
           },
           {
             type: "lambda",
@@ -186,12 +170,12 @@ const declaration = node("declaration")(
                 children: [lhs, body],
                 offset: rhs.offset,
                 size:
-                  body.offset - rhs.offset + body.size
-              }
+                  body.offset - rhs.offset + body.size,
+              },
             ],
             offset: op.offset,
-            size: body.offset - op.offset + body.size
-          }
+            size: body.offset - op.offset + body.size,
+          },
         ];
       } else {
         return children;
@@ -208,7 +192,7 @@ const declaration = node("declaration")(
       type: "lambda",
       children: funPart,
       offset,
-      size
+      size,
     };
     let i = funPart.length;
     const step = 2;
@@ -223,8 +207,8 @@ const declaration = node("declaration")(
           type: "lambda",
           children: body,
           offset,
-          size
-        }
+          size,
+        },
       ];
       i -= 1;
     }
@@ -233,12 +217,12 @@ const declaration = node("declaration")(
     chain([
       choice([
         infixPattern,
-        separatedBy(ws)(_pattern)
+        separatedBy(ws)(_pattern),
       ]),
       ws,
       ignore(string("=")),
       ws,
-      lazy(() => expression)
+      lazy(() => expression),
     ])
   )
 );
@@ -251,7 +235,7 @@ const match = node("match")(
     ws,
     ignore(string("of")),
     ws,
-    listOf(lazy(() => matchCase))
+    listOf(lazy(() => matchCase)),
   ])
 );
 
@@ -261,13 +245,13 @@ const matchCase = node("case")(
     ws,
     ignore(string("=")),
     ws,
-    lazy(() => expression)
+    lazy(() => expression),
   ])
 );
 
 const precedenceMatch = choice([
   match,
-  lazy(() => precedenceLambda)
+  lazy(() => precedenceLambda),
 ]);
 
 // TODO: Cleanup
@@ -282,7 +266,7 @@ const lambda = map(children => {
     type: "lambda",
     children,
     offset,
-    size
+    size,
   };
   let i = children.length;
   const step = 2;
@@ -297,8 +281,8 @@ const lambda = map(children => {
         type: "lambda",
         children: body,
         offset,
-        size
-      }
+        size,
+      },
     ];
     i -= 1;
   }
@@ -309,13 +293,13 @@ const lambda = map(children => {
     ws,
     ignore(string("->")),
     ws,
-    lazy(() => expression)
+    lazy(() => expression),
   ])
 );
 
 const precedenceLambda = choice([
   lambda,
-  lazy(() => precedenceInfix)
+  lazy(() => precedenceInfix),
 ]);
 
 const infix = nodeLeft(
@@ -327,7 +311,7 @@ const infix = nodeLeft(
       lazy(() => match),
       lambda,
       lazy(() => application),
-      lazy(() => atom)
+      lazy(() => atom),
     ]),
     oneOrMore(
       chain([
@@ -338,16 +322,16 @@ const infix = nodeLeft(
           lazy(() => match),
           lambda,
           lazy(() => application),
-          lazy(() => atom)
-        ])
+          lazy(() => atom),
+        ]),
       ])
-    )
+    ),
   ])
 );
 
 const precedenceInfix = choice([
   infix,
-  lazy(() => precedenceApplication)
+  lazy(() => precedenceApplication),
 ]);
 
 const application = nodeLeft("application")(
@@ -360,16 +344,16 @@ const application = nodeLeft("application")(
           lazy(() => match),
           lazy(() => atom),
           infix,
-          lambda
-        ])
+          lambda,
+        ]),
       ])
-    )
+    ),
   ])
 );
 
 const precedenceApplication = choice([
   application,
-  lazy(() => atom)
+  lazy(() => atom),
 ]);
 
 const destructuring = node("destructuring")(
@@ -378,7 +362,7 @@ const destructuring = node("destructuring")(
 
 const element = choice([
   destructuring,
-  lazy(() => expression)
+  lazy(() => expression),
 ]);
 
 const list = node("list")(
@@ -387,7 +371,7 @@ const list = node("list")(
     ws,
     optional(listOf(element)),
     ws,
-    ignore(string("]"))
+    ignore(string("]")),
   ])
 );
 
@@ -401,7 +385,7 @@ const record = node("record")(
     ws,
     optional(listOf(field)),
     ws,
-    ignore(string("}"))
+    ignore(string("}")),
   ])
 );
 
@@ -411,17 +395,17 @@ const literal = choice([
   number,
   list,
   record,
-  parenthesised(operator)
+  parenthesised(operator),
 ]);
 
 const atom = choice([
   literal,
-  parenthesised(lazy(() => expression))
+  parenthesised(lazy(() => expression)),
 ]);
 
 const statement = choice([
   declaration,
-  lazy(() => expression)
+  lazy(() => expression),
 ]);
 
 const expression = precedenceMatch;
@@ -431,13 +415,13 @@ const statements = chain([
     statement
   ),
   ws,
-  _try(ignore(string(";")))
+  _try(ignore(string(";"))),
 ]);
 
 const program = node("program")(
   chain([
     ws,
-    choice([eof, chain([statements, ws, eof])])
+    choice([eof, chain([statements, ws, eof])]),
   ])
 );
 
@@ -551,7 +535,11 @@ export const defaultEnv: ReadonlyRecord = {
       for (const x of xs) parts[f(x) ? 1 : 0].push(x);
       return parts;
     },
-  size: (x: any) => Object.keys(x).length,
+  size: (x: any) =>
+    (typeof x === "string"
+      ? Array.from(new Intl.Segmenter().segment(x))
+      : Object.keys(x)
+    ).length,
   max: (a: any) => (b: any) => Math.max(a, b),
   min: (a: any) => (b: any) => Math.min(a, b),
   show: (x: any) => {
@@ -575,7 +563,7 @@ export const defaultEnv: ReadonlyRecord = {
   },
   panic: (reason: string) => {
     // TODO: Use `makeError`
-    throw redUnderline("Uh oh: " + reason);
+    throw ansi.red(ansi.underline("Uh oh: " + reason));
   },
   benchmark: (f: Function) => {
     const times: number[] = [];
@@ -591,256 +579,5 @@ export const defaultEnv: ReadonlyRecord = {
       ).toFixed(3)}ms on average`
     );
     return result;
-  }
-};
-
-export const defaultTypeEnv: ReadonlyRecord = {
-  "/": newLambdaType(
-    oddNumber,
-    newLambdaType(oddNumber, oddNumber)
-  ),
-  "*": newLambdaType(
-    oddNumber,
-    newLambdaType(oddNumber, oddNumber)
-  ),
-  "+": newLambdaType(
-    oddNumber,
-    newLambdaType(oddNumber, oddNumber)
-  ),
-  "-": newLambdaType(
-    oddNumber,
-    newLambdaType(oddNumber, oddNumber)
-  ),
-  "%": newLambdaType(
-    oddNumber,
-    newLambdaType(oddNumber, oddNumber)
-  ),
-  "^": newLambdaType(
-    oddNumber,
-    newLambdaType(oddNumber, oddNumber)
-  ),
-  ...(() => {
-    const ord = Symbol("Ord");
-    const a = 0;
-    const b = 1;
-    const constraints = { [stringify(a)]: ord };
-    return {
-      "<": newTypeclassConstraint(
-        constraints,
-        newLambdaType(a, newLambdaType(a, oddNumber))
-      ),
-      ">": newTypeclassConstraint(
-        constraints,
-        newLambdaType(a, newLambdaType(a, oddNumber))
-      ),
-      "<=": newTypeclassConstraint(
-        constraints,
-        newLambdaType(a, newLambdaType(a, oddNumber))
-      ),
-      ">=": newTypeclassConstraint(
-        constraints,
-        newLambdaType(a, newLambdaType(a, oddNumber))
-      ),
-      "@": newTypeclassConstraint(
-        constraints,
-        newLambdaType(
-          a,
-          newLambdaType(
-            newGenericRecord(b),
-            newUnionType([b, oddNothing])
-          )
-        )
-      ),
-      has: newTypeclassConstraint(
-        constraints,
-        newLambdaType(
-          a,
-          newLambdaType(
-            newGenericRecord(b),
-            oddBoolean
-          )
-        )
-      ),
-      min: newTypeclassConstraint(
-        constraints,
-        newLambdaType(a, newLambdaType(a, a))
-      ),
-      max: newTypeclassConstraint(
-        constraints,
-        newLambdaType(a, newLambdaType(a, a))
-      )
-      // sort:
-      //   (f: (b: any) => (a: any) => number) =>
-      //   (xs: any[]) =>
-      //     xs.slice().sort((a, b) => f(a)(b)),
-      // "sort-by": (key: string | Function) => (xs: any[]) =>
-      //   xs
-      //     .slice()
-      //     .sort((a, b) =>
-      //       typeof key === "function"
-      //         ? key(a) > key(b)
-      //           ? -1
-      //           : key(b) > key(a)
-      //           ? 1
-      //           : 0
-      //         : a[key] > b[key]
-      //         ? 1
-      //         : b[key] > a[key]
-      //         ? -1
-      //         : 0
-      //     ),
-    };
-  })(),
-  true: oddBoolean,
-  false: oddBoolean,
-  nothing: oddNothing,
-  infinity: oddNumber,
-  ...(() => {
-    const eq = Symbol("Eq");
-    const a = 0;
-    const b = 1;
-    return {
-      "==": newTypeclassConstraint(
-        { [stringify(a)]: eq },
-        newLambdaType(a, newLambdaType(a, oddBoolean))
-      ),
-      "!=": newTypeclassConstraint(
-        { [stringify(a)]: eq },
-        newLambdaType(a, newLambdaType(a, oddBoolean))
-      ),
-      group: newTypeclassConstraint(
-        { [stringify(b)]: eq },
-        newLambdaType(
-          newLambdaType(a, b, true),
-          newLambdaType(
-            newListType(a),
-            newRecordType({
-              [stringify(b)]: newGenericList(a)
-            })
-          )
-        )
-      )
-    };
-  })(),
-  "&": newLambdaType(
-    oddBoolean,
-    newLambdaType(oddBoolean, oddBoolean)
-  ),
-  "|": newLambdaType(
-    oddBoolean,
-    newLambdaType(oddBoolean, oddBoolean)
-  ),
-  // "<.": newLambdaType(
-  //   oddLambda,
-  //   newLambdaType(oddLambda, oddLambda)
-  // ),
-  // ".>": newLambdaType(
-  //   oddLambda,
-  //   newLambdaType(oddLambda, oddLambda)
-  // ),
-  // "|>": newLambdaType(
-  //   oddLambda,
-  //   newLambdaType(oddLambda, 0)
-  // ),
-  // "<|": newLambdaType(
-  //   oddLambda,
-  //   newLambdaType(oddLambda, 0)
-  // ),
-  not: newLambdaType(oddBoolean, oddBoolean),
-  range: newLambdaType(
-    oddNumber,
-    newListType(oddNumber)
-  ),
-  "range-from": newLambdaType(
-    oddNumber,
-    newLambdaType(oddNumber, newListType(oddNumber))
-  ),
-  map: newLambdaType(
-    newLambdaType(0, 1, true),
-    newLambdaType(newListType(0), newListType(1))
-  ),
-  filter: newLambdaType(
-    newLambdaType(0, oddBoolean, true),
-    newLambdaType(newGenericList(0), newGenericList(0))
-  ),
-  fold: newLambdaType(
-    newLambdaType(0, newLambdaType(1, 0), true),
-    newLambdaType(
-      0,
-      newLambdaType(newGenericList(1), 0)
-    )
-  ),
-  foldr: newLambdaType(
-    newLambdaType(0, newLambdaType(1, 1), true),
-    newLambdaType(
-      1,
-      newLambdaType(newGenericList(0), 1)
-    )
-  ),
-  // replace:
-  //   (key: keyof any) =>
-  //   (value: any) =>
-  //   (target: any) => {
-  //     if (Array.isArray(target)) {
-  //       const clone = target.slice();
-  //       clone.splice(key as number, 1, value);
-  //       return clone;
-  //     } else {
-  //       const clone = { ...target };
-  //       clone[key] = value;
-  //       return clone;
-  //     }
-  //   },
-  reverse: newLambdaType(
-    newGenericList(0),
-    newGenericList(0)
-  ),
-  head: newLambdaType(
-    newGenericList(0),
-    newUnionType([0, oddNothing])
-  ),
-  last: newLambdaType(
-    newGenericList(0),
-    newUnionType([0, oddNothing])
-  ),
-  tail: newLambdaType(
-    newGenericList(0),
-    newGenericList(0)
-  ),
-  drop: newLambdaType(
-    oddNumber,
-    newLambdaType(newGenericList(0), newGenericList(0))
-  ),
-  partition: newLambdaType(
-    newLambdaType(0, oddBoolean, true),
-    newLambdaType(
-      newGenericList(0),
-      newTupleType([
-        newGenericList(0),
-        newGenericList(0)
-      ])
-    )
-  ),
-  size: (() => {
-    const sized = Symbol("Sized");
-    const a = 0;
-    return newTypeclassConstraint(
-      { [stringify(a)]: sized },
-      newLambdaType(a, oddNumber)
-    );
-  })(),
-  show: (() => {
-    const show = Symbol("Show");
-    const a = 0;
-    return newTypeclassConstraint(
-      { [stringify(a)]: show },
-      newLambdaType(a, oddStringType)
-    );
-  })(),
-  import: newLambdaType(
-    oddStringType,
-    Symbol("Module")
-  ),
-  panic: newLambdaType(oddStringType, oddNever)
-  // benchmark: newLambdaType(oddLambda, oddNothing),
+  },
 };

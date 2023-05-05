@@ -5,7 +5,7 @@ import {
   diff,
   difference,
   equal,
-  serialise
+  serialise,
 } from "../core/util.js";
 
 test("Lambdas do not pollute parent scope", () => {
@@ -51,11 +51,11 @@ test("Lambdas are folded properly", () => {
                 type: "name",
                 text: "a",
                 offset: 0,
-                size: 1
-              }
+                size: 1,
+              },
             ],
             offset: 0,
-            size: 1
+            size: 1,
           },
           {
             type: "lambda",
@@ -67,29 +67,29 @@ test("Lambdas are folded properly", () => {
                     type: "name",
                     text: "b",
                     offset: 5,
-                    size: 1
-                  }
+                    size: 1,
+                  },
                 ],
                 offset: 5,
-                size: 1
+                size: 1,
               },
               {
                 type: "number",
                 text: "0",
                 offset: 10,
-                size: 1
-              }
+                size: 1,
+              },
             ],
             offset: 5,
-            size: 6
-          }
+            size: 6,
+          },
         ],
         offset: 0,
-        size: 11
-      }
+        size: 11,
+      },
     ],
     offset: 0,
-    size: 11
+    size: 11,
   };
   const got = parse("a -> b -> 0");
   const ok = equal(got, expected);

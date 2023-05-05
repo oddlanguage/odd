@@ -3,21 +3,14 @@ import { Branch, Token, Tree } from "./parser.js";
 import { makeError } from "./problem.js";
 import { Mutable, ReadonlyRecord } from "./util.js";
 
-// TODO: Skip .wat and go straight to .wasm
-// https://www.youtube.com/watch?v=pkw9USN_Tko
-// https://github.com/btzy/wasm-codegen/blob/master/wasm32-codewriter.js
-// https://blog.ttulka.com/learning-webassembly-2-wasm-binary-format/
-// https://webassembly.github.io/spec/core/index.html
-// https://blog.scottlogic.com/2018/04/26/webassembly-by-hand.html
-
 type Eval = (
   tree: Tree,
   env: ReadonlyRecord,
   input: string
 ) => readonly [
-  any, // result
-  ReadonlyRecord | null, // exports
-  ReadonlyRecord // env
+  any,
+  ReadonlyRecord | null,
+  ReadonlyRecord
 ];
 
 const _eval: Eval = (tree, env, input) => {
@@ -53,8 +46,8 @@ const _eval: Eval = (tree, env, input) => {
         {
           reason: `Unhandled node type "${tree?.type}".`,
           at: tree.offset,
-          size: tree.size
-        }
+          size: tree.size,
+        },
       ]);
   }
 };
@@ -62,15 +55,15 @@ const _eval: Eval = (tree, env, input) => {
 const program: Eval = (tree, env, input) =>
   (tree as Branch).children.reduce(
     ([, oldExports, oldEnv], child) => {
-      const [value, exports, newEnv] = _eval(
+      const [value, newExports, newEnv] = _eval(
         child,
         oldEnv,
         input
       );
       return [
         value,
-        { ...oldExports, ...exports },
-        newEnv
+        { ...oldExports, ...newExports },
+        newEnv,
       ];
     },
     [nothing, {}, { ...env }] as const
@@ -88,7 +81,7 @@ const declaration: Eval = (tree, env, input) => {
 
   const lhsTree = (tree as Branch)
     .children[0] as Branch;
-  const extracted = extractPattern(
+  const extracted = extractPatterns(
     lhsTree,
     rhs,
     input
@@ -103,19 +96,19 @@ const declaration: Eval = (tree, env, input) => {
 const number: Eval = (tree, env) => [
   numberLiteral((tree as Token).text),
   null,
-  env
+  env,
 ];
 
 const name: Eval = (tree, env) => [
   env[(tree as Token).text],
   null,
-  env
+  env,
 ];
 
 const operator: Eval = (tree, env) => [
   env[(tree as Token).text],
   null,
-  env
+  env,
 ];
 
 const application: Eval = (tree, env, input) => {
@@ -141,7 +134,7 @@ const application: Eval = (tree, env, input) => {
 const string: Eval = (tree, env) => [
   stringLiteral((tree as Token).text),
   null,
-  env
+  env,
 ];
 
 // BUG: TODO: If operators evaluate RHS first,
@@ -172,16 +165,16 @@ const lambda: Eval = (tree, env, input) => [
       (tree as Branch).children[1]!,
       {
         ...env,
-        ...extractPattern(
+        ...extractPatterns(
           (tree as Branch).children[0] as Branch,
           arg,
           input
-        )
+        ),
       },
       input
     )[0],
   null,
-  env
+  env,
 ];
 
 const list: Eval = (tree, env, input) => {
@@ -208,7 +201,7 @@ const record: Eval = (tree, env, input) => [
     return { ...acc, ...value };
   }, {}),
   null,
-  env
+  env,
 ];
 
 const field: Eval = (tree, env, input) => {
@@ -216,7 +209,7 @@ const field: Eval = (tree, env, input) => {
   switch (field.type) {
     case "declaration":
       return [
-        extractPattern(
+        extractPatterns(
           (field as Branch).children[0] as Branch,
           _eval(
             (field as Branch).children[1]!,
@@ -226,7 +219,7 @@ const field: Eval = (tree, env, input) => {
           input
         ),
         null,
-        env
+        env,
       ];
     case "name":
       return [
@@ -235,10 +228,10 @@ const field: Eval = (tree, env, input) => {
             field,
             env,
             input
-          )[0]
+          )[0],
         },
         null,
-        env
+        env,
       ];
     case "destructuring":
       return [
@@ -247,18 +240,18 @@ const field: Eval = (tree, env, input) => {
             (field as Branch).children[0]!,
             env,
             input
-          )[0]
+          )[0],
         },
         null,
-        env
+        env,
       ];
     default:
       throw makeError(input, [
         {
           reason: `Unhandled field type "${field.type}".`,
           at: field.offset,
-          size: field.size
-        }
+          size: field.size,
+        },
       ]);
   }
 };
@@ -280,19 +273,30 @@ const match: Eval = (tree, env, input) => {
     );
   const match = cases.find(([pattern]) =>
     matchPattern(pattern, value, input)
-  )!;
+  );
+
+  // TODO: This should be impossible after semantic analysis
+  if (!match) {
+    throw makeError(input, [
+      {
+        reason: "No matching case found.",
+        at: tree.offset,
+        size: tree.size,
+      },
+    ]);
+  }
 
   return [
     _eval(
       match[1],
       {
         ...env,
-        ...extractPattern(match[0], value, input)
+        ...extractPatterns(match[0], value, input),
       },
       input
     )[0],
     null,
-    env
+    env,
   ];
 };
 
@@ -336,8 +340,8 @@ const matchPattern = (
             {
               reason: `Unhandled matcher for literal pattern type "${literal.type}".`,
               at: literal.offset,
-              size: literal.size
-            }
+              size: literal.size,
+            },
           ]);
       }
     }
@@ -391,13 +395,13 @@ const matchPattern = (
         {
           reason: `Unhandled matcher for pattern type "${pattern.type}".`,
           at: pattern.offset,
-          size: pattern.size
-        }
+          size: pattern.size,
+        },
       ]);
   }
 };
 
-const extractPattern = (
+const extractPatterns = (
   pattern: Branch,
   value: any,
   input: string
@@ -423,8 +427,8 @@ const extractPattern = (
             {
               reason: `Unhandled extractor for literal pattern type "${literal?.type}".`,
               at: literal.offset,
-              size: literal.size
-            }
+              size: literal.size,
+            },
           ]);
       }
     }
@@ -432,13 +436,13 @@ const extractPattern = (
       return (pattern.children as Branch[]).reduce(
         (extracted, pattern, i) => ({
           ...extracted,
-          ...extractPattern(
+          ...extractPatterns(
             pattern,
             pattern.type === "rest-pattern"
               ? value.slice(i)
               : value[i],
             input
-          )
+          ),
         }),
         {}
       );
@@ -448,7 +452,7 @@ const extractPattern = (
           const field = pattern.children[0] as Branch;
           return {
             ...extracted,
-            ...extractPattern(
+            ...extractPatterns(
               pattern.children.length === 2
                 ? (pattern.children[1] as Branch)
                 : field,
@@ -478,7 +482,7 @@ const extractPattern = (
                     (field.children[0] as Token).text
                   ],
               input
-            )
+            ),
           };
         },
         {}
@@ -488,8 +492,8 @@ const extractPattern = (
         {
           reason: `Unhandled extractor for pattern type "${pattern?.type}".`,
           at: pattern.offset,
-          size: pattern.size
-        }
+          size: pattern.size,
+        },
       ]);
   }
 };

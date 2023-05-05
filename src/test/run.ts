@@ -1,19 +1,27 @@
 import { exec } from "node:child_process";
-import { readdir } from "node:fs/promises";
+import { readdir, stat } from "node:fs/promises";
+import path from "node:path/posix";
 
 const run = (file: string) => {
+  // TODO: Show results in order
+  // TODO: Don't check errors with ❌, that's dumb
   let resolve: Function;
   let reject: Function;
   const promise = new Promise((res, rej) => {
     resolve = res;
     reject = rej;
   });
-  console.log(`Running test/${file}`);
-  exec(`node dist/test/${file}`, (err, stdout) => {
+  const base = "/dist/test/";
+  console.log(
+    `Running ${file.slice(
+      file.indexOf(base) + base.length
+    )}`
+  );
+  exec(`node ${file}`, (err, stdout) => {
     process.stdout.write(stdout + "\n");
 
-    if (err || stdout.includes("❌")) {
-      reject(err);
+    if (err ?? stdout.includes("❌")) {
+      reject(err ?? stdout);
     } else {
       resolve();
     }
@@ -22,12 +30,30 @@ const run = (file: string) => {
   return promise;
 };
 
-const files = (await readdir("dist/test")).filter(
-  file =>
-    file !==
-    import.meta.url.slice(
-      import.meta.url.lastIndexOf("/") + 1
+const walk = async (
+  dir: string,
+  depth = 0
+): Promise<ReadonlyArray<string>> => {
+  if (depth > 100)
+    throw `Maximum walk depth exceeded.`;
+  return (
+    await Promise.all(
+      (
+        await readdir(dir)
+      ).map(async file => {
+        const fullPath = path.resolve(dir, file);
+        return (await stat(fullPath)).isDirectory()
+          ? await walk(fullPath, depth + 1)
+          : fullPath;
+      })
     )
+  ).flat();
+};
+
+const files = (await walk("dist/test")).filter(
+  file =>
+    !import.meta.url.endsWith(file) &&
+    !file.endsWith(".map")
 );
 
 let succeeded = 0;

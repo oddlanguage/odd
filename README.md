@@ -41,10 +41,12 @@ Feel free to contribute. [Please read our contributing guidelines](./CONTRIBUTIN
 To try out Odd, download the repo and run it through NodeJS:
 
 ```sh
-npm i; # install types for development
+npm i; # install dependencies
 npx tsc; # compile source
-node dist/run.js; # start a repl
+node dist/core/run.js; # start a repl
 ```
+
+> ℹ️ Consider using the node option `--enable-source-maps` to get direct error stack translations when creating an issue.
 
 When Odd is finished, it will be a standalone executable requiring no separate Node installation, or any other dependency.
 
@@ -57,16 +59,16 @@ For a more in-depth look at how Odd works, [have a look at the documentation](do
 
 Some work has yet to be done for odd to release as v1.0. The following is a list of development milestones to get to **v1.0**:
 
-- [x] ⏱️ **0.1**: Runnable programs.
-- [x] ⏱️ **0.2**: Module system.
-- [x] ⏱️ **0.3**: (Complete) Pattern matching.
-- [ ] ⏱️ **0.4**: Improved parsing speed & errors.
-- [ ] ⏱️ **0.5**: Damas-Hindley-Milner type system with typeclasses and row polymorphism.
-- [ ] ⏱️ **0.6**: Odd LSP for proper editor integration.
+- [x] **0.1**: CLI REPL
+- [x] **0.2**: Modules
+- [x] **0.3**: Pattern matching
+- [ ] **0.4**: Type system
+- [ ] **0.5**: LSP for proper editor integration
+- [ ] **0.6**: Intelligble and helpful errors
 
 > ...
 
-- [ ] 🏁 **1.0**: Standalone executable for real-world use.
+- [ ] **1.0**: 🏁 Standalone executable for real-world use.
 
 <br/>
 <br/>
