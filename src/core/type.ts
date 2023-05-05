@@ -58,7 +58,6 @@ const isScheme = (type: Type): type is TypeScheme =>
 
 const alphabet = "αβγδεζηθικλμνξοπρστυφχψω";
 const subscript = "₀₁₂₃₄₅₆₇₈₉";
-// TODO: parenthesise when ambiguous such as (a->b)->c etc.
 export const stringify = (type: Type): string =>
   typeof type === "number"
     ? alphabet[type] ??
