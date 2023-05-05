@@ -90,6 +90,13 @@ const declaration: Eval = (tree, env, input) => {
   for (const [key, value] of Object.entries(extracted))
     mutableEnvToAllowRecursion[key] = value;
 
+  if (typeof rhs === "function") {
+    const name = Object.entries(extracted)[0]![0];
+    Object.defineProperty(rhs, "name", {
+      get: () => name,
+    });
+  }
+
   return [rhs, extracted, mutableEnvToAllowRecursion];
 };
 
