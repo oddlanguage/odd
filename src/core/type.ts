@@ -1,6 +1,10 @@
 import { Branch, Token, Tree } from "./parser.js";
 import { makeError } from "./problem.js";
-import { Mutable, ReadonlyRecord } from "./util.js";
+import {
+  Mutable,
+  ReadonlyRecord,
+  unique,
+} from "./util.js";
 
 export type TypeConstructor = Readonly<{
   name: symbol;
@@ -12,6 +16,30 @@ type TypeScheme = Readonly<{
   vars: ReadonlyArray<number>;
   type: Type;
 }>;
+const newScheme = (type: Type): TypeScheme => ({
+  vars: free(type),
+  type,
+});
+const instantiate = (scheme: TypeScheme): Type => {
+  let i = 0;
+  const vars = Object.fromEntries(
+    scheme.vars.map(v => [v, i++])
+  );
+  const _inst = (type: Type): Type => {
+    if (typeof type === "symbol") {
+      return type;
+    } else if (typeof type === "number") {
+      return vars[type]!;
+    } else if (isConstructor(type)) {
+      return {
+        ...type,
+        children: type.children.map(_inst),
+      };
+    }
+    throw `Cannot instantiate ${type}.`;
+  };
+  return _inst(scheme.type);
+};
 
 type Type =
   | number
@@ -63,7 +91,12 @@ export const newLambda = (
   name: lambdaType,
   children: [arg, body],
   stringify: self =>
-    self.children.map(stringify).join(" -> "),
+    (isConstructor(self.children[0]!) &&
+    self.children[0].name === lambdaType
+      ? `(${stringify(self.children[0])})`
+      : stringify(self.children[0]!)) +
+    " -> " +
+    stringify(self.children[1]!),
 });
 
 export const listType = Symbol("List");
@@ -199,7 +232,7 @@ const free = (type: Type): ReadonlyArray<number> => {
   } else if (typeof type === "number") {
     return [type];
   } else if (isConstructor(type)) {
-    return type.children.flatMap(free);
+    return unique(type.children.flatMap(free));
   } else {
     return free(type.type).filter(
       freeVar => !type.vars.includes(freeVar)
@@ -466,7 +499,7 @@ const program: Infer = (tree, env, input) => {
   for (const child of (tree as Branch).children) {
     [type, env] = infer(child, env, input);
   }
-  return [type, env, null];
+  return [instantiate(newScheme(type)), env, null];
 };
 
 const lambda: Infer = (tree, env, input) => {
