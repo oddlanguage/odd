@@ -145,20 +145,28 @@ const string: Eval = (tree, env) => [
   env,
 ];
 
-// BUG: TODO: If operators evaluate RHS first,
-// it can never short-circuit in case of boolean
-// operators.
 const infix: Eval = (tree, env, input) => {
-  const [lhs] = _eval(
-    (tree as Branch).children[0]!,
-    env,
-    input
-  );
   const [op] = _eval(
     (tree as Branch).children[1]!,
     env,
     input
   );
+  const [lhs] = _eval(
+    (tree as Branch).children[0]!,
+    env,
+    input
+  );
+
+  // TODO: Figure out how to do this out of the interpreter
+  const opName = (
+    (tree as Branch).children[1] as Token
+  ).text;
+  if (
+    (opName === "&" && !lhs) ||
+    (opName === "|" && lhs)
+  )
+    return [lhs, null, env];
+
   const [rhs] = _eval(
     (tree as Branch).children[2]!,
     env,

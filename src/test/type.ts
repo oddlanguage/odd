@@ -10,6 +10,16 @@ import {
   stringify,
 } from "../core/type.js";
 
+test("Redefining a value raises an error", () => {
+  const code = `a=1;a=2`;
+  try {
+    infer(parse(code), defaultTypeEnv, code);
+    return false;
+  } catch (_) {
+    return true;
+  }
+});
+
 test("Simple types", () =>
   Object.entries({
     "1": numberType,

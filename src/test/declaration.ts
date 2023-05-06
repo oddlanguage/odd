@@ -35,16 +35,6 @@ test("Function declarations are desugared into lambdas", () =>
     ([key]) => !["offset", "size"].includes(key)
   ));
 
-test("Redefining a value raises an error", () => {
-  const code = `a=1;a=2`;
-  try {
-    _eval(parse(code), defaultEnv, code);
-    return false;
-  } catch (_) {
-    return true;
-  }
-});
-
 test("Custom infix operators", () => {
   const code = `a %^& b = 7;1 %^& 3`;
   const [value] = _eval(parse(code), defaultEnv, code);
