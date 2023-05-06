@@ -38,17 +38,14 @@ Feel free to contribute. [Please read our contributing guidelines](./CONTRIBUTIN
 
 > ℹ️ Odd is guaranteed to work with [NodeJS version 16.13.1](https://nodejs.org/dist/v16.13.1/), but should be compatible with earlier versions down to v12, possibly requiring the `--harmony` flag.
 
-To try out Odd, download the repo and run it through NodeJS:
+To try out Odd, download the repo and run it:
 
 ```sh
 npm i; # install dependencies
-npx tsc; # compile source
-node dist/core/run.js; # start a repl
+npm run repl; # start a repl
 ```
 
-> ℹ️ Consider using the node option `--enable-source-maps` to get direct error stack translations when creating an issue.
-
-When Odd is finished, it will be a standalone executable requiring no separate Node installation, or any other dependency.
+> ℹ️ When Odd is finished, it will be a standalone executable requiring no separate Node installation, or any other dependency.
 
 For a more in-depth look at how Odd works, [have a look at the documentation](docs/syntax.md).
 
