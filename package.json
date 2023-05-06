@@ -2,6 +2,9 @@
   "type": "module",
   "name": "odd",
   "version": "0.4.1",
+  "scripts": {
+    "test": "tsc && clear && node dist/test/run.js"
+  },
   "devDependencies": {
     "@types/node": "^20.1.0",
     "typescript": "^5.0.3"
