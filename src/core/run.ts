@@ -1,11 +1,6 @@
 import { readFile } from "fs/promises";
 import _eval from "./eval.js";
 import parse, { defaultEnv } from "./odd.js";
-import {
-  defaultTypeEnv,
-  infer,
-  stringify,
-} from "./type.js";
 import { serialise } from "./util.js";
 
 const [target, outfile] = process.argv.slice(2);
@@ -24,7 +19,6 @@ const repl = async () => {
   process.stdout.write(`${versionString}\n> `);
 
   let env = defaultEnv;
-  let typeEnv = defaultTypeEnv;
   const history: string[] = [];
 
   for await (const input of process.stdin) {
@@ -36,23 +30,13 @@ const repl = async () => {
 
     try {
       const ast = parse(inputWithoutFinalNewline);
-      const [type, newTypeEnv] = infer(
-        ast,
-        typeEnv,
-        inputWithoutFinalNewline
-      );
       const [result, , newEnv] = _eval(
         ast,
         env,
         inputWithoutFinalNewline
       );
-      console.log(
-        serialise(result) +
-          " : " +
-          serialise(stringify(type))
-      );
+      console.log(serialise(result));
       env = newEnv;
-      typeEnv = newTypeEnv;
     } catch (error: any) {
       console.error(
         error instanceof Error

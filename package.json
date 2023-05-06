@@ -1,12 +1,13 @@
 {
   "type": "module",
   "name": "odd",
-  "version": "0.4.0",
+  "version": "0.3.8",
   "scripts": {
-    "test": "npx tsc && node dist/test/run.js"
+    "repl": "tsc && clear && node --enable-source-maps dist/core/run.js",
+    "test": "tsc && clear && node --enable-source-maps dist/test/run.js"
   },
   "devDependencies": {
-    "@types/node": "^18.15.11",
+    "@types/node": "^20.1.0",
     "typescript": "^5.0.3"
   },
   "license": "MIT"
