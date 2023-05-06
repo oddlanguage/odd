@@ -15,26 +15,45 @@ test("Lambdas do not pollute parent scope", () => {
     defaultEnv,
     code
   );
-  return equal(difference(env, defaultEnv), {});
+
+  if (!equal(difference(env, defaultEnv), {}))
+    return serialise(diff(env, defaultEnv));
 });
 
-test("Multiple parameters are desugared", () =>
-  equal(
-    parse("a b c -> 1"),
-    parse("a -> b -> c -> 1"),
-    ([key]) => !["offset", "size"].includes(key)
-  ));
+test("Multiple parameters are desugared", () => {
+  const a = parse("a b c -> 1");
+  const b = parse("a -> b -> c -> 1");
+
+  if (
+    !equal(
+      a,
+      b,
+      ([key]) => !["offset", "size"].includes(key)
+    )
+  )
+    return serialise(diff(a, b));
+});
 
 test("First-order record pattern argument destructuring", () => {
   const code = `({a}->a) {a=1}`;
-  const [value] = _eval(parse(code), defaultEnv, code);
-  return value === 1;
+  const [result] = _eval(
+    parse(code),
+    defaultEnv,
+    code
+  );
+  if (result !== 1)
+    return `Expected 1 but got ${result}`;
 });
 
 test("First-order list pattern argument destructuring", () => {
   const code = `([a]->a) [1]`;
-  const [value] = _eval(parse(code), defaultEnv, code);
-  return value === 1;
+  const [result] = _eval(
+    parse(code),
+    defaultEnv,
+    code
+  );
+  if (result !== 1)
+    return `Expected 1 but got ${result}`;
 });
 
 test("Lambdas are folded properly", () => {
@@ -92,9 +111,7 @@ test("Lambdas are folded properly", () => {
     size: 11,
   };
   const got = parse("a -> b -> 0");
-  const ok = equal(got, expected);
 
-  if (!ok) throw serialise(diff(got, expected));
-
-  return ok;
+  if (!equal(got, expected))
+    return serialise(diff(got, expected));
 });

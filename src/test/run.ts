@@ -1,73 +1,116 @@
-import { exec } from "node:child_process";
-import { readdir, stat } from "node:fs/promises";
-import path from "node:path/posix";
+import { readFile, readdir } from "node:fs/promises";
+import { Worker } from "node:worker_threads";
 
-const run = (file: string) => {
-  // TODO: Show results in order
-  // TODO: Don't check errors with ❌, that's dumb
-  let resolve: Function;
-  let reject: Function;
-  const promise = new Promise((res, rej) => {
-    resolve = res;
-    reject = rej;
-  });
-  const base = "/dist/test/";
-  console.log(
-    `Running ${file.slice(
-      file.indexOf(base) + base.length
-    )}`
-  );
-  exec(`node ${file}`, (err, stdout) => {
-    process.stdout.write(stdout + "\n");
+// NOTE: This keeps the vent loop alive.
+// Nodejs doesn't wait for "empty" promises
+// https://github.com/nodejs/node/issues/22088
+const timeout = setTimeout(() => {
+  throw "Why did this not terminate in 24 days?";
+}, 2147483647);
 
-    if (err ?? stdout.includes("❌")) {
-      reject(err ?? stdout);
-    } else {
-      resolve();
-    }
-  });
-
-  return promise;
-};
-
-const walk = async (
-  dir: string,
-  depth = 0
-): Promise<ReadonlyArray<string>> => {
-  if (depth > 100)
-    throw `Maximum walk depth exceeded.`;
-  return (
-    await Promise.all(
-      (
-        await readdir(dir)
-      ).map(async file => {
-        const fullPath = path.resolve(dir, file);
-        return (await stat(fullPath)).isDirectory()
-          ? await walk(fullPath, depth + 1)
-          : fullPath;
-      })
-    )
-  ).flat();
-};
-
-const files = (await walk("dist/test")).filter(
+const files = (
+  await readdir("dist/test", {
+    recursive: true,
+  })
+).filter(
   file =>
-    !import.meta.url.endsWith(file) &&
-    !file.endsWith(".map")
+    !file.endsWith(".map") &&
+    !import.meta.url.endsWith(file)
 );
 
-let succeeded = 0;
-for (const file of files) {
-  try {
-    await run(file);
-    succeeded += 1;
-  } catch (_) {}
+type Result = Success | Failure;
+
+type Success = Readonly<{
+  type: "success";
+  description: string;
+}>;
+
+type Failure = Readonly<{
+  type: "failure";
+  description: string;
+  error: string;
+}>;
+
+const loadingChars = ["⠾", "⠷", "⠯", "⠟", "⠻", "⠽"];
+const { version } = JSON.parse(
+  await readFile("package.json", "utf-8")
+);
+console.log(`Running Odd v${version} test suite`);
+let total = 0;
+let done = 0;
+const failures: Record<string, Failure[]> = {};
+for (let line = 0; line < files.length; line++) {
+  const file = files[line]!;
+  const worker = new Worker("./dist/test/" + file);
+  let loadingCharIndex = 0;
+  let totalFile = 0;
+  let doneFile = 0;
+  let didFail = false;
+  const interval = setInterval(() => {
+    process.stdout.cursorTo(0, line + 1);
+    process.stdout.write(
+      loadingChars[
+        loadingCharIndex++ % loadingChars.length
+      ] +
+        " " +
+        file
+    );
+  }, 100);
+  worker.on(
+    "message",
+    (payload: "register" | Result) => {
+      if (payload === "register") {
+        total += 1;
+        totalFile += 1;
+      } else {
+        done += 1;
+        doneFile += 1;
+
+        if (payload.type === "failure") {
+          didFail = true;
+          (failures[file] ??= []).push(payload);
+        }
+
+        // TODO: Register errors to be displayed afterwards
+        if (doneFile === totalFile) {
+          clearInterval(interval);
+          process.stdout.cursorTo(0, line + 1);
+          process.stdout.clearLine(1);
+          console.log(
+            `${didFail ? "❌" : "✅"} ` + file
+          );
+
+          if (done === total) {
+            process.stdout.cursorTo(
+              0,
+              files.length + 2
+            );
+            if (Object.keys(failures).length) {
+              console.log(
+                `Found ${
+                  Object.values(failures).flat().length
+                } issues in ${
+                  Object.keys(failures).length
+                } file(s):\n`
+              );
+            } else {
+              console.log("Done! No issues found 😎");
+            }
+            for (const [
+              file,
+              issues,
+            ] of Object.entries(failures)) {
+              for (const issue of issues) {
+                console.log(
+                  `[${file}] ${issue.description}:\n${issue.error}\n`
+                );
+              }
+            }
+            // NOTE: Clearing the "busywork" to tell node it can stop the process
+            clearTimeout(timeout);
+          }
+        }
+      }
+    }
+  );
 }
-
-console.log(
-  `${succeeded}/${
-    files.length
-  } test succeeded (${Math.round(
-    (succeeded / files.length) * 100
-  )}%)`
-);

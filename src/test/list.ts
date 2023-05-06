@@ -1,16 +1,23 @@
 import _eval from "../core/eval.js";
 import parse, { defaultEnv } from "../core/odd.js";
 import test from "../core/test.js";
-import { equal } from "../core/util.js";
+import {
+  diff,
+  equal,
+  serialise,
+} from "../core/util.js";
 
 test("Empty lists", () => {
   const code = `[]`;
+  const expected = [] as const;
   const [result] = _eval(
     parse(code),
     defaultEnv,
     code
   );
-  return equal(result, []);
+
+  if (!equal(result, expected))
+    return serialise(diff(expected, result));
 });
 
 test("Simple elements", () => {
@@ -20,16 +27,18 @@ test("Simple elements", () => {
     defaultEnv,
     code
   );
-  return equal(result, [1, "a", true]);
+  const expected = [1, "a", true];
+
+  if (!equal(result, expected))
+    return serialise(diff(expected, result));
 });
 
 test("Complex elements", () => {
-  const code = `[a -> b, [], {x=7}, (a -> a) 1]`;
   try {
+    const code = `[a -> b, [], {x=7}, (a -> a) 1]`;
     _eval(parse(code), defaultEnv, code);
-    return true;
-  } catch (_) {
-    return false;
+  } catch (err: any) {
+    return err.toString();
   }
 });
 
@@ -40,7 +49,10 @@ test("Dangling commas are ignored", () => {
     defaultEnv,
     code
   );
-  return equal(result, [1]);
+  const expected = [1];
+
+  if (!equal(result, expected))
+    return serialise(diff(expected, result));
 });
 
 test("Destructuring", () => {
@@ -50,5 +62,8 @@ test("Destructuring", () => {
     defaultEnv,
     code
   );
-  return equal(result, [1]);
+  const expected = [1];
+
+  if (!equal(result, expected))
+    return serialise(diff(expected, result));
 });

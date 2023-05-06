@@ -1,7 +1,11 @@
 import _eval from "../core/eval.js";
 import parse, { defaultEnv } from "../core/odd.js";
 import test from "../core/test.js";
-import { equal } from "../core/util.js";
+import {
+  diff,
+  equal,
+  serialise,
+} from "../core/util.js";
 
 test("Function application", () => {
   const code = `f x=x+1;f 0`;
@@ -10,7 +14,9 @@ test("Function application", () => {
     defaultEnv,
     code
   );
-  return result === 1;
+
+  if (result !== 1)
+    return `Expected 1 but got ${result}`;
 });
 
 test("Literal application", () => {
@@ -20,7 +26,9 @@ test("Literal application", () => {
     defaultEnv,
     code
   );
-  return result === 1;
+
+  if (result !== 1)
+    return `Expected 1 but got ${result}`;
 });
 
 test("Record access", () => {
@@ -30,7 +38,9 @@ test("Record access", () => {
     defaultEnv,
     code
   );
-  return result === 1;
+
+  if (result !== 1)
+    return `Expected 1 but got ${result}`;
 });
 
 test("List access", () => {
@@ -40,7 +50,9 @@ test("List access", () => {
     defaultEnv,
     code
   );
-  return result === 1;
+
+  if (result !== 1)
+    return `Expected 1 but got ${result}`;
 });
 
 test("Application has higher precedence than infix", () => {
@@ -50,7 +62,9 @@ test("Application has higher precedence than infix", () => {
     defaultEnv,
     code
   );
-  return result === 2;
+
+  if (result !== 2)
+    return `Expected 2 but got ${result}`;
 });
 
 test("Record access and application", () => {
@@ -66,11 +80,15 @@ test("Record access and application", () => {
     },
     code1
   );
-  return (
-    equal(
+
+  if (
+    !equal(
       tree1,
       tree2,
       ([key]) => !["offset", "size"].includes(key)
-    ) && result === 2
-  );
+    )
+  )
+    return serialise(diff(tree1, tree2));
+  if (result !== 2)
+    return `Expected 2 but got ${result}`;
 });

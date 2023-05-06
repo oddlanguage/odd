@@ -14,23 +14,35 @@ test("Redefining a value raises an error", () => {
   const code = `a=1;a=2`;
   try {
     infer(parse(code), defaultTypeEnv, code);
-    return false;
-  } catch (_) {
-    return true;
-  }
+    return "Expected an error to be raised";
+  } catch (_) {}
 });
 
-test("Simple types", () =>
-  Object.entries({
+test("Simple types", () => {
+  const error = Object.entries({
     "1": numberType,
     "''hey''": stringType,
     true: booleanType,
     nothing: nothingType,
-  }).every(
-    ([input, type]) =>
-      infer(parse(input), defaultTypeEnv, input)[0] ===
-      type
-  ));
+  })
+    .map(
+      ([input, type]) =>
+        [
+          type,
+          infer(
+            parse(input),
+            defaultTypeEnv,
+            input
+          )[0],
+        ] as const
+    )
+    .find(([expected, got]) => expected !== got);
+
+  if (error)
+    return `${stringify(error[0])} !== ${stringify(
+      error[1]
+    )}`;
+});
 
 test("Lambda parameter and return type", () => {
   const input = "a -> a * a";
@@ -39,7 +51,11 @@ test("Lambda parameter and return type", () => {
     defaultTypeEnv,
     input
   );
-  return stringify(type) === "Number -> Number";
+
+  const got = stringify(type);
+  const expected = "Number -> Number";
+  if (got !== expected)
+    return `Expected: ${expected}\nGot:      ${got}`;
 });
 
 test("Higher order inference", () => {
@@ -49,9 +65,11 @@ test("Higher order inference", () => {
     defaultTypeEnv,
     input
   );
-  return (
-    stringify(type) === "List Number -> List Number"
-  );
+
+  const got = stringify(type);
+  const expected = "List Number -> List Number";
+  if (got !== expected)
+    return `Expected: ${expected}\nGot:      ${got}`;
 });
 
 test("Stringification parentheses", () => {
@@ -61,9 +79,14 @@ test("Stringification parentheses", () => {
     defaultTypeEnv,
     input
   );
-  return /\((.+?) -> (.+?) -> (.+?)\) -> \2 -> \1 -> \3/.test(
-    stringify(type)
-  );
+  if (
+    !/\((.+?) -> (.+?) -> (.+?)\) -> \2 -> \1 -> \3/.test(
+      stringify(type)
+    )
+  )
+    return `Improperly parenthesised type: ${stringify(
+      type
+    )}`;
 });
 
 test("Records", () => {
@@ -73,10 +96,12 @@ test("Records", () => {
     defaultTypeEnv,
     input
   );
-  return (
-    stringify(type) ===
-    "{ a : Number, b : Number -> Number }"
-  );
+
+  const got = stringify(type);
+  const expected =
+    "{ a : Number, b : Number -> Number }";
+  if (got !== expected)
+    return `Expected: ${expected}\nGot:      ${got}`;
 });
 
 test("Lists", () => {
@@ -86,7 +111,11 @@ test("Lists", () => {
     defaultTypeEnv,
     input
   );
-  return stringify(type) === "List Number";
+
+  const got = stringify(type);
+  const expected = "List Number";
+  if (got !== expected)
+    return `Expected: ${expected}\nGot:      ${got}`;
 });
 
 test("Record lambda parameter", () => {
@@ -96,9 +125,11 @@ test("Record lambda parameter", () => {
     defaultTypeEnv,
     input
   );
-  return (
-    stringify(type) === "{ a : Number } -> Number"
-  );
+
+  const got = stringify(type);
+  const expected = "{ a : Number } -> Number";
+  if (got !== expected)
+    return `Expected: ${expected}\nGot:      ${got}`;
 });
 
 test("List lambda parameter", () => {
@@ -108,7 +139,11 @@ test("List lambda parameter", () => {
     defaultTypeEnv,
     input
   );
-  return stringify(type) === "List Number -> Number";
+
+  const got = stringify(type);
+  const expected = "List Number -> Number";
+  if (got !== expected)
+    return `Expected: ${expected}\nGot:      ${got}`;
 });
 
 test("Polymorphic lists", () => {
@@ -118,5 +153,9 @@ test("Polymorphic lists", () => {
     defaultTypeEnv,
     input
   );
-  return stringify(type) === "List (Number | String)";
+
+  const got = stringify(type);
+  const expected = "List (Number | String)";
+  if (got !== expected)
+    return `Expected: ${expected}\nGot:      ${got}`;
 });

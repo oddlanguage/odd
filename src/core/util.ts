@@ -216,3 +216,25 @@ export const diff = (
     )
     .reverse();
 };
+
+export const defer = <T>(
+  f: (
+    resolve: (value?: T) => void,
+    reject: (reason?: any) => void
+  ) => void
+) => {
+  let resolve: Function;
+  let reject: Function;
+  const promise = new Promise<T>((res, rej) => {
+    resolve = res;
+    reject = rej;
+  });
+  f(
+    (value?: T) => resolve(value),
+    (reason?: any) => reject(reason)
+  );
+  return promise;
+};
+
+export const wait = (ms: number) =>
+  defer(res => setTimeout(res, ms));

@@ -16,7 +16,7 @@
     "esModuleInterop": true,
     "downlevelIteration": true,
     "importHelpers": true,
-    "lib": ["ESNext", "DOM"],
+    "lib": ["ESNext"],
     "moduleResolution": "NodeNext",
     "sourceMap": true
   },

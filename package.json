@@ -2,11 +2,8 @@
   "type": "module",
   "name": "odd",
   "version": "0.4.1",
-  "scripts": {
-    "test": "npx tsc && node dist/test/run.js"
-  },
   "devDependencies": {
-    "@types/node": "^18.15.11",
+    "@types/node": "^20.1.0",
     "typescript": "^5.0.3"
   },
   "license": "MIT"

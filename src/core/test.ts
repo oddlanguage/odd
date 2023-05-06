@@ -1,15 +1,25 @@
+import { parentPort as self } from "node:worker_threads";
+
 const test = async (
   description: string,
-  condition: () => boolean | Promise<boolean>
+  condition: () =>
+    | string
+    | void
+    | Promise<string | void>
 ) => {
+  self?.postMessage("register");
+
+  let error: string | void;
   try {
-    const ok = await condition();
-    if (!ok) throw null;
-    console.log(`✅ ${description}`);
+    error = await condition();
   } catch (err: any) {
-    console.log(`❌ ${description}`);
-    if (err) console.log(err.stack ?? err + "\n");
+    error = err.toString();
   }
+  self?.postMessage({
+    type: error ? "failure" : "success",
+    description,
+    error,
+  });
 };
 
 export default test;
