@@ -1,5 +1,6 @@
 import { readFile, readdir } from "node:fs/promises";
 import { Worker } from "node:worker_threads";
+import { ansi, pluralise } from "../core/util.js";
 
 // NOTE: This keeps the vent loop alive.
 // Nodejs doesn't wait for "empty" promises
@@ -31,7 +32,7 @@ type Failure = Readonly<{
   error: string;
 }>;
 
-const loadingChars = ["⠾", "⠷", "⠯", "⠟", "⠻", "⠽"];
+const loadingChars = ["⠋", "⠙", "⠸", "⠴", "⠦", "⠇"];
 const { version } = JSON.parse(
   await readFile("package.json", "utf-8")
 );
@@ -56,12 +57,14 @@ for (let line = 0; line < files.length; line++) {
         file
     );
   }, 100);
+  let before: number;
   worker.on(
     "message",
     (payload: "register" | Result) => {
       if (payload === "register") {
         total += 1;
         totalFile += 1;
+        before = performance.now();
       } else {
         done += 1;
         doneFile += 1;
@@ -77,7 +80,13 @@ for (let line = 0; line < files.length; line++) {
           process.stdout.cursorTo(0, line + 1);
           process.stdout.clearLine(1);
           console.log(
-            `${didFail ? "❌" : "✅"} ` + file
+            `${didFail ? "❌" : "✅"} ` +
+              file +
+              ansi.grey(
+                ` (${Math.floor(
+                  performance.now() - before
+                )}ms)`
+              )
           );
 
           if (done === total) {
@@ -87,14 +96,20 @@ for (let line = 0; line < files.length; line++) {
             );
             if (Object.keys(failures).length) {
               console.log(
-                `Found ${
+                `Found ${pluralise(
+                  "issue",
                   Object.values(failures).flat().length
-                } issues in ${
+                )} in ${pluralise(
+                  "file",
                   Object.keys(failures).length
-                } file(s):\n`
+                )}:\n`
               );
             } else {
-              console.log("Done! No issues found 😎");
+              console.log(
+                `${ansi.green(
+                  "Done!"
+                )} No issues found 😎`
+              );
             }
             for (const [
               file,
@@ -102,7 +117,9 @@ for (let line = 0; line < files.length; line++) {
             ] of Object.entries(failures)) {
               for (const issue of issues) {
                 console.log(
-                  `[${file}] ${issue.description}:\n${issue.error}\n`
+                  ansi.bold(`[${file}]`) +
+                    ` ${issue.description}\n` +
+                    `${issue.error}\n`
                 );
               }
             }

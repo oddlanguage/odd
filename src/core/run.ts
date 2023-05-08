@@ -9,9 +9,13 @@ import {
 import { serialise } from "./util.js";
 
 const [target, outfile] = process.argv.slice(2);
-outfile;
 
-const compile = async (target: string) => {
+const compile = async (
+  target: string,
+  outfile: string
+) => {
+  // This prevents typescript from being an idiot and telling me I need to "use" the variable
+  outfile;
   throw `Cannot compile "${target}": the compiler is not implemented yet.`;
 };
 
@@ -91,8 +95,8 @@ const repl = async () => {
   }
 };
 
-if (target) {
-  await compile(target);
+if (target && outfile) {
+  await compile(target, outfile);
 } else {
   await repl();
 }

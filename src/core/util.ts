@@ -16,6 +16,8 @@ export const log = <T>(x: T) => {
 };
 
 export const ansi = {
+  black: (string: string) =>
+    "\x1b[30m" + string + "\x1b[0m",
   red: (string: string) =>
     "\x1b[31m" + string + "\x1b[0m",
   green: (string: string) =>
@@ -28,6 +30,8 @@ export const ansi = {
     "\x1b[35m" + string + "\x1b[0m",
   cyan: (string: string) =>
     "\x1b[36m" + string + "\x1b[0m",
+  grey: (string: string) =>
+    "\x1b[90m" + string + "\x1b[0m",
   bold: (string: string) =>
     "\x1b[1m" + string + "\x1b[0m",
   dim: (string: string) =>
@@ -36,6 +40,24 @@ export const ansi = {
     "\x1b[3m" + string + "\x1b[0m",
   underline: (string: string) =>
     "\x1b[4m" + string + "\x1b[0m",
+  bg: {
+    black: (string: string) =>
+      "\x1b[40m" + string + "\x1b[0m",
+    red: (string: string) =>
+      "\x1b[41m" + string + "\x1b[0m",
+    green: (string: string) =>
+      "\x1b[42m" + string + "\x1b[0m",
+    yellow: (string: string) =>
+      "\x1b[43m" + string + "\x1b[0m",
+    blue: (string: string) =>
+      "\x1b[44m" + string + "\x1b[0m",
+    magenta: (string: string) =>
+      "\x1b[45m" + string + "\x1b[0m",
+    cyan: (string: string) =>
+      "\x1b[46m" + string + "\x1b[0m",
+    grey: (string: string) =>
+      "\x1b[100m" + string + "\x1b[0m",
+  },
 };
 
 type Primitive =
@@ -238,3 +260,8 @@ export const defer = <T>(
 
 export const wait = (ms: number) =>
   defer(res => setTimeout(res, ms));
+
+export const pluralise = (
+  word: string,
+  count: number
+) => count + " " + (count === 1 ? word : word + "s");

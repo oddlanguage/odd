@@ -1,7 +1,14 @@
+import { Type, stringify } from "./type.js";
 import { ansi } from "./util.js";
 
 export type Problem = ProblemBase &
-  (Expected | Unexpected | EndOfInput | Custom);
+  (
+    | Expected
+    | Unexpected
+    | EndOfInput
+    | TypeMismatch
+    | Custom
+  );
 
 type ProblemBase = Readonly<{
   at: number;
@@ -18,6 +25,11 @@ export type Unexpected = Readonly<{
 
 export type EndOfInput = Readonly<{
   endOfInput: true;
+}>;
+
+export type TypeMismatch = Readonly<{
+  expected: Type;
+  got: Type;
 }>;
 
 export type Custom = Readonly<{
@@ -65,7 +77,10 @@ const furthest = (problems: ReadonlyArray<Problem>) =>
   );
 
 const weigh = (problem: Problem) => {
-  if ((problem as Expected).expected) {
+  if (
+    (problem as Expected).expected ||
+    (problem as TypeMismatch).got
+  ) {
     return 1;
   } else if ((problem as Unexpected).unexpected) {
     return 2;
@@ -88,22 +103,28 @@ export const makeError = (
     "\n\n" +
     furthestProblems
       .sort((a, b) => weigh(a) - weigh(b))
-      .map(problem => `- ${stringifyProblem(problem)}`)
+      .map(stringifyProblem)
       .join("\n")
   );
 };
 
 const stringifyProblem = (problem: Problem) => {
-  if ((problem as Expected).expected) {
-    return `Expected ${
+  if ((problem as TypeMismatch).got) {
+    return `- Type mismatch\n  Expected: ${stringify(
+      (problem as TypeMismatch).expected
+    )}\n  Got:      ${stringify(
+      (problem as TypeMismatch).got
+    )}`;
+  } else if ((problem as Expected).expected) {
+    return `- Expected ${
       (problem as Expected).expected
     }`;
   } else if ((problem as Unexpected).unexpected) {
-    return `Unexpected ${
+    return `- Unexpected ${
       (problem as Unexpected).unexpected
     }`;
   } else if ((problem as EndOfInput).endOfInput) {
-    return `Unexpected end of input (EOF)`;
+    return `- Unexpected end of input (EOF)`;
   }
   return (problem as Custom).reason;
 };

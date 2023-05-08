@@ -41,7 +41,7 @@ const instantiate = (scheme: TypeScheme): Type => {
   return _inst(scheme.type);
 };
 
-type Type =
+export type Type =
   | number
   | symbol
   | ListType
@@ -299,9 +299,8 @@ const unify = (
 
   throw makeError(input, [
     {
-      reason: `Cannot unify:\n  ${[a, b]
-        .map(stringify)
-        .join("\n  ")}`,
+      got: a,
+      expected: b,
       at: tree.offset,
       size: tree.size,
     },
@@ -419,7 +418,7 @@ export const infer: Infer = (tree, env, input) => {
     case "application":
       return application(tree, env, input);
     case "declaration":
-      return declaration(tree, env, input);
+      return declaration(true)(tree, env, input);
     case "list":
       return list(tree, env, input);
     case "record":
@@ -482,6 +481,15 @@ const extractPatterns = (
         }),
         {}
       );
+    case "record-pattern":
+      return Object.fromEntries(
+        (type as RecordType).children.map(
+          (child, i) => [
+            (type as RecordType).labels[i]!,
+            child,
+          ]
+        )
+      );
     default:
       throw makeError(input, [
         {
@@ -508,8 +516,18 @@ const lambda: Infer = (tree, env, input) => {
       ? newList(newVar())
       : param.type === "record-pattern"
       ? (() => {
-          // TODO: Implement
-          throw "Cannot destructure records yet.";
+          const keys = (param as Branch).children.map(
+            field =>
+              (
+                (
+                  (field as Branch)
+                    .children[0] as Branch
+                ).children[0] as Token
+              ).text
+          );
+          return newRecord(
+            keys.map(key => [key, newVar()])
+          );
         })()
       : newVar();
 
@@ -652,46 +670,64 @@ const application: Infer = (tree, env, input) => {
   return [returnType, env, allSubs];
 };
 
-const declaration: Infer = (tree, env, input) => {
-  const lhs = (tree as Branch).children[0]!;
-  const lhsVar =
-    lhs.type === "list-pattern"
-      ? newList(newVar())
-      : lhs.type === "record-pattern"
-      ? (() => {
-          // TODO: Implement
-          throw "Cannot destructure records yet.";
-        })()
-      : newVar();
-  const patterns = extractPatterns(lhs, lhsVar, input);
-  for (const key of Object.keys(patterns)) {
-    if (key in env) {
-      throw makeError(input, [
-        {
-          reason: `Cannot redeclare "${key}"`,
-          at: lhs.offset,
-          size: lhs.size,
-        },
-      ]);
+const declaration =
+  (checkRedeclare: boolean): Infer =>
+  (tree, env, input) => {
+    const lhs = (tree as Branch).children[0]!;
+    const lhsVar =
+      lhs.type === "list-pattern"
+        ? newList(newVar())
+        : lhs.type === "record-pattern"
+        ? (() => {
+            const keys = (lhs as Branch).children.map(
+              field =>
+                (
+                  (
+                    (field as Branch)
+                      .children[0] as Branch
+                  ).children[0] as Token
+                ).text
+            );
+            return newRecord(
+              keys.map(key => [key, newVar()])
+            );
+          })()
+        : newVar();
+    const patterns = extractPatterns(
+      lhs,
+      lhsVar,
+      input
+    );
+    if (checkRedeclare) {
+      for (const key of Object.keys(patterns)) {
+        if (key in env) {
+          throw makeError(input, [
+            {
+              reason: `Cannot redeclare "${key}"`,
+              at: lhs.offset,
+              size: lhs.size,
+            },
+          ]);
+        }
+      }
     }
-  }
-  const [rhsType, newEnv] = infer(
-    (tree as Branch).children[1]!,
-    {
-      ...env,
-      ...patterns,
-    },
-    input
-  );
-  const subs = unify(lhsVar, rhsType, tree, input);
-  const appliedEnv = applyEnv(
-    newEnv,
-    subs,
-    tree,
-    input
-  );
-  return [rhsType, appliedEnv, null];
-};
+    const [rhsType, newEnv] = infer(
+      (tree as Branch).children[1]!,
+      {
+        ...env,
+        ...patterns,
+      },
+      input
+    );
+    const subs = unify(lhsVar, rhsType, tree, input);
+    const appliedEnv = applyEnv(
+      newEnv,
+      subs,
+      tree,
+      input
+    );
+    return [rhsType, appliedEnv, null];
+  };
 
 const list: Infer = (tree, env, input) => [
   newList(
@@ -718,40 +754,21 @@ const record: Infer = (tree, env, input) => {
               ],
             ];
           case "declaration": {
-            // TODO: This is the same code as infer "declaration" except for
-            // checking whether variables are overwritten
-            const lhs = (row as Branch).children[0]!;
-            const lhsVar =
-              lhs.type === "list-pattern"
-                ? newList(newVar())
-                : lhs.type === "record-pattern"
-                ? (() => {
-                    // TODO: Implement
-                    throw "Cannot destructure records yet.";
-                  })()
-                : newVar();
-            const patterns = extractPatterns(
-              lhs,
-              lhsVar,
-              input
-            );
-            const [rhsType] = infer(
-              (row as Branch).children[1]!,
-              {
-                ...env,
-                ...patterns,
-              },
-              input
-            );
-            const subs = unify(
-              lhsVar,
-              rhsType,
-              row!,
-              input
-            );
-            return Object.entries(
-              applyEnv(patterns, subs, row!, input)
-            );
+            return [
+              [
+                (
+                  (
+                    (row as Branch)
+                      .children[0] as Branch
+                  ).children[0] as Token
+                ).text,
+                declaration(false)(
+                  row!,
+                  env,
+                  input
+                )[0],
+              ],
+            ];
           }
           default:
             throw `Unhandled row type "${row!.type}".`;
