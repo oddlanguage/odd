@@ -1,8 +1,12 @@
 import { readFile, readdir } from "node:fs/promises";
 import { Worker } from "node:worker_threads";
-import { ansi, pluralise } from "../core/util.js";
+import {
+  ansi,
+  getCursorPos,
+  pluralise,
+} from "../core/util.js";
 
-// NOTE: This keeps the vent loop alive.
+// NOTE: This keeps the event loop alive.
 // Nodejs doesn't wait for "empty" promises
 // https://github.com/nodejs/node/issues/22088
 const timeout = setTimeout(() => {
@@ -36,6 +40,7 @@ const loadingChars = ["⠋", "⠙", "⠸", "⠴", "⠦", "⠇"];
 const { version } = JSON.parse(
   await readFile("package.json", "utf-8")
 );
+const [, startY] = await getCursorPos();
 console.log(`Running Odd v${version} test suite`);
 let total = 0;
 let done = 0;
@@ -48,7 +53,7 @@ for (let line = 0; line < files.length; line++) {
   let doneFile = 0;
   let didFail = false;
   const interval = setInterval(() => {
-    process.stdout.cursorTo(0, line + 1);
+    process.stdout.cursorTo(0, startY + line + 1);
     process.stdout.write(
       loadingChars[
         loadingCharIndex++ % loadingChars.length
@@ -77,7 +82,10 @@ for (let line = 0; line < files.length; line++) {
         // TODO: Register errors to be displayed afterwards
         if (doneFile === totalFile) {
           clearInterval(interval);
-          process.stdout.cursorTo(0, line + 1);
+          process.stdout.cursorTo(
+            0,
+            startY + line + 1
+          );
           process.stdout.clearLine(1);
           console.log(
             `${didFail ? "❌" : "✅"} ` +
@@ -92,7 +100,7 @@ for (let line = 0; line < files.length; line++) {
           if (done === total) {
             process.stdout.cursorTo(
               0,
-              files.length + 2
+              startY + files.length + 2
             );
             if (Object.keys(failures).length) {
               console.log(
