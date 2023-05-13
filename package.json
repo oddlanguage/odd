@@ -1,7 +1,7 @@
 {
   "type": "module",
   "name": "odd",
-  "version": "0.4.1",
+  "version": "0.4.2",
   "scripts": {
     "repl": "tsc && node --enable-source-maps dist/core/run.js",
     "test": "tsc && node --enable-source-maps dist/test/run.js"

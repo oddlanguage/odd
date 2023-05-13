@@ -123,12 +123,16 @@ const newRecord = (
     labels: sortedRows.map(([label]) => label),
     children: sortedRows.map(([, type]) => type),
     stringify: self =>
-      `{ ${self.children
-        .map(
-          (type, i) =>
-            self.labels[i]! + " : " + stringify(type)
-        )
-        .join(", ")} }`,
+      [
+        "{",
+        self.children
+          .map(
+            (type, i) =>
+              self.labels[i]! + " : " + stringify(type)
+          )
+          .join(", "),
+        "}",
+      ].join(" "),
   };
 };
 
@@ -747,9 +751,10 @@ const extractPatterns = (
   pattern: Tree,
   type: Type,
   input: string
-): [
+): readonly [
   ReadonlyRecord<string, Type>,
-  Substitutions | null
+  Substitutions | null,
+  Record<string, Type> | null
 ] => {
   switch (pattern.type) {
     case "literal-pattern": {
@@ -757,15 +762,31 @@ const extractPatterns = (
         .children[0] as Token;
       switch (literal.type) {
         case "name":
-          return [{ [literal.text]: type }, null];
+          return [
+            { [literal.text]: type },
+            null,
+            null,
+          ];
         case "number":
-          return [{}, [[type as number, numberType]]];
+          return [
+            {},
+            [[type as number, numberType]],
+            null,
+          ];
         case "string":
-          return [{}, [[type as number, stringType]]];
+          return [
+            {},
+            [[type as number, stringType]],
+            null,
+          ];
         case "boolean":
-          return [{}, [[type as number, booleanType]]];
+          return [
+            {},
+            [[type as number, booleanType]],
+            null,
+          ];
         case "wildcard":
-          return [{}, null];
+          return [{}, null, null];
         default:
           throw makeError(input, [
             {
@@ -777,6 +798,7 @@ const extractPatterns = (
       }
     }
     case "list-pattern": {
+      // TODO: Clean up this mess 😱
       const element = newVar();
       const container = newList(element);
       let subs: Substitutions = [
@@ -802,10 +824,67 @@ const extractPatterns = (
         );
         patterns = { ...patterns, ...pat };
         if (sub) {
-          subs = compose(subs, sub, pattern, input);
+          subs = compose(subs, sub, child, input);
         }
       }
-      return [patterns, subs];
+      return [patterns, subs, null];
+    }
+    case "record-pattern": {
+      // TODO: Clean up this mess 😱
+      let subs: Substitutions = [];
+      let patterns: Record<string, Type> = {};
+      let container: Record<string, Type> = {};
+
+      for (const child of (pattern as Branch)
+        .children as Branch[]) {
+        const field =
+          child.children.length === 1
+            ? child.children[0]! // literal
+            : (child.children[1] as Branch); // assignment
+        if (field.type === "rest-pattern") {
+          throw makeError(input, [
+            {
+              reason: `Unhandled field type "${field.type}"`,
+              at: field.offset,
+              size: field.size,
+            },
+          ]);
+        }
+        const [extracted, sub, extraContainer] =
+          extractPatterns(field, newVar(), input);
+        patterns = { ...patterns, ...extracted };
+        if (sub) {
+          subs = compose(subs, sub, field, input);
+        }
+        if (child.children.length === 1) {
+          container = { ...container, ...extracted };
+        } else {
+          const name = (
+            (child.children[0] as Branch)
+              .children[0] as Token
+          ).text;
+          container = {
+            ...container,
+            [name]: newRecord(
+              Object.entries(extraContainer!)
+            ),
+          };
+        }
+      }
+
+      subs = compose(
+        [
+          [
+            type as number,
+            newRecord(Object.entries(container)),
+          ],
+        ],
+        subs,
+        pattern,
+        input
+      );
+
+      return [patterns, subs, container];
     }
     default:
       throw makeError(input, [
