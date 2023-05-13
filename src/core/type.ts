@@ -597,6 +597,7 @@ const application: Infer = (tree, env, input) => {
   ];
 
   if (lhs.type === "list") {
+    // TODO: return Union of list member and Nothing
     const [list] = infer(lhs, env, input) as [
       TypeConstructor,
       ReadonlyRecord<string, Type>,
@@ -611,6 +612,7 @@ const application: Infer = (tree, env, input) => {
     ];
     const [key] = infer(rhs, env, input);
     if (key !== stringType) {
+      // TODO: show union of all keys instead
       throw makeError(input, [
         {
           expected: stringType,
