@@ -173,9 +173,25 @@ export const defaultTypeEnv: ReadonlyRecord<
     newLambda(numberType, numberType)
   ),
   // "<": (Ord a) => a -> a -> Boolean,
+  "<": newLambda(
+    numberType,
+    newLambda(numberType, booleanType)
+  ),
   // ">": (Ord a) => a -> a -> Boolean,
+  ">": newLambda(
+    numberType,
+    newLambda(numberType, booleanType)
+  ),
   // "<=": (Ord a) => a -> a -> Boolean,
+  "<=": newLambda(
+    numberType,
+    newLambda(numberType, booleanType)
+  ),
   // ">=": (Ord a) => a -> a -> Boolean,
+  ">=": newLambda(
+    numberType,
+    newLambda(numberType, booleanType)
+  ),
   // "==": (Eq a) => a -> a -> Boolean,
   // "!=": (Eq a) => a -> a -> Boolean,
   "|": newLambda(
