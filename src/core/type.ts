@@ -611,21 +611,18 @@ const application: Infer = (tree, env, input) => {
     Tree,
     Tree
   ];
+  const [lhsType, , lhsSubs] = infer(lhs, env, input);
 
-  if (lhs.type === "list") {
+  if (
+    isConstructor(lhsType) &&
+    lhsType.name === listType
+  ) {
     // TODO: return Union of list member and Nothing
-    const [list] = infer(lhs, env, input) as [
-      TypeConstructor,
-      ReadonlyRecord<string, Type>,
-      null
-    ];
-    return [list.children[0]!, env, null];
-  } else if (lhs.type === "record") {
-    const [record] = infer(lhs, env, input) as [
-      RecordType,
-      ReadonlyRecord<string, Type>,
-      null
-    ];
+    return [lhsType.children[0]!, env, null];
+  } else if (
+    isConstructor(lhsType) &&
+    lhsType.name === recordType
+  ) {
     const [key] = infer(rhs, env, input);
     if (key !== stringType) {
       // TODO: show union of all keys instead
@@ -639,39 +636,34 @@ const application: Infer = (tree, env, input) => {
       ]);
     }
     const label = (rhs as Token).text.slice(2, -2);
-    const typeIndex = record.labels.findIndex(
-      l => l === label
-    );
+    const typeIndex = (
+      lhsType as RecordType
+    ).labels.findIndex(l => l === label);
     if (typeIndex === -1) {
       throw makeError(input, [
         {
           reason: `"${label}" is not a key of ${stringify(
-            record
+            lhsType
           )}`,
           at: rhs.offset,
           size: rhs.size,
         },
       ]);
     }
-    return [record.children[typeIndex]!, env, null];
+    return [lhsType.children[typeIndex]!, env, null];
   } else {
     const argVar = newVar();
     const returnVar = newVar();
     const funVar = newLambda(argVar, returnVar);
 
-    const [funType, , funSubs] = infer(
-      lhs,
-      env,
-      input
-    );
     const moreFunSubs = unify(
       funVar,
-      funType,
+      lhsType,
       tree,
       input
     );
     const allFunSubs = compose(
-      funSubs,
+      lhsSubs,
       moreFunSubs,
       tree,
       input
