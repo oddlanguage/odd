@@ -47,7 +47,10 @@ let done = 0;
 const failures: Record<string, Failure[]> = {};
 for (let line = 0; line < files.length; line++) {
   const file = files[line]!;
-  const worker = new Worker("./dist/test/" + file);
+  const worker = new Worker("./dist/test/" + file, {
+    stdout: true,
+    stderr: true,
+  });
   let loadingCharIndex = 0;
   let totalFile = 0;
   let doneFile = 0;
@@ -79,7 +82,6 @@ for (let line = 0; line < files.length; line++) {
           (failures[file] ??= []).push(payload);
         }
 
-        // TODO: Register errors to be displayed afterwards
         if (doneFile === totalFile) {
           clearInterval(interval);
           process.stdout.cursorTo(
