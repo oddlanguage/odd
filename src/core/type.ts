@@ -114,18 +114,23 @@ type RecordType = Omit<TypeConstructor, "stringify"> &
 const newRecord = (
   // TODO: Records should map values to values (thus types to types)
   rows: ReadonlyArray<readonly [string, Type]>
-): RecordType => ({
-  name: recordType,
-  labels: rows.map(([label]) => label),
-  children: rows.map(([, type]) => type),
-  stringify: self =>
-    `{ ${self.children
-      .map(
-        (type, i) =>
-          self.labels[i]! + " : " + stringify(type)
-      )
-      .join(", ")} }`,
-});
+): RecordType => {
+  const sortedRows = rows
+    .slice()
+    .sort(([a], [b]) => a.localeCompare(b));
+  return {
+    name: recordType,
+    labels: sortedRows.map(([label]) => label),
+    children: sortedRows.map(([, type]) => type),
+    stringify: self =>
+      `{ ${self.children
+        .map(
+          (type, i) =>
+            self.labels[i]! + " : " + stringify(type)
+        )
+        .join(", ")} }`,
+  };
+};
 
 let __LAST_TYPE_VAR = 0;
 const newVar = () => __LAST_TYPE_VAR++;
@@ -188,7 +193,6 @@ export const defaultTypeEnv: ReadonlyRecord<
     numberType,
     newLambda(numberType, newList(numberType))
   ),
-  // map: (a -> b) -> List a -> List b,
   map: (() => {
     const a = newVar();
     const b = newVar();
@@ -197,18 +201,46 @@ export const defaultTypeEnv: ReadonlyRecord<
       newLambda(newList(a), newList(b))
     );
   })(),
-  // group: (a -> b) -> { a : c } -> { b : a };
-  // filter: (a -> Boolean) -> List a -> List a,
-  // fold: (a -> b -> a) -> a -> List b -> a,
-  // foldr: (a -> b -> a) -> a -> List b -> a,
+  // group: (a -> b) -> { x : a } -> { x : b };
+  fold: (() => {
+    const a = newVar();
+    const b = newVar();
+    return newLambda(
+      newLambda(a, newLambda(b, a)),
+      newLambda(a, newLambda(newList(b), a))
+    );
+  })(),
+  scan: (() => {
+    const a = newVar();
+    const b = newVar();
+    return newLambda(
+      newLambda(b, newLambda(a, b)),
+      newLambda(b, newLambda(newList(a), b))
+    );
+  })(),
   // replace: a -> b -> { a : c } -> { a : b };
-  // reverse: List a -> List a,
+  reverse: (() => {
+    const a = newVar();
+    return newLambda(newList(a), newList(a));
+  })(),
   // head: List a -> a | Nothing,
   // last: List a -> a | Nothing,
-  // tail: List a -> List a | Nothing,
-  // drop: List a -> List a,
-  // sort: (a -> a -> Number) -> List a -> List a,
-  // "sort-by": (a -> Number) -> List a -> List a
+  tail: (() => {
+    const a = newVar();
+    return newLambda(newList(a), newList(a));
+  })(),
+  drop: (() => {
+    const a = newVar();
+    return newLambda(numberType, newList(a));
+  })(),
+  sort: (() => {
+    const a = newVar();
+    return newLambda(
+      newLambda(a, newLambda(a, numberType)),
+      newLambda(newList(a), newList(a))
+    );
+  })(),
+  // "sort-by": idk???
   // partition: (a -> Boolean) -> List a -> [List a, List a],
   // size: Container a => a -> Number,
   max: newLambda(
@@ -222,7 +254,10 @@ export const defaultTypeEnv: ReadonlyRecord<
   // show: Serialisable a => a -> a,
   // import: String -> {},
   panic: newLambda(stringType, neverType),
-  // benchmark: (a -> b) -> Number,
+  benchmark: newLambda(
+    newLambda(newVar(), newVar()),
+    numberType
+  ),
 };
 
 const free = (type: Type): ReadonlyArray<number> => {
@@ -299,8 +334,8 @@ const unify = (
 
   throw makeError(input, [
     {
-      got: a,
       expected: b,
+      got: a,
       at: tree.offset,
       size: tree.size,
     },
@@ -434,73 +469,6 @@ export const infer: Infer = (tree, env, input) => {
   }
 };
 
-const extractPatterns = (
-  pattern: Tree,
-  type: Type,
-  input: string
-): ReadonlyRecord<string, Type> => {
-  switch (pattern.type) {
-    case "literal-pattern": {
-      const literal = (pattern as Branch)
-        .children[0] as Token;
-      switch (literal.type) {
-        case "name":
-          return { [literal.text]: type };
-        case "number":
-        case "number":
-        case "string":
-        case "boolean":
-        case "wildcard":
-          return {};
-        default:
-          throw makeError(input, [
-            {
-              reason: `Cannot extract literal patterns from "${literal.type}" nodes`,
-              at: literal.offset,
-              size: literal.size,
-            },
-          ]);
-      }
-    }
-    case "list-pattern":
-      return (
-        (pattern as Branch).children as Branch[]
-      ).reduce(
-        (extracted, pattern, i) => ({
-          ...extracted,
-          ...extractPatterns(
-            pattern,
-            isConstructor(type) &&
-              type.name === listType
-              ? pattern.type === "rest-pattern"
-                ? newList(type.children[i]!)
-                : type.children[i]!
-              : type,
-            input
-          ),
-        }),
-        {}
-      );
-    case "record-pattern":
-      return Object.fromEntries(
-        (type as RecordType).children.map(
-          (child, i) => [
-            (type as RecordType).labels[i]!,
-            child,
-          ]
-        )
-      );
-    default:
-      throw makeError(input, [
-        {
-          reason: `Cannot extract patterns from "${pattern.type}" nodes`,
-          at: pattern.offset,
-          size: pattern.size,
-        },
-      ]);
-  }
-};
-
 const program: Infer = (tree, env, input) => {
   let type: Type = nothingType;
   for (const child of (tree as Branch).children) {
@@ -511,25 +479,12 @@ const program: Infer = (tree, env, input) => {
 
 const lambda: Infer = (tree, env, input) => {
   const param = (tree as Branch).children[0]!;
-  const paramVar =
-    param.type === "list-pattern"
-      ? newList(newVar())
-      : param.type === "record-pattern"
-      ? (() => {
-          const keys = (param as Branch).children.map(
-            field =>
-              (
-                (
-                  (field as Branch)
-                    .children[0] as Branch
-                ).children[0] as Token
-              ).text
-          );
-          return newRecord(
-            keys.map(key => [key, newVar()])
-          );
-        })()
-      : newVar();
+  const paramVar = newVar();
+  const [patterns, paramSubs] = extractPatterns(
+    param,
+    paramVar,
+    input
+  );
 
   const bodyVar = newVar();
   const lambda = newLambda(paramVar, bodyVar);
@@ -538,12 +493,28 @@ const lambda: Infer = (tree, env, input) => {
     (tree as Branch).children[1]!,
     {
       ...env,
-      ...extractPatterns(param, paramVar, input),
+      ...patterns,
     },
     input
   );
-  const bodySubs = unify(bodyVar, body, tree, input);
-  const allSubs = compose(subs, bodySubs, tree, input);
+  const bodyVarSubs = unify(
+    bodyVar,
+    body,
+    tree,
+    input
+  );
+  const bodySubs = compose(
+    subs,
+    bodyVarSubs,
+    tree,
+    input
+  );
+  const allSubs = compose(
+    paramSubs,
+    bodySubs,
+    tree,
+    input
+  );
 
   const finalType = apply(
     lambda,
@@ -671,34 +642,17 @@ const application: Infer = (tree, env, input) => {
 };
 
 const declaration =
-  (checkRedeclare: boolean): Infer =>
+  (preventRedeclaration: boolean): Infer =>
   (tree, env, input) => {
     const lhs = (tree as Branch).children[0]!;
-    const lhsVar =
-      lhs.type === "list-pattern"
-        ? newList(newVar())
-        : lhs.type === "record-pattern"
-        ? (() => {
-            const keys = (lhs as Branch).children.map(
-              field =>
-                (
-                  (
-                    (field as Branch)
-                      .children[0] as Branch
-                  ).children[0] as Token
-                ).text
-            );
-            return newRecord(
-              keys.map(key => [key, newVar()])
-            );
-          })()
-        : newVar();
-    const patterns = extractPatterns(
+    const lhsVar = newVar();
+    const [patterns, lhsSubs] = extractPatterns(
       lhs,
       lhsVar,
       input
     );
-    if (checkRedeclare) {
+
+    if (preventRedeclaration) {
       for (const key of Object.keys(patterns)) {
         if (key in env) {
           throw makeError(input, [
@@ -711,6 +665,7 @@ const declaration =
         }
       }
     }
+
     const [rhsType, newEnv] = infer(
       (tree as Branch).children[1]!,
       {
@@ -720,12 +675,20 @@ const declaration =
       input
     );
     const subs = unify(lhsVar, rhsType, tree, input);
-    const appliedEnv = applyEnv(
-      newEnv,
+    const allSubs = compose(
+      lhsSubs,
       subs,
       tree,
       input
     );
+
+    const appliedEnv = applyEnv(
+      newEnv,
+      allSubs,
+      tree,
+      input
+    );
+
     return [rhsType, appliedEnv, null];
   };
 
@@ -741,8 +704,8 @@ const list: Infer = (tree, env, input) => [
   null,
 ];
 
-const record: Infer = (tree, env, input) => {
-  const record = newRecord(
+const record: Infer = (tree, env, input) => [
+  newRecord(
     ((tree as Branch).children as Branch[]).flatMap(
       ({ children: [row] }) => {
         switch (row!.type) {
@@ -775,7 +738,82 @@ const record: Infer = (tree, env, input) => {
         }
       }
     )
-  );
+  ),
+  env,
+  null,
+];
 
-  return [record, env, null];
+const extractPatterns = (
+  pattern: Tree,
+  type: Type,
+  input: string
+): [
+  ReadonlyRecord<string, Type>,
+  Substitutions | null
+] => {
+  switch (pattern.type) {
+    case "literal-pattern": {
+      const literal = (pattern as Branch)
+        .children[0] as Token;
+      switch (literal.type) {
+        case "name":
+          return [{ [literal.text]: type }, null];
+        case "number":
+          return [{}, [[type as number, numberType]]];
+        case "string":
+          return [{}, [[type as number, stringType]]];
+        case "boolean":
+          return [{}, [[type as number, booleanType]]];
+        case "wildcard":
+          return [{}, null];
+        default:
+          throw makeError(input, [
+            {
+              reason: `Cannot extract literal patterns from "${literal.type}" nodes`,
+              at: literal.offset,
+              size: literal.size,
+            },
+          ]);
+      }
+    }
+    case "list-pattern": {
+      const element = newVar();
+      const container = newList(element);
+      let subs: Substitutions = [
+        [type as number, container],
+      ];
+      let patterns = {};
+      for (const child of (pattern as Branch)
+        .children) {
+        const [pat, sub] = extractPatterns(
+          child.type === "rest-pattern"
+            ? {
+                ...(child as Branch).children[0]!,
+                type: "literal-pattern",
+                children: [
+                  (child as Branch).children[0]!,
+                ],
+              }
+            : child,
+          child.type === "rest-pattern"
+            ? container
+            : element,
+          input
+        );
+        patterns = { ...patterns, ...pat };
+        if (sub) {
+          subs = compose(subs, sub, pattern, input);
+        }
+      }
+      return [patterns, subs];
+    }
+    default:
+      throw makeError(input, [
+        {
+          reason: `Cannot extract patterns from "${pattern.type}" nodes`,
+          at: pattern.offset,
+          size: pattern.size,
+        },
+      ]);
+  }
 };

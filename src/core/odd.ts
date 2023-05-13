@@ -485,11 +485,16 @@ export const defaultEnv: ReadonlyRecord = {
     (a: any) =>
     (xs: any[]) =>
       xs.reduce((a, x) => f(x)(a), a),
-  foldr:
-    (f: (a: any) => (x: any) => any) =>
-    (a: any) =>
-    (xs: any[]) =>
-      xs.reduceRight((a, x) => f(x)(a), a),
+  scan:
+    (f: (x: any, y: any) => any) =>
+    (start: any) =>
+    (arr: any[]) =>
+      arr
+        .reduce(
+          (xs, x, i) => xs.concat(f(xs[i], x)),
+          [start]
+        )
+        .slice(1),
   replace:
     (key: keyof any) =>
     (value: any) =>
@@ -567,17 +572,13 @@ export const defaultEnv: ReadonlyRecord = {
   },
   benchmark: (f: Function) => {
     const times: number[] = [];
-    let result: any;
     for (let i = 0; i < 100; i++) {
       const before = performance.now();
-      result = f();
+      f();
       times.push(performance.now() - before);
     }
-    console.log(
-      `Takes ~${(
-        times.reduce((a, b) => a + b, 0) / times.length
-      ).toFixed(3)}ms on average`
+    return (
+      times.reduce((a, b) => a + b, 0) / times.length
     );
-    return result;
   },
 };

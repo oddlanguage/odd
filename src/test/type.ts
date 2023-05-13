@@ -146,16 +146,83 @@ test("List lambda parameter", () => {
     return `Expected: ${expected}\nGot:      ${got}`;
 });
 
-test("Polymorphic lists", () => {
-  const input = "[1, ''a'']";
-  const [type] = infer(
+test("List destructuring", () => {
+  const input =
+    "[a,[b, ...c], d] = [1, [''b'', true, false], nothing]";
+  const [, env] = infer(
     parse(input),
     defaultTypeEnv,
     input
   );
 
-  const got = stringify(type);
-  const expected = "List (Number | String)";
-  if (got !== expected)
-    return `Expected: ${expected}\nGot:      ${got}`;
+  if (env["a"] !== numberType)
+    return `Expected: Number\nGot:      ${stringify(
+      env["a"]!
+    )}`;
+  if (env["b"] !== stringType)
+    return `Expected: String\nGot:      ${stringify(
+      env["b"]!
+    )}`;
+  if (stringify(env["c"]!) !== "List Boolean")
+    return `Expected: List Boolean\nGot:      ${stringify(
+      env["c"]!
+    )}`;
+  if (env["d"] !== nothingType)
+    return `Expected: Nothing\nGot:      ${stringify(
+      env["d"]!
+    )}`;
+});
+
+test("Record destructuring", () => {
+  const input = "{a={b,...c}}={a={b=3,x=true,y=5}}";
+  const [, env] = infer(
+    parse(input),
+    defaultTypeEnv,
+    input
+  );
+
+  if (env["a"])
+    return `Expected: a ∉ Γ\nGot:      ${stringify(
+      env["b"]!
+    )}`;
+  if (env["b"] !== numberType)
+    return `Expected: Number\nGot:      ${stringify(
+      env["b"]!
+    )}`;
+  if (
+    stringify(env["c"]!) !==
+    "{ x : Boolean, y : Number }"
+  )
+    return `Expected: { x : Boolean, y : Number }\nGot:      ${stringify(
+      env["c"]!
+    )}`;
+});
+
+test("Literal patterns", () => {
+  try {
+    const input = "(0 -> 1) 1";
+    const [type] = infer(
+      parse(input),
+      defaultTypeEnv,
+      input
+    );
+
+    if (type)
+      return `0 !== 1 thus did not expect to succeed typechecking`;
+  } catch (_) {}
+
+  try {
+    const input =
+      "(1 -> ''yup'') ((true -> 1) ((nothing -> true) nothing))";
+    const [type] = infer(
+      parse(input),
+      defaultTypeEnv,
+      input
+    );
+
+    if (type !== stringType)
+      return `Expected: String\nGot:      ${stringify(
+        type
+      )}`;
+  } catch (_) {}
 });
