@@ -1,4 +1,4 @@
-import { Branch, Token, Tree } from "./parser.js";
+import { Branch, Token, Tree } from "./parse.js";
 import { makeError } from "./problem.js";
 import {
   Mutable,
@@ -591,58 +591,108 @@ const infix: Infer = (tree, env, input) => {
 };
 
 const application: Infer = (tree, env, input) => {
-  const [fun, arg] = (tree as Branch).children as [
+  const [lhs, rhs] = (tree as Branch).children as [
     Tree,
     Tree
   ];
 
-  const argVar = newVar();
-  const returnVar = newVar();
-  const funVar = newLambda(argVar, returnVar);
+  if (lhs.type === "list") {
+    const [list] = infer(lhs, env, input) as [
+      TypeConstructor,
+      ReadonlyRecord<string, Type>,
+      null
+    ];
+    return [list.children[0]!, env, null];
+  } else if (lhs.type === "record") {
+    const [record] = infer(lhs, env, input) as [
+      RecordType,
+      ReadonlyRecord<string, Type>,
+      null
+    ];
+    const [key] = infer(rhs, env, input);
+    if (key !== stringType) {
+      throw makeError(input, [
+        {
+          expected: stringType,
+          got: key,
+          at: rhs.offset,
+          size: rhs.size,
+        },
+      ]);
+    }
+    const label = (rhs as Token).text.slice(2, -2);
+    const typeIndex = record.labels.findIndex(
+      l => l === label
+    );
+    if (typeIndex === -1) {
+      throw makeError(input, [
+        {
+          reason: `"${label}" is not a key of ${stringify(
+            record
+          )}`,
+          at: rhs.offset,
+          size: rhs.size,
+        },
+      ]);
+    }
+    return [record.children[typeIndex]!, env, null];
+  } else {
+    const argVar = newVar();
+    const returnVar = newVar();
+    const funVar = newLambda(argVar, returnVar);
 
-  const [funType, , funSubs] = infer(fun, env, input);
-  const moreFunSubs = unify(
-    funVar,
-    funType,
-    tree,
-    input
-  );
-  const allFunSubs = compose(
-    funSubs,
-    moreFunSubs,
-    tree,
-    input
-  );
+    const [funType, , funSubs] = infer(
+      lhs,
+      env,
+      input
+    );
+    const moreFunSubs = unify(
+      funVar,
+      funType,
+      tree,
+      input
+    );
+    const allFunSubs = compose(
+      funSubs,
+      moreFunSubs,
+      tree,
+      input
+    );
 
-  const [argType, , argSubs] = infer(arg, env, input);
-  const moreArgSubs = unify(
-    argVar,
-    argType,
-    tree,
-    input
-  );
-  const allArgSubs = compose(
-    argSubs,
-    moreArgSubs,
-    tree,
-    input
-  );
+    const [argType, , argSubs] = infer(
+      rhs,
+      env,
+      input
+    );
+    const moreArgSubs = unify(
+      argVar,
+      argType,
+      tree,
+      input
+    );
+    const allArgSubs = compose(
+      argSubs,
+      moreArgSubs,
+      tree,
+      input
+    );
 
-  const allSubs = compose(
-    allFunSubs,
-    allArgSubs,
-    tree,
-    input
-  );
-  const appliedFun = apply(
-    funVar,
-    allSubs,
-    tree,
-    input
-  ) as TypeConstructor;
-  const returnType = appliedFun.children[1]!;
+    const allSubs = compose(
+      allFunSubs,
+      allArgSubs,
+      tree,
+      input
+    );
+    const appliedFun = apply(
+      funVar,
+      allSubs,
+      tree,
+      input
+    ) as TypeConstructor;
+    const returnType = appliedFun.children[1]!;
 
-  return [returnType, env, allSubs];
+    return [returnType, env, allSubs];
+  }
 };
 
 const declaration =
@@ -842,6 +892,7 @@ const extractPatterns = (
             ? child.children[0]! // literal
             : (child.children[1] as Branch); // assignment
         if (field.type === "rest-pattern") {
+          // TODO: How can we return a usable type here?
           throw makeError(input, [
             {
               reason: `Unhandled field type "${field.type}"`,

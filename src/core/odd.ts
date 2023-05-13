@@ -24,7 +24,7 @@ import {
   separatedBy,
   string,
   unpack,
-} from "./parser.js";
+} from "./parse.js";
 import {
   ReadonlyRecord,
   ansi,

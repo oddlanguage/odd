@@ -226,3 +226,31 @@ test("Literal patterns", () => {
       )}`;
   } catch (_) {}
 });
+
+test("Record access", () => {
+  const input = "{a=1} ''a''";
+  const [type] = infer(
+    parse(input),
+    defaultTypeEnv,
+    input
+  );
+
+  if (type !== numberType)
+    return `Expected: Number\nGot:      ${stringify(
+      type
+    )}`;
+});
+
+test("List access", () => {
+  const input = "[1] 0";
+  const [type] = infer(
+    parse(input),
+    defaultTypeEnv,
+    input
+  );
+
+  if (type !== numberType)
+    return `Expected: Number\nGot:      ${stringify(
+      type
+    )}`;
+});

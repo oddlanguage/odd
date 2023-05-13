@@ -1,5 +1,5 @@
 import { nothing } from "./odd.js";
-import { Branch, Token, Tree } from "./parser.js";
+import { Branch, Token, Tree } from "./parse.js";
 import { makeError } from "./problem.js";
 import { Mutable, ReadonlyRecord } from "./util.js";
 
