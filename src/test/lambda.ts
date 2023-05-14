@@ -2,6 +2,12 @@ import _eval from "../core/eval.js";
 import parse, { defaultEnv } from "../core/odd.js";
 import test from "../core/test.js";
 import {
+  defaultTypeEnv,
+  infer,
+  numberType,
+  stringify,
+} from "../core/type.js";
+import {
   diff,
   difference,
   equal,
@@ -36,24 +42,30 @@ test("Multiple parameters are desugared", () => {
 
 test("First-order record pattern argument destructuring", () => {
   const code = `({a}->a) {a=1}`;
-  const [result] = _eval(
-    parse(code),
-    defaultEnv,
-    code
-  );
+  const parsed = parse(code);
+  const [result] = _eval(parsed, defaultEnv, code);
+  const [type] = infer(parsed, defaultTypeEnv, code);
+
   if (result !== 1)
     return `Expected 1 but got ${result}`;
+  if (type !== numberType)
+    return `Expected Number but got ${stringify(
+      type
+    )}`;
 });
 
 test("First-order list pattern argument destructuring", () => {
   const code = `([a]->a) [1]`;
-  const [result] = _eval(
-    parse(code),
-    defaultEnv,
-    code
-  );
+  const parsed = parse(code);
+  const [result] = _eval(parsed, defaultEnv, code);
+  const [type] = infer(parsed, defaultTypeEnv, code);
+
   if (result !== 1)
     return `Expected 1 but got ${result}`;
+  if (type !== numberType)
+    return `Expected Number but got ${stringify(
+      type
+    )}`;
 });
 
 test("Lambdas are folded properly", () => {
