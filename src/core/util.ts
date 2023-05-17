@@ -286,3 +286,13 @@ export const getCursorPos = () =>
     });
     process.stdout.write("\u001b[6n");
   });
+
+export const dedent = (string: string) => {
+  const whitespace = string.match(/^\n*([ \t]+)/)?.[1];
+  const indent = whitespace?.length ?? 0;
+  return string
+    .replace(/^\n+|\n+$/g, "")
+    .split("\n")
+    .map(line => line.slice(indent))
+    .join("\n");
+};

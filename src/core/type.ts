@@ -509,8 +509,9 @@ const lambda: Infer = (tree, env, input) => {
   const bodyVar = newVar();
   const lambda = newLambda(paramVar, bodyVar);
 
-  const [body, , subs] = infer(
-    (tree as Branch).children[1]!,
+  const body = (tree as Branch).children[1]!;
+  const [bodyType, , subs] = infer(
+    body,
     {
       ...env,
       ...patterns,
@@ -519,20 +520,20 @@ const lambda: Infer = (tree, env, input) => {
   );
   const bodyVarSubs = unify(
     bodyVar,
+    bodyType,
     body,
-    tree,
     input
   );
   const bodySubs = compose(
     subs,
     bodyVarSubs,
-    tree,
+    body,
     input
   );
   const allSubs = compose(
     paramSubs,
     bodySubs,
-    tree,
+    param,
     input
   );
 
@@ -586,11 +587,11 @@ const infix: Infer = (tree, env, input) => {
 
   const opReturnType = newVar();
   const newType = newLambda(
-    lhsType,
-    newLambda(rhsType, opReturnType)
+    rhsType,
+    newLambda(lhsType, opReturnType)
   );
-  const subs = unify(opType, newType, tree, input);
-  const allSubs = compose(subs, lhsSubs, tree, input);
+  const subs = unify(opType, newType, rhs, input);
+  const allSubs = compose(subs, lhsSubs, lhs, input);
 
   const finalType = apply(
     newType,
@@ -822,6 +823,7 @@ const extractPatterns = (
         .children[0] as Token;
       switch (literal.type) {
         case "name":
+        case "operator":
           return [
             { [literal.text]: type },
             null,

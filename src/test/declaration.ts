@@ -9,6 +9,7 @@ import {
   stringify,
 } from "../core/type.js";
 import {
+  dedent,
   diff,
   equal,
   serialise,
@@ -71,10 +72,10 @@ test("Custom infix operators", () => {
 });
 
 test("Custom infix operators preserve environment", () => {
-  const code = `
-		a %^& b = 7;
-		1 %^& 3;
-	`;
+  const code = dedent(`
+    a %^& b = 7;
+    1 %^& 3;
+  `);
   const parsed = parse(code);
   const [, , env] = _eval(parsed, defaultEnv, code);
   const [type] = infer(parsed, defaultTypeEnv, code);
@@ -106,10 +107,10 @@ test("Infix declarations are desugared into lambdas", () => {
 });
 
 test("Infix declarations allow arbitrary patterns", () => {
-  const code = `
-		{a} %^& [b] = a + b;
-		{a=1} %^& [2];
-	`;
+  const code = dedent(`
+    {a} %^& [b] = a + b;
+    {a=1} %^& [2];
+  `);
   const parsed = parse(code);
   const [result] = _eval(parsed, defaultEnv, code);
   const [type] = infer(parsed, defaultTypeEnv, code);
@@ -248,11 +249,11 @@ test("Record destructuring rest pattern", () => {
 });
 
 test("Self recursion", () => {
-  const code = `
-		fib n = case (n <= 1) of
-			true = n,
-			false = fib (n - 2) + fib (n - 1);
-		fib 10`;
+  const code = dedent(`
+    fib n = case (n <= 1) of
+      true = n,
+      false = fib (n - 2) + fib (n - 1);
+    fib 10`);
   const parsed = parse(code);
   const [result] = _eval(parsed, defaultEnv, code);
   const [type] = infer(parsed, defaultTypeEnv, code);
@@ -266,15 +267,15 @@ test("Self recursion", () => {
 });
 
 test("Mutual recursion", () => {
-  const code = `
-		is-odd n = case (n == 1) of
-			true = true,
-			false = is-even (n - 1);
-		is-even n = case (n == 0) of
-			true = true,
-			false = is-odd (n - 1);
-		is-odd 3;
-	`;
+  const code = dedent(`
+    is-odd n = case (n == 1) of
+      true = true,
+      false = is-even (n - 1);
+    is-even n = case (n == 0) of
+      true = true,
+      false = is-odd (n - 1);
+    is-odd 3;
+  `);
   const parsed = parse(code);
   const [result] = _eval(parsed, defaultEnv, code);
   const [type] = infer(parsed, defaultTypeEnv, code);
