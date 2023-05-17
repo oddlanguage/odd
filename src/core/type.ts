@@ -3,6 +3,7 @@ import { makeError } from "./problem.js";
 import {
   Mutable,
   ReadonlyRecord,
+  log,
   unique,
 } from "./util.js";
 
@@ -478,6 +479,8 @@ export const infer: Infer = (tree, env, input) => {
       return list(tree, env, input);
     case "record":
       return record(tree, env, input);
+    case "match":
+      return match(tree, env, input);
     default:
       throw makeError(input, [
         {
@@ -807,6 +810,120 @@ const record: Infer = (tree, env, input) => [
   env,
   null,
 ];
+
+const match: Infer = (tree, env, input) => {
+  const [pattern, ...cases] = (tree as Branch)
+    .children as [Token, ...Branch[]];
+  const [patternType] = infer(pattern, env, input);
+  const caseTypes = cases.map(
+    ({ children: [pattern, _case] }) => {
+      matchType(pattern!, patternType, env, input);
+      return infer(_case!, env, input)[0];
+    }
+  );
+  const type = caseTypes.reduce((type, t) =>
+    apply(
+      type,
+      unify(type, t, tree, input),
+      tree,
+      input
+    )
+  );
+  return [type, env, null];
+};
+
+const matchType = (
+  pattern: Tree,
+  type: Type,
+  env: ReadonlyRecord<string, Type>,
+  input: string
+): void => {
+  switch (pattern.type) {
+    case "literal-pattern": {
+      const literal = (pattern as Branch)
+        .children[0] as Token;
+      switch (literal.type) {
+        case "name":
+        case "operator": {
+          if (!(literal.text in env))
+            throw makeError(input, [
+              {
+                reason: `Unknown name "${literal.text}".`,
+                at: literal.offset,
+                size: literal.size,
+              },
+            ]);
+          if (env[literal.text] !== type)
+            throw makeError(input, [
+              {
+                expected: type,
+                got: env[literal.text]!,
+                at: literal.offset,
+                size: literal.size,
+              },
+            ]);
+          return;
+        }
+        case "number": {
+          if (type !== numberType)
+            throw makeError(input, [
+              {
+                expected: numberType,
+                got: type,
+                at: literal.offset,
+                size: literal.size,
+              },
+            ]);
+          return;
+        }
+        case "string": {
+          if (type !== stringType)
+            throw makeError(input, [
+              {
+                expected: stringType,
+                got: type,
+                at: literal.offset,
+                size: literal.size,
+              },
+            ]);
+          return;
+        }
+        case "boolean": {
+          if (type !== booleanType)
+            throw makeError(input, [
+              {
+                expected: booleanType,
+                got: type,
+                at: literal.offset,
+                size: literal.size,
+              },
+            ]);
+          return;
+        }
+        case "wildcard":
+          return;
+        default:
+          throw makeError(input, [
+            {
+              reason: `Cannot match literal patterns of type "${literal.type}"`,
+              at: literal.offset,
+              size: literal.size,
+            },
+          ]);
+      }
+    }
+    default: {
+      log(pattern);
+      throw makeError(input, [
+        {
+          reason: `Cannot match patterns of type "${pattern.type}"`,
+          at: pattern.offset,
+          size: pattern.size,
+        },
+      ]);
+    }
+  }
+};
 
 const extractPatterns = (
   pattern: Tree,
