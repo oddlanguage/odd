@@ -134,7 +134,7 @@ const application: Eval = (tree, env, input) => {
       typeof rhs === "string") ||
     (Array.isArray(lhs) && typeof rhs === "number")
   )
-    return [lhs[rhs], null, env];
+    return [lhs[rhs] ?? nothing, null, env];
 
   return [lhs(rhs), null, env];
 };
