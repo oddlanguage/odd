@@ -3,6 +3,7 @@ import { makeError } from "./problem.js";
 import {
   Mutable,
   ReadonlyRecord,
+  equal,
   log,
   unique,
 } from "./util.js";
@@ -81,8 +82,6 @@ export const stringify = (type: Type): string =>
         .map(stringify)
         .join(" ");
 
-// =============================================================
-
 export const lambdaType = Symbol("Lambda");
 export const newLambda = (
   arg: Type,
@@ -99,11 +98,32 @@ export const newLambda = (
     stringify(self.children[1]!),
 });
 
+export const unionType = Symbol("Union");
+export const newUnion = (
+  types: ReadonlyArray<Type>
+): Type =>
+  types.length == 1
+    ? types[0]!
+    : ({
+        name: unionType,
+        // TODO: Sort?
+        children: types,
+        stringify: self =>
+          self.children.map(stringify).join(" | "),
+      } as TypeConstructor);
+
 export const listType = Symbol("List");
 type ListType = TypeConstructor;
 const newList = (type: Type): ListType => ({
   name: listType,
   children: [type],
+  stringify: self =>
+    `List ${
+      isConstructor(self.children[0]!) &&
+      self.children[0].name === unionType
+        ? `(${stringify(self.children[0])})`
+        : stringify(self.children[0]!)
+    }`,
 });
 
 export const recordType = Symbol("Record");
@@ -123,17 +143,17 @@ const newRecord = (
     name: recordType,
     labels: sortedRows.map(([label]) => label),
     children: sortedRows.map(([, type]) => type),
-    stringify: self =>
-      [
-        "{",
-        self.children
-          .map(
-            (type, i) =>
-              self.labels[i]! + " : " + stringify(type)
-          )
-          .join(", "),
-        "}",
-      ].join(" "),
+    stringify: self => {
+      const rows = self.children
+        .map(
+          (type, i) =>
+            self.labels[i]! + " : " + stringify(type)
+        )
+        .join(", ");
+      return rows.length === 0
+        ? "{}"
+        : ["{", rows, "}"].join(" ");
+    },
   };
 };
 
@@ -355,8 +375,9 @@ const unify = (
 
   throw makeError(input, [
     {
-      expected: b,
-      got: a,
+      reason: `Cannot unify ${stringify(
+        a
+      )} and ${stringify(b)}`,
       at: tree.offset,
       size: tree.size,
     },
@@ -593,8 +614,8 @@ const infix: Infer = (tree, env, input) => {
     rhsType,
     newLambda(lhsType, opReturnType)
   );
-  const subs = unify(opType, newType, rhs, input);
-  const allSubs = compose(subs, lhsSubs, lhs, input);
+  const subs = unify(opType, newType, tree, input);
+  const allSubs = compose(subs, lhsSubs, tree, input);
 
   const finalType = apply(
     newType,
@@ -621,19 +642,26 @@ const application: Infer = (tree, env, input) => {
     isConstructor(lhsType) &&
     lhsType.name === listType
   ) {
-    // TODO: return Union of list member and Nothing
-    return [lhsType.children[0]!, env, null];
+    return [
+      newUnion([lhsType.children[0]!, nothingType]),
+      env,
+      null,
+    ];
   } else if (
     isConstructor(lhsType) &&
     lhsType.name === recordType
   ) {
     const [key] = infer(rhs, env, input);
     if (key !== stringType) {
-      // TODO: show union of all keys instead
+      // TODO: When literal types are implemented,
+      // show union of all keys instead of String
       throw makeError(input, [
         {
-          expected: stringType,
-          got: key,
+          reason: `Type "${stringify(
+            key
+          )}" cannot be used to index ${stringify(
+            lhsType
+          )}`,
           at: rhs.offset,
           size: rhs.size,
         },
@@ -646,7 +674,7 @@ const application: Infer = (tree, env, input) => {
     if (typeIndex === -1) {
       throw makeError(input, [
         {
-          reason: `"${label}" is not a key of ${stringify(
+          reason: `Type "${label}" cannot be used to index ${stringify(
             lhsType
           )}`,
           at: rhs.offset,
@@ -760,17 +788,24 @@ const declaration =
     return [rhsType, appliedEnv, null];
   };
 
-const list: Infer = (tree, env, input) => [
-  newList(
-    infer(
-      (tree as Branch).children[0]!,
-      env,
-      input
-    )[0]!
-  ),
-  env,
-  null,
-];
+const list: Infer = (tree, env, input) => {
+  const types = (tree as Branch).children
+    .map(child => infer(child!, env, input)[0]!)
+    .reduce(
+      (uniques, type) =>
+        uniques.find(unique =>
+          equal(
+            unique,
+            type,
+            ([key]) => key !== "stringify"
+          )
+        )
+          ? uniques
+          : uniques.concat(type),
+      [] as ReadonlyArray<Type>
+    );
+  return [newList(newUnion(types)), env, null];
+};
 
 const record: Infer = (tree, env, input) => [
   newRecord(
@@ -856,8 +891,11 @@ const matchType = (
           if (env[literal.text] !== type)
             throw makeError(input, [
               {
-                expected: type,
-                got: env[literal.text]!,
+                reason: `Expected ${stringify(
+                  type
+                )} but got ${stringify(
+                  env[literal.text]!
+                )}`,
                 at: literal.offset,
                 size: literal.size,
               },
@@ -868,8 +906,9 @@ const matchType = (
           if (type !== numberType)
             throw makeError(input, [
               {
-                expected: numberType,
-                got: type,
+                reason: `Expected Number but got ${stringify(
+                  type
+                )}`,
                 at: literal.offset,
                 size: literal.size,
               },
@@ -880,8 +919,9 @@ const matchType = (
           if (type !== stringType)
             throw makeError(input, [
               {
-                expected: stringType,
-                got: type,
+                reason: `Expected String but got ${stringify(
+                  type
+                )}`,
                 at: literal.offset,
                 size: literal.size,
               },
@@ -892,8 +932,9 @@ const matchType = (
           if (type !== booleanType)
             throw makeError(input, [
               {
-                expected: booleanType,
-                got: type,
+                reason: `Expected Boolean but got ${stringify(
+                  type
+                )}`,
                 at: literal.offset,
                 size: literal.size,
               },
