@@ -249,8 +249,8 @@ test("List access", () => {
     input
   );
 
-  if (type !== numberType)
-    return `Expected: Number\nGot:      ${stringify(
+  if (stringify(type) !== "Number | Nothing")
+    return `Expected: Number | Nothing\nGot:      ${stringify(
       type
     )}`;
 });
