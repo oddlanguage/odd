@@ -1,14 +1,7 @@
-import { Type, stringify } from "./type.js";
 import { ansi } from "./util.js";
 
 export type Problem = ProblemBase &
-  (
-    | Expected
-    | Unexpected
-    | EndOfInput
-    | TypeMismatch
-    | Custom
-  );
+  (Expected | Unexpected | EndOfInput | Custom);
 
 type ProblemBase = Readonly<{
   at: number;
@@ -25,11 +18,6 @@ export type Unexpected = Readonly<{
 
 export type EndOfInput = Readonly<{
   endOfInput: true;
-}>;
-
-export type TypeMismatch = Readonly<{
-  expected: Type;
-  got: Type;
 }>;
 
 export type Custom = Readonly<{
@@ -77,15 +65,10 @@ const furthest = (problems: ReadonlyArray<Problem>) =>
   );
 
 const weigh = (problem: Problem) => {
-  if (
-    (problem as Expected).expected ||
-    (problem as TypeMismatch).got
-  ) {
+  if ((problem as Unexpected).unexpected) {
     return 1;
-  } else if ((problem as Unexpected).unexpected) {
-    return 2;
   } else if ((problem as EndOfInput).endOfInput) {
-    return 3;
+    return 2;
   }
   return 0;
 };
@@ -109,13 +92,7 @@ export const makeError = (
 };
 
 const stringifyProblem = (problem: Problem) => {
-  if ((problem as TypeMismatch).got) {
-    return `- Type mismatch\n  Expected: ${stringify(
-      (problem as TypeMismatch).expected
-    )}\n  Got:      ${stringify(
-      (problem as TypeMismatch).got
-    )}`;
-  } else if ((problem as Expected).expected) {
+  if ((problem as Expected).expected) {
     return `- Expected ${
       (problem as Expected).expected
     }`;
