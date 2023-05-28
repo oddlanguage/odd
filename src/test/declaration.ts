@@ -240,7 +240,7 @@ test("Record destructuring rest pattern", () => {
       env["x"]
     )}`;
   if (
-    stringify(tenv["a"]) !==
+    stringify(tenv["x"]!) !==
     "{ y : Number, z : Number }"
   )
     return `Expected { y : Number, z : Number } but got ${stringify(

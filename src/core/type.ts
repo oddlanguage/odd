@@ -385,6 +385,7 @@ const unify = (
       }
     }
   } else if (isRecord(a) && isRecord(b)) {
+    // TODO: Subtyping should happen automatically, not just on extensible records
     // TODO: Clean up this mess
     outer: {
       // extensible records
@@ -1135,7 +1136,7 @@ const extractPatterns = (
         .children as Branch[]) {
         const field =
           child.children.length === 1
-            ? child.children[0]! // literal
+            ? child.children[0]! // literal / extensible
             : (child.children[1] as Branch); // assignment
         const [extracted, sub, extraContainer] =
           extractPatterns(field, newVar(), input);
