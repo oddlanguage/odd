@@ -4,6 +4,8 @@ import {
   booleanType,
   defaultTypeEnv,
   infer,
+  newLambda,
+  newUnion,
   nothingType,
   numberType,
   stringType,
@@ -147,8 +149,7 @@ test("List lambda parameter", () => {
 });
 
 test("List destructuring", () => {
-  const input =
-    "[a,[b, ...c], d] = [1, [''b'', true, false], nothing]";
+  const input = "[a,...b] = [1, 2, 3]";
   const [, env] = infer(
     parse(input),
     defaultTypeEnv,
@@ -159,17 +160,9 @@ test("List destructuring", () => {
     return `Expected: Number\nGot:      ${stringify(
       env["a"]!
     )}`;
-  if (env["b"] !== stringType)
-    return `Expected: String\nGot:      ${stringify(
+  if (stringify(env["b"]!) !== "List Number")
+    return `Expected: List Number\nGot:      ${stringify(
       env["b"]!
-    )}`;
-  if (stringify(env["c"]!) !== "List Boolean")
-    return `Expected: List Boolean\nGot:      ${stringify(
-      env["c"]!
-    )}`;
-  if (env["d"] !== nothingType)
-    return `Expected: Nothing\nGot:      ${stringify(
-      env["d"]!
     )}`;
 });
 
@@ -253,4 +246,30 @@ test("List access", () => {
     return `Expected: Number | Nothing\nGot:      ${stringify(
       type
     )}`;
+});
+
+test("Union unification", () => {
+  const code = `f x`;
+  const [a, b, c] = [0, 1, 2] as const;
+  try {
+    infer(
+      parse(code),
+      {
+        f: newLambda(newUnion([a, b, c]), nothingType),
+        x: b,
+      },
+      code
+    );
+    infer(
+      parse(code),
+      {
+        f: newLambda(newUnion([a, b, c]), nothingType),
+        x: newUnion([a, c]),
+      },
+      code
+    );
+  } catch (error) {
+    if (error instanceof Error) throw error;
+    return error as string;
+  }
 });

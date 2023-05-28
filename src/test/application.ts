@@ -63,8 +63,8 @@ test("List access", () => {
 
   if (result !== 1)
     return `Expected 1 but got ${result}`;
-  if (type !== numberType)
-    return `Expected Number but got ${stringify(
+  if (stringify(type) !== "Number | Nothing")
+    return `Expected Number | Nothing but got ${stringify(
       type
     )}`;
 });

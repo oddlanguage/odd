@@ -6,6 +6,7 @@ import {
   equal,
   log,
   unique,
+  zip,
 } from "./util.js";
 
 export type TypeConstructor = Readonly<{
@@ -111,6 +112,10 @@ export const newUnion = (
         stringify: self =>
           self.children.map(stringify).join(" | "),
       } as TypeConstructor);
+const isUnion = (
+  type: Type
+): type is TypeConstructor =>
+  isConstructor(type) && type.name === unionType;
 
 export const listType = Symbol("List");
 type ListType = TypeConstructor;
@@ -130,11 +135,13 @@ export const recordType = Symbol("Record");
 type RecordType = Omit<TypeConstructor, "stringify"> &
   Readonly<{
     labels: ReadonlyArray<string>;
+    spread?: boolean | undefined;
     stringify?: (self: RecordType) => string;
   }>;
 const newRecord = (
   // TODO: Records should map values to values (thus types to types)
-  rows: ReadonlyArray<readonly [string, Type]>
+  rows: ReadonlyArray<readonly [string, Type]>,
+  spread?: boolean
 ): RecordType => {
   const sortedRows = rows
     .slice()
@@ -143,11 +150,15 @@ const newRecord = (
     name: recordType,
     labels: sortedRows.map(([label]) => label),
     children: sortedRows.map(([, type]) => type),
+    spread,
     stringify: self => {
       const rows = self.children
         .map(
           (type, i) =>
-            self.labels[i]! + " : " + stringify(type)
+            (i === sortedRows.length - 1 && spread
+              ? "..."
+              : "") +
+            (self.labels[i]! + " : " + stringify(type))
         )
         .join(", ");
       return rows.length === 0
@@ -156,6 +167,8 @@ const newRecord = (
     },
   };
 };
+const isRecord = (type: Type): type is RecordType =>
+  isConstructor(type) && !!(type as RecordType).labels;
 
 let __LAST_TYPE_VAR = 0;
 const newVar = () => __LAST_TYPE_VAR++;
@@ -356,20 +369,82 @@ const unify = (
     typeof b === "symbol"
   ) {
     return [];
+  } else if (isUnion(a) || isUnion(b)) {
+    // TODO: Clean up this mess
+    if (isUnion(a)) {
+      for (const type of a.children) {
+        try {
+          return unify(type, b, tree, input);
+        } catch (_) {}
+      }
+    } else if (isUnion(b)) {
+      for (const type of b.children) {
+        try {
+          return unify(type, b, tree, input);
+        } catch (_) {}
+      }
+    }
+  } else if (isRecord(a) && isRecord(b)) {
+    // TODO: Clean up this mess
+    outer: {
+      // Spread records
+      const [shortest, longest] =
+        a.labels.length <= b.labels.length
+          ? [a, b]
+          : [b, a];
+      let subs: Substitutions = [];
+      for (
+        let i = 0;
+        i < shortest.labels.length;
+        i++
+      ) {
+        const labelA = shortest.labels[i];
+        const labelB = longest.labels[i];
+        const isLast =
+          i === shortest.labels.length - 1;
+        if (labelA !== labelB) {
+          if (!isLast) break outer;
+          subs = subs.concat(
+            unify(
+              shortest.children[i]!,
+              newRecord(
+                zip(
+                  longest.labels.slice(i),
+                  longest.children.slice(i)
+                )
+              ),
+              tree,
+              input
+            )
+          );
+        } else {
+          subs = subs.concat(
+            unify(
+              shortest.children[i]!,
+              longest.children[i]!,
+              tree,
+              input
+            )
+          );
+        }
+      }
+      return subs;
+    }
   } else if (
-    (a as TypeConstructor).name ===
-      (b as TypeConstructor).name &&
-    (a as TypeConstructor).children.length ===
-      (b as TypeConstructor).children.length
+    (a as any as TypeConstructor).name ===
+      (b as any as TypeConstructor).name &&
+    (a as any as TypeConstructor).children.length ===
+      (b as any as TypeConstructor).children.length
   ) {
-    return (a as TypeConstructor).children.flatMap(
-      (a, i) =>
-        unify(
-          a,
-          (b as TypeConstructor).children[i]!,
-          tree,
-          input
-        )
+    return (
+      a as any as TypeConstructor
+    ).children.flatMap((a, i) =>
+      unify(
+        a,
+        (b as any as TypeConstructor).children[i]!,
+        tree,
+        input
+      )
     );
   }
 
@@ -971,9 +1046,9 @@ const extractPatterns = (
   type: Type,
   input: string
 ): readonly [
-  ReadonlyRecord<string, Type>,
-  Substitutions | null,
-  Record<string, Type> | null
+  ReadonlyRecord<string, Type>, // patterns
+  Substitutions | null, // substitutions
+  Record<string, Type> | null // record type state
 ] => {
   switch (pattern.type) {
     case "literal-pattern": {
@@ -1054,6 +1129,7 @@ const extractPatterns = (
       let subs: Substitutions = [];
       let patterns: Record<string, Type> = {};
       let container: Record<string, Type> = {};
+      let spread = false;
 
       for (const child of (pattern as Branch)
         .children as Branch[]) {
@@ -1061,25 +1137,20 @@ const extractPatterns = (
           child.children.length === 1
             ? child.children[0]! // literal
             : (child.children[1] as Branch); // assignment
-        if (field.type === "rest-pattern") {
-          // TODO: How can we return a usable type here?
-          throw makeError(input, [
-            {
-              reason: `Unhandled field type "${field.type}"`,
-              at: field.offset,
-              size: field.size,
-            },
-          ]);
-        }
         const [extracted, sub, extraContainer] =
           extractPatterns(field, newVar(), input);
         patterns = { ...patterns, ...extracted };
         if (sub) {
           subs = compose(subs, sub, field, input);
         }
+        if (field.type === "rest-pattern") {
+          spread = true;
+        }
         if (child.children.length === 1) {
+          // literal / spread
           container = { ...container, ...extracted };
         } else {
+          // assignment
           const name = (
             (child.children[0] as Branch)
               .children[0] as Token
@@ -1097,15 +1168,23 @@ const extractPatterns = (
         [
           [
             type as number,
-            newRecord(Object.entries(container)),
+            newRecord(
+              Object.entries(container),
+              spread
+            ),
           ],
         ],
         subs,
         pattern,
         input
       );
-
       return [patterns, subs, container];
+    }
+    case "rest-pattern": {
+      const name = (
+        (pattern as Branch).children[0] as Token
+      ).text;
+      return [{ [name]: newVar() }, null, null];
     }
     default:
       throw makeError(input, [

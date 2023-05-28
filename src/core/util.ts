@@ -194,12 +194,10 @@ export const formatBytes = (
 export const largest = <T>(x: T[], y: T[]) =>
   x.length >= y.length ? x : y;
 
-export const zip = <T>(x: T[], y: T[]) =>
-  largest(x, y).map(
+export const zip = <A, B>(x: A[], y: B[]) =>
+  largest(x, y as any).map(
     (_, i) => [x[i], y[i]] as const
-  ) as ReadonlyArray<
-    readonly [T | undefined, T | undefined]
-  >;
+  ) as ReadonlyArray<readonly [A, B]>;
 
 export type ReadonlyRecord<
   K extends keyof any = string,
