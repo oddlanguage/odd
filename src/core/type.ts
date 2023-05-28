@@ -135,13 +135,13 @@ export const recordType = Symbol("Record");
 type RecordType = Omit<TypeConstructor, "stringify"> &
   Readonly<{
     labels: ReadonlyArray<string>;
-    spread?: boolean | undefined;
+    extensible?: boolean | undefined;
     stringify?: (self: RecordType) => string;
   }>;
 const newRecord = (
   // TODO: Records should map values to values (thus types to types)
   rows: ReadonlyArray<readonly [string, Type]>,
-  spread?: boolean
+  extensible?: boolean
 ): RecordType => {
   const sortedRows = rows
     .slice()
@@ -150,12 +150,12 @@ const newRecord = (
     name: recordType,
     labels: sortedRows.map(([label]) => label),
     children: sortedRows.map(([, type]) => type),
-    spread,
+    extensible,
     stringify: self => {
       const rows = self.children
         .map(
           (type, i) =>
-            (i === sortedRows.length - 1 && spread
+            (i === sortedRows.length - 1 && extensible
               ? "..."
               : "") +
             (self.labels[i]! + " : " + stringify(type))
@@ -387,7 +387,7 @@ const unify = (
   } else if (isRecord(a) && isRecord(b)) {
     // TODO: Clean up this mess
     outer: {
-      // Spread records
+      // extensible records
       const [shortest, longest] =
         a.labels.length <= b.labels.length
           ? [a, b]
@@ -1129,7 +1129,7 @@ const extractPatterns = (
       let subs: Substitutions = [];
       let patterns: Record<string, Type> = {};
       let container: Record<string, Type> = {};
-      let spread = false;
+      let extensible = false;
 
       for (const child of (pattern as Branch)
         .children as Branch[]) {
@@ -1144,10 +1144,10 @@ const extractPatterns = (
           subs = compose(subs, sub, field, input);
         }
         if (field.type === "rest-pattern") {
-          spread = true;
+          extensible = true;
         }
         if (child.children.length === 1) {
-          // literal / spread
+          // literal / extensible
           container = { ...container, ...extracted };
         } else {
           // assignment
@@ -1170,7 +1170,7 @@ const extractPatterns = (
             type as number,
             newRecord(
               Object.entries(container),
-              spread
+              extensible
             ),
           ],
         ],
