@@ -8,6 +8,7 @@ import {
   stringify,
 } from "../core/type.js";
 import {
+  dedent,
   diff,
   equal,
   serialise,
@@ -103,6 +104,51 @@ test("Record access and application", () => {
     return `Expected 2 but got ${result}`;
   if (type !== numberType)
     return `Expected Number but got ${stringify(
+      type
+    )}`;
+});
+
+test("Union collapse", () => {
+  const code = `head [1]`;
+  const [type] = infer(
+    parse(code),
+    defaultTypeEnv,
+    code
+  );
+
+  if (type !== numberType)
+    return `Expected Number but got ${stringify(
+      type
+    )}`;
+});
+
+test("Argument type mismatch", () => {
+  const code = dedent(`
+		{a} #$% b = a+b;
+		{a=''1''} #$% 2;
+	`);
+  try {
+    const [type] = infer(
+      parse(code),
+      defaultTypeEnv,
+      code
+    );
+    return `Expected to fail typechecking but got ${stringify(
+      type
+    )}`;
+  } catch (_) {}
+});
+
+test("Contstraint application", () => {
+  const code = `(==) 1`;
+  const [type] = infer(
+    parse(code),
+    defaultTypeEnv,
+    code
+  );
+
+  if (stringify(type) !== "(Eq a) => a -> Boolean")
+    return `Expected (Eq a) => a -> Boolean but got ${stringify(
       type
     )}`;
 });

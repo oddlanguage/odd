@@ -434,13 +434,14 @@ export default parse;
 
 export const nothing = Symbol("nothing");
 
+// TODO: write these declarations in odd itself through a prelude
 export const defaultEnv: ReadonlyRecord = {
-  "/": (b: any) => (a: any) => a / b,
-  "*": (b: any) => (a: any) => a * b,
-  "+": (b: any) => (a: any) => a + b,
-  "-": (b: any) => (a: any) => a - b,
-  "%": (b: any) => (a: any) => a % b,
-  "^": (b: any) => (a: any) => a ** b,
+  "/": (b: number) => (a: number) => a / b,
+  "*": (b: number) => (a: number) => a * b,
+  "+": (b: number) => (a: number) => a + b,
+  "-": (b: number) => (a: number) => a - b,
+  "%": (b: number) => (a: number) => a % b,
+  "^": (b: number) => (a: number) => a ** b,
   "<": (b: any) => (a: any) => a < b,
   ">": (b: any) => (a: any) => a > b,
   "<=": (b: any) => (a: any) => a <= b,
@@ -449,6 +450,8 @@ export const defaultEnv: ReadonlyRecord = {
   "!=": (b: any) => (a: any) => !equal(a, b),
   "&": (b: any) => (a: any) => a && b,
   "|": (b: any) => (a: any) => a || b,
+  "++": (b: any) => (a: any) =>
+    Array.isArray(a) ? a.concat(b) : a + b,
   "<.": (g: Function) => (f: Function) => (x: any) =>
     f(g(x)),
   ".>": (g: Function) => (f: Function) => (x: any) =>

@@ -24,40 +24,75 @@ const newScheme = (type: Type): TypeScheme => ({
   type,
 });
 const instantiate = (scheme: TypeScheme): Type => {
-  let i = 0;
-  const vars = Object.fromEntries(
-    scheme.vars.map(v => [v, i++])
-  );
-  const _inst = (type: Type): Type => {
+  const _inst = (
+    type: Type,
+    vars: ReadonlyRecord<string, number>
+  ): Type => {
     if (typeof type === "symbol") {
       return type;
     } else if (typeof type === "number") {
       return vars[type]!;
+    } else if (isTypeConstraint(type)) {
+      return newTypeConstraint(
+        type.constraints.map(([k, v]) => [
+          vars[k]!,
+          v,
+        ]),
+        _inst(type.type, vars)
+      );
     } else if (isConstructor(type)) {
       return {
         ...type,
-        children: type.children.map(_inst),
+        children: type.children.map(c =>
+          _inst(c, vars)
+        ),
       };
+    } else {
+      return type;
     }
-    throw `Cannot instantiate ${type}.`;
   };
-  return _inst(scheme.type);
+  let i = 0;
+  const vars = Object.fromEntries(
+    scheme.vars.map(v => [v, i++])
+  );
+  return _inst(scheme.type, vars);
 };
+
+type TypeConstraint = Readonly<{
+  constraints: ReadonlyArray<readonly [number, Type]>;
+  type: Type;
+}>;
+const newTypeConstraint = (
+  constraints: ReadonlyArray<readonly [number, Type]>,
+  type: Type
+): TypeConstraint => ({
+  constraints,
+  type,
+});
 
 export type Type =
   | number
   | symbol
   | ListType
   | RecordType
-  | TypeScheme;
+  | TypeScheme
+  | TypeConstraint;
 
 const isConstructor = (
   type: Type
 ): type is TypeConstructor | ListType | RecordType =>
   !!(type as TypeConstructor).children;
 
+const isRecord = (type: Type): type is RecordType =>
+  isConstructor(type) && !!(type as RecordType).labels;
+
 const isScheme = (type: Type): type is TypeScheme =>
   !!(type as TypeScheme).vars;
+
+const isTypeConstraint = (
+  type: Type
+): type is TypeConstraint =>
+  !!(type as TypeConstraint).constraints;
 
 const alphabet = "αβγδεζηθικλμνξοπρστυφχψω";
 const subscript = "₀₁₂₃₄₅₆₇₈₉";
@@ -78,6 +113,16 @@ export const stringify = (type: Type): string =>
     ? `∀${type.vars
         .map(stringify)
         .join(",")}.${stringify(type.type)}`
+    : isTypeConstraint(type)
+    ? `(${type.constraints
+        .map(constraint => {
+          const reversed = constraint
+            .map(stringify)
+            .slice()
+            .reverse();
+          return reversed.join(" ");
+        })
+        .join(", ")}) => ${stringify(type.type)}`
     : type.stringify?.(type as any) ??
       [type.name, ...type.children]
         .map(stringify)
@@ -141,8 +186,23 @@ type RecordType = Omit<TypeConstructor, "stringify"> &
 const newRecord = (
   // TODO: Records should map values to values (thus types to types)
   rows: ReadonlyArray<readonly [string, Type]>,
+  tree: Tree,
+  input: string,
   extensible?: boolean
 ): RecordType => {
+  const visited: string[] = [];
+  for (const [label] of rows) {
+    if (visited.includes(label))
+      throw makeError(input, [
+        {
+          reason: `Duplicate label "${label}"`,
+          at: tree.offset,
+          size: tree.size,
+        },
+      ]);
+    visited.push(label);
+  }
+
   const sortedRows = rows
     .slice()
     .sort(([a], [b]) => a.localeCompare(b));
@@ -167,8 +227,6 @@ const newRecord = (
     },
   };
 };
-const isRecord = (type: Type): type is RecordType =>
-  isConstructor(type) && !!(type as RecordType).labels;
 
 let __LAST_TYPE_VAR = 0;
 const newVar = () => __LAST_TYPE_VAR++;
@@ -178,6 +236,7 @@ export const stringType = Symbol("String");
 export const booleanType = Symbol("Boolean");
 export const nothingType = Symbol("Nothing");
 export const neverType = Symbol("Never");
+// TODO: write these declarations in odd itself through a prelude
 export const defaultTypeEnv: ReadonlyRecord<
   string,
   Type
@@ -206,28 +265,42 @@ export const defaultTypeEnv: ReadonlyRecord<
     numberType,
     newLambda(numberType, numberType)
   ),
-  // "<": (Ord a) => a -> a -> Boolean,
-  "<": newLambda(
-    numberType,
-    newLambda(numberType, booleanType)
-  ),
-  // ">": (Ord a) => a -> a -> Boolean,
-  ">": newLambda(
-    numberType,
-    newLambda(numberType, booleanType)
-  ),
-  // "<=": (Ord a) => a -> a -> Boolean,
-  "<=": newLambda(
-    numberType,
-    newLambda(numberType, booleanType)
-  ),
-  // ">=": (Ord a) => a -> a -> Boolean,
-  ">=": newLambda(
-    numberType,
-    newLambda(numberType, booleanType)
-  ),
-  // "==": (Eq a) => a -> a -> Boolean,
-  // "!=": (Eq a) => a -> a -> Boolean,
+  ...(() => {
+    const a = newVar();
+    const vars = [[a, Symbol("Ord")] as const];
+    return {
+      "<": newTypeConstraint(
+        vars,
+        newLambda(a, newLambda(a, booleanType))
+      ),
+      ">": newTypeConstraint(
+        vars,
+        newLambda(a, newLambda(a, booleanType))
+      ),
+      "<=": newTypeConstraint(
+        vars,
+        newLambda(a, newLambda(a, booleanType))
+      ),
+      ">=": newTypeConstraint(
+        vars,
+        newLambda(a, newLambda(a, booleanType))
+      ),
+    };
+  })(),
+  ...(() => {
+    const a = newVar();
+    const vars = [[a, Symbol("Eq")] as const];
+    return {
+      "==": newTypeConstraint(
+        vars,
+        newLambda(a, newLambda(a, booleanType))
+      ),
+      "!=": newTypeConstraint(
+        vars,
+        newLambda(a, newLambda(a, booleanType))
+      ),
+    };
+  })(),
   "|": newLambda(
     booleanType,
     newLambda(booleanType, booleanType)
@@ -235,6 +308,10 @@ export const defaultTypeEnv: ReadonlyRecord<
   "&": newLambda(
     booleanType,
     newLambda(booleanType, booleanType)
+  ),
+  "++": newLambda(
+    stringType,
+    newLambda(stringType, stringType)
   ),
   true: booleanType,
   false: booleanType,
@@ -277,8 +354,20 @@ export const defaultTypeEnv: ReadonlyRecord<
     const a = newVar();
     return newLambda(newList(a), newList(a));
   })(),
-  // head: List a -> a | Nothing,
-  // last: List a -> a | Nothing,
+  head: (() => {
+    const a = newVar();
+    return newLambda(
+      newList(a),
+      newUnion([a, nothingType])
+    );
+  })(),
+  last: (() => {
+    const a = newVar();
+    return newLambda(
+      newList(a),
+      newUnion([a, nothingType])
+    );
+  })(),
   tail: (() => {
     const a = newVar();
     return newLambda(newList(a), newList(a));
@@ -321,6 +410,12 @@ const free = (type: Type): ReadonlyArray<number> => {
     return [type];
   } else if (isConstructor(type)) {
     return unique(type.children.flatMap(free));
+  } else if (isTypeConstraint(type)) {
+    return unique(
+      type.constraints
+        .map(([typeVar]) => typeVar)
+        .concat(free(type.type))
+    );
   } else {
     return free(type.type).filter(
       freeVar => !type.vars.includes(freeVar)
@@ -333,8 +428,24 @@ const occurs = (a: Type, b: Type): boolean => {
     return a.children.some(child => occurs(child, b));
   } else if (isConstructor(b)) {
     return b.children.some(child => occurs(child, a));
+  } else if (isScheme(a)) {
+    return a.vars.some(child => occurs(child, a.type));
+  } else if (isScheme(b)) {
+    return b.vars.some(child => occurs(child, b.type));
+  } else if (isTypeConstraint(a)) {
+    return (
+      a.constraints.some(([child]) =>
+        occurs(child, b)
+      ) || occurs(a.type, b)
+    );
+  } else if (isTypeConstraint(b)) {
+    return (
+      b.constraints.some(([child]) =>
+        occurs(child, a)
+      ) || occurs(b.type, a)
+    );
   } else {
-    return false;
+    return a === b;
   }
 };
 
@@ -380,12 +491,11 @@ const unify = (
     } else if (isUnion(b)) {
       for (const type of b.children) {
         try {
-          return unify(type, b, tree, input);
+          return unify(type, a, tree, input);
         } catch (_) {}
       }
     }
   } else if (isRecord(a) && isRecord(b)) {
-    // TODO: Subtyping should happen automatically, not just on extensible records
     // TODO: Clean up this mess
     outer: {
       // extensible records
@@ -412,7 +522,9 @@ const unify = (
                 zip(
                   longest.labels.slice(i),
                   longest.children.slice(i)
-                )
+                ),
+                tree,
+                input
               ),
               tree,
               input
@@ -431,6 +543,29 @@ const unify = (
       }
       return subs;
     }
+  } else if (
+    isTypeConstraint(a) ||
+    isTypeConstraint(b)
+  ) {
+    const [constraint, other] = (
+      isTypeConstraint(a) ? [a, b] : [b, a]
+    ) as [TypeConstraint, Type];
+    return unify(
+      constraint.type,
+      other,
+      tree,
+      input
+    ).map(([tvar, tsub]) => {
+      return [
+        tvar,
+        occurs(constraint, tsub)
+          ? newTypeConstraint(
+              constraint.constraints,
+              tsub
+            )
+          : tsub,
+      ];
+    });
   } else if (
     (a as any as TypeConstructor).name ===
       (b as any as TypeConstructor).name &&
@@ -512,6 +647,13 @@ const apply = (
     return (
       subs?.find(([t]) => t === type)?.[1] ?? type
     );
+  } else if (isTypeConstraint(type)) {
+    // TODO: What if x : (Eq a) => a and x : Number?
+    log({ type, subs });
+    return {
+      ...type,
+      type: apply(type.type, subs, tree, input),
+    };
   } else if (isConstructor(type)) {
     return {
       ...type,
@@ -916,7 +1058,9 @@ const record: Infer = (tree, env, input) => [
             throw `Unhandled row type "${row!.type}".`;
         }
       }
-    )
+    ),
+    tree,
+    input
   ),
   env,
   null,
@@ -932,15 +1076,7 @@ const match: Infer = (tree, env, input) => {
       return infer(_case!, env, input)[0];
     }
   );
-  const type = caseTypes.reduce((type, t) =>
-    apply(
-      type,
-      unify(type, t, tree, input),
-      tree,
-      input
-    )
-  );
-  return [type, env, null];
+  return [newUnion(caseTypes), env, null];
 };
 
 const matchType = (
@@ -1159,7 +1295,9 @@ const extractPatterns = (
           container = {
             ...container,
             [name]: newRecord(
-              Object.entries(extraContainer!)
+              Object.entries(extraContainer!),
+              child,
+              input
             ),
           };
         }
@@ -1171,6 +1309,8 @@ const extractPatterns = (
             type as number,
             newRecord(
               Object.entries(container),
+              pattern,
+              input,
               extensible
             ),
           ],

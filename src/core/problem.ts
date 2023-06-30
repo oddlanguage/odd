@@ -3,6 +3,7 @@ import { ansi } from "./util.js";
 export type Problem = ProblemBase &
   (Expected | Unexpected | EndOfInput | Custom);
 
+// TODO: Problems can have multiple origins, e.g. a type mismatch
 type ProblemBase = Readonly<{
   at: number;
   size?: number;
