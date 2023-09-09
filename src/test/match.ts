@@ -1,7 +1,11 @@
 import _eval from "../core/eval.js";
 import parse, { defaultEnv } from "../core/odd.js";
 import test from "../core/test.js";
-import { equal } from "../core/util.js";
+import {
+  diff,
+  equal,
+  serialise,
+} from "../core/util.js";
 
 test("Match expression selects correct case", () => {
   const code = `case (3) of 1 = false, 2 = false, 3 = true`;
@@ -10,7 +14,9 @@ test("Match expression selects correct case", () => {
     defaultEnv,
     code
   );
-  return result === true;
+
+  if (result !== true)
+    `Expected true but got ${result}`;
 });
 
 test("Match expression correctly selects wildcard", () => {
@@ -20,7 +26,9 @@ test("Match expression correctly selects wildcard", () => {
     defaultEnv,
     code
   );
-  return result === true;
+
+  if (result !== true)
+    `Expected true but got ${result}`;
 });
 
 test("Matches do not fall through", () => {
@@ -30,7 +38,9 @@ test("Matches do not fall through", () => {
     defaultEnv,
     code
   );
-  return result === true;
+
+  if (result !== true)
+    `Expected true but got ${result}`;
 });
 
 test("List pattern case", () => {
@@ -40,7 +50,8 @@ test("List pattern case", () => {
     defaultEnv,
     code
   );
-  return result === 1;
+
+  if (result !== 1) `Expected 1 but got ${result}`;
 });
 
 test("List rest pattern case", () => {
@@ -50,7 +61,9 @@ test("List rest pattern case", () => {
     defaultEnv,
     code
   );
-  return equal(result, [1, 2]);
+
+  if (!equal(result, [1, 2]))
+    `Expected [1, 2] but got ${result}`;
 });
 
 test("Record pattern case", () => {
@@ -60,7 +73,8 @@ test("Record pattern case", () => {
     defaultEnv,
     code
   );
-  return result === 1;
+
+  if (result !== 1) `Expected 1 but got ${result}`;
 });
 
 test("Record rest pattern case", () => {
@@ -70,7 +84,9 @@ test("Record rest pattern case", () => {
     defaultEnv,
     code
   );
-  return equal(result, { a: 1, b: 2 });
+
+  if (!equal(result, { a: 1, b: 2 }))
+    `Expected { a: 1, b: 2 } but got ${result}`;
 });
 
 test("Match expressions do not pollute scope", () => {
@@ -80,5 +96,7 @@ test("Match expressions do not pollute scope", () => {
     defaultEnv,
     code
   );
-  return equal(env, defaultEnv);
+
+  if (!equal(env, defaultEnv))
+    return serialise(diff(defaultEnv, env));
 });

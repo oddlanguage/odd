@@ -3,6 +3,7 @@ import { ansi } from "./util.js";
 export type Problem = ProblemBase &
   (Expected | Unexpected | EndOfInput | Custom);
 
+// TODO: Problems can have multiple origins, e.g. a type mismatch
 type ProblemBase = Readonly<{
   at: number;
   size?: number;
@@ -65,12 +66,10 @@ const furthest = (problems: ReadonlyArray<Problem>) =>
   );
 
 const weigh = (problem: Problem) => {
-  if ((problem as Expected).expected) {
+  if ((problem as Unexpected).unexpected) {
     return 1;
-  } else if ((problem as Unexpected).unexpected) {
-    return 2;
   } else if ((problem as EndOfInput).endOfInput) {
-    return 3;
+    return 2;
   }
   return 0;
 };
@@ -88,22 +87,22 @@ export const makeError = (
     "\n\n" +
     furthestProblems
       .sort((a, b) => weigh(a) - weigh(b))
-      .map(problem => `- ${stringifyProblem(problem)}`)
+      .map(stringifyProblem)
       .join("\n")
   );
 };
 
 const stringifyProblem = (problem: Problem) => {
   if ((problem as Expected).expected) {
-    return `Expected ${
+    return `- Expected ${
       (problem as Expected).expected
     }`;
   } else if ((problem as Unexpected).unexpected) {
-    return `Unexpected ${
+    return `- Unexpected ${
       (problem as Unexpected).unexpected
     }`;
   } else if ((problem as EndOfInput).endOfInput) {
-    return `Unexpected end of input (EOF)`;
+    return `- Unexpected end of input (EOF)`;
   }
   return (problem as Custom).reason;
 };

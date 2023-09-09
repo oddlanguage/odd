@@ -67,7 +67,7 @@ There are no multiline comments.
 
 ## Literals
 
-A `literal` is a lexeme that represents a value _literally_. Below are all possible literal productions, ordered by simplicity.
+A `literal` is a lexeme that represents a value _literally_. Below are all possible literal productions, loosely ordered by simplicity.
 
 <br/>
 
@@ -185,11 +185,11 @@ A string is a sequence of any character (except newlines), contained within _two
 ''This is a string!'';
 ```
 
-> ℹ️ Multiline strings are a planned feature, and will use the same syntax.
+> ℹ️ Multiline strings are a planned feature.
 
 #### Interpolation
 
-> ℹ️ String interpolation is a planned feature. It will use the backslash (`\`) to denote interpolated parts.
+> ℹ️ String interpolation is a planned feature.
 
 #### Common pitfalls in strings
 
@@ -270,15 +270,15 @@ To merge two lists _literally_, you can destructure them:
 
 ```hs
 -- given two lists
-a = [1,2,3];
-b = [4,5,6];
+a = [1, 2, 3];
+b = [4, 5, 6];
 
 -- the destructuring
 [ ...a,
   ...b ]
 
 -- is equal to
-[1,2,3,4,5,6];
+[1, 2, 3, 4, 5, 6];
 ```
 
 <br/>
@@ -323,7 +323,7 @@ If there exists a variable `var` in the current scope, a record can be assigned 
 { var = var };
 ```
 
-> ℹ️ Dynamic field names are a planned feature, which will use the string syntax.
+> ℹ️ Dynamic field names are a planned feature.
 
 To merge two records _literally_, you can destructure them:
 
@@ -332,11 +332,13 @@ To merge two records _literally_, you can destructure them:
 x = {
   a = 1,
   b = 2,
-  c = 3 };
+  c = 3,
+};
 y = {
   d = 4,
   e = 5,
-  f = 6 };
+  f = 6,
+};
 
 -- the destructuring
 destructured = {
@@ -557,7 +559,7 @@ Here are some valid patterns:
   - etc.
 
 ```hs
-case ''a'' of
+case (''a'') of
   1 = 1, -- no match
   true = 2, -- no match
   ''a'' = 3; -- match!
@@ -567,7 +569,7 @@ case ''a'' of
 - The _success_ case, which is one or more underscores (`_`), and always matches.
 
 ```hs
-case ''a'' of
+case (''a'') of
   1 = 1, -- no match
   true = 2, -- no match
   _ = 3; -- match!

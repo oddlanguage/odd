@@ -1,7 +1,12 @@
 import _eval from "../core/eval.js";
 import parse, { defaultEnv } from "../core/odd.js";
 import test from "../core/test.js";
-import { difference, equal } from "../core/util.js";
+import {
+  diff,
+  difference,
+  equal,
+  serialise,
+} from "../core/util.js";
 
 test("Empty record", () => {
   const code = `{}`;
@@ -10,7 +15,10 @@ test("Empty record", () => {
     defaultEnv,
     code
   );
-  return equal(result, {});
+
+  const expected = {};
+  if (!equal(result, expected))
+    return serialise(diff(result, expected));
 });
 
 test("Simple fields", () => {
@@ -20,7 +28,10 @@ test("Simple fields", () => {
     defaultEnv,
     code
   );
-  return equal(result, { a: 1 });
+
+  const expected = { a: 1 };
+  if (!equal(result, expected))
+    return serialise(diff(result, expected));
 });
 
 test("Function fields", () => {
@@ -30,7 +41,8 @@ test("Function fields", () => {
     defaultEnv,
     code
   );
-  return result === 1;
+
+  if (result !== 1) `Expected 1 but got ${result}`;
 });
 
 test("Dangling commas are ignored", () => {
@@ -40,7 +52,10 @@ test("Dangling commas are ignored", () => {
     defaultEnv,
     code
   );
-  return equal(result, { a: 1 });
+
+  const expected = { a: 1 };
+  if (!equal(result, expected))
+    return serialise(diff(result, expected));
 });
 
 test("Property shorthands", () => {
@@ -50,7 +65,10 @@ test("Property shorthands", () => {
     defaultEnv,
     code
   );
-  return equal(result, { a: 1 });
+
+  const expected = { a: 1 };
+  if (!equal(result, expected))
+    return serialise(diff(result, expected));
 });
 
 test("Destructuring", () => {
@@ -60,7 +78,10 @@ test("Destructuring", () => {
     defaultEnv,
     code
   );
-  return equal(result, { a: 1 });
+
+  const expected = { a: 1 };
+  if (!equal(result, expected))
+    return serialise(diff(result, expected));
 });
 
 test("Properties do not pollute scope", () => {
@@ -70,11 +91,18 @@ test("Properties do not pollute scope", () => {
     defaultEnv,
     code
   );
-  return equal(difference(defaultEnv, env), {});
+
+  if (!equal(difference(defaultEnv, env), {}))
+    return serialise(diff(defaultEnv, env));
 });
 
 test("Fields can reference outer scope", () => {
   const code = `b=1;{a=b} ''a''`;
-  const [value] = _eval(parse(code), defaultEnv, code);
-  return value === 1;
+  const [result] = _eval(
+    parse(code),
+    defaultEnv,
+    code
+  );
+
+  if (result !== 1) `Expected 1 but got ${result}`;
 });

@@ -1,5 +1,5 @@
-import { nothing } from "./odd.js";
-import { Branch, Token, Tree } from "./parser.js";
+import { nothing, typeclassTag } from "./odd.js";
+import { Branch, Token, Tree } from "./parse.js";
 import { makeError } from "./problem.js";
 import { Mutable, ReadonlyRecord } from "./util.js";
 
@@ -21,10 +21,9 @@ const _eval: Eval = (tree, env, input) => {
       return declaration(tree, env, input);
     case "number":
       return number(tree, env, input);
+    case "operator":
     case "name":
       return name(tree, env, input);
-    case "operator":
-      return operator(tree, env, input);
     case "application":
       return application(tree, env, input);
     case "string":
@@ -41,6 +40,9 @@ const _eval: Eval = (tree, env, input) => {
       return field(tree, env, input);
     case "match":
       return match(tree, env, input);
+    case "typeclass":
+      // TODO: Carry around the impl of typeclasses
+      return [nothing, {}, env];
     default:
       throw makeError(input, [
         {
@@ -87,8 +89,16 @@ const declaration: Eval = (tree, env, input) => {
     input
   );
 
-  for (const [key, value] of Object.entries(extracted))
+  for (const [key, value] of Object.entries(
+    extracted
+  )) {
     mutableEnvToAllowRecursion[key] = value;
+    if (typeof value === "function") {
+      Object.defineProperty(value, "name", {
+        get: () => key,
+      });
+    }
+  }
 
   return [rhs, extracted, mutableEnvToAllowRecursion];
 };
@@ -99,17 +109,21 @@ const number: Eval = (tree, env) => [
   env,
 ];
 
-const name: Eval = (tree, env) => [
-  env[(tree as Token).text],
-  null,
-  env,
-];
-
-const operator: Eval = (tree, env) => [
-  env[(tree as Token).text],
-  null,
-  env,
-];
+const name: Eval = (tree, env) => {
+  const text = (tree as Token).text;
+  return [
+    env[text] ??
+      Object.values(env)
+        .filter(
+          value =>
+            value.constructor === Object &&
+            typeclassTag in value
+        )
+        .find(value => value[text])?.[text],
+    null,
+    env,
+  ];
+};
 
 const application: Eval = (tree, env, input) => {
   const lhsTree = (tree as Branch).children[0]!;
@@ -126,7 +140,7 @@ const application: Eval = (tree, env, input) => {
       typeof rhs === "string") ||
     (Array.isArray(lhs) && typeof rhs === "number")
   )
-    return [lhs[rhs], null, env];
+    return [lhs[rhs] ?? nothing, null, env];
 
   return [lhs(rhs), null, env];
 };
@@ -137,20 +151,28 @@ const string: Eval = (tree, env) => [
   env,
 ];
 
-// BUG: TODO: If operators evaluate RHS first,
-// it can never short-circuit in case of boolean
-// operators.
 const infix: Eval = (tree, env, input) => {
-  const [lhs] = _eval(
-    (tree as Branch).children[0]!,
-    env,
-    input
-  );
   const [op] = _eval(
     (tree as Branch).children[1]!,
     env,
     input
   );
+  const [lhs] = _eval(
+    (tree as Branch).children[0]!,
+    env,
+    input
+  );
+
+  // TODO: Figure out how to do this out of the interpreter
+  const opName = (
+    (tree as Branch).children[1] as Token
+  ).text;
+  if (
+    (opName === "&" && !lhs) ||
+    (opName === "|" && lhs)
+  )
+    return [lhs, null, env];
+
   const [rhs] = _eval(
     (tree as Branch).children[2]!,
     env,

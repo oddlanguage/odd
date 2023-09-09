@@ -16,6 +16,8 @@ export const log = <T>(x: T) => {
 };
 
 export const ansi = {
+  black: (string: string) =>
+    "\x1b[30m" + string + "\x1b[0m",
   red: (string: string) =>
     "\x1b[31m" + string + "\x1b[0m",
   green: (string: string) =>
@@ -28,6 +30,8 @@ export const ansi = {
     "\x1b[35m" + string + "\x1b[0m",
   cyan: (string: string) =>
     "\x1b[36m" + string + "\x1b[0m",
+  grey: (string: string) =>
+    "\x1b[90m" + string + "\x1b[0m",
   bold: (string: string) =>
     "\x1b[1m" + string + "\x1b[0m",
   dim: (string: string) =>
@@ -36,6 +40,24 @@ export const ansi = {
     "\x1b[3m" + string + "\x1b[0m",
   underline: (string: string) =>
     "\x1b[4m" + string + "\x1b[0m",
+  bg: {
+    black: (string: string) =>
+      "\x1b[40m" + string + "\x1b[0m",
+    red: (string: string) =>
+      "\x1b[41m" + string + "\x1b[0m",
+    green: (string: string) =>
+      "\x1b[42m" + string + "\x1b[0m",
+    yellow: (string: string) =>
+      "\x1b[43m" + string + "\x1b[0m",
+    blue: (string: string) =>
+      "\x1b[44m" + string + "\x1b[0m",
+    magenta: (string: string) =>
+      "\x1b[45m" + string + "\x1b[0m",
+    cyan: (string: string) =>
+      "\x1b[46m" + string + "\x1b[0m",
+    grey: (string: string) =>
+      "\x1b[100m" + string + "\x1b[0m",
+  },
 };
 
 type Primitive =
@@ -172,12 +194,10 @@ export const formatBytes = (
 export const largest = <T>(x: T[], y: T[]) =>
   x.length >= y.length ? x : y;
 
-export const zip = <T>(x: T[], y: T[]) =>
-  largest(x, y).map(
+export const zip = <A, B>(x: A[], y: B[]) =>
+  largest(x, y as any).map(
     (_, i) => [x[i], y[i]] as const
-  ) as ReadonlyArray<
-    readonly [T | undefined, T | undefined]
-  >;
+  ) as ReadonlyArray<readonly [A, B]>;
 
 export type ReadonlyRecord<
   K extends keyof any = string,
@@ -216,3 +236,70 @@ export const diff = (
     )
     .reverse();
 };
+
+export const defer = <T>(
+  f: (
+    resolve: (value?: T) => void,
+    reject: (reason?: any) => void
+  ) => void
+) => {
+  let resolve: Function;
+  let reject: Function;
+  const promise = new Promise<T>((res, rej) => {
+    resolve = res;
+    reject = rej;
+  });
+  f(
+    (value?: T) => resolve(value),
+    (reason?: any) => reject(reason)
+  );
+  return promise;
+};
+
+export const wait = (ms: number) =>
+  defer(res => setTimeout(res, ms));
+
+export const pluralise = (
+  word: string,
+  count: number
+) => count + " " + (count === 1 ? word : word + "s");
+
+export const getCursorPos = () =>
+  new Promise<readonly [number, number]>(resolve => {
+    const encoding =
+      process.stdin.readableEncoding ?? undefined;
+    process.stdin.setEncoding("utf8");
+    process.stdin.setRawMode(true);
+    process.stdin.once("readable", () => {
+      const [y, x] = JSON.stringify(
+        process.stdin.read()
+      )
+        .slice(1, -1)
+        .match(/\\u001b\[(\d+);(\d+)R$/)
+        ?.slice(1)
+        .map(parseInt) as [number, number];
+      process.stdin.setEncoding(encoding);
+      process.stdin.setRawMode(false);
+      resolve([x - 1, y - 1]);
+    });
+    process.stdout.write("\u001b[6n");
+  });
+
+export const dedent = (string: string) => {
+  const whitespace = string.match(/^\n*([ \t]+)/)?.[1];
+  const indent = whitespace?.length ?? 0;
+  return string
+    .replace(/^\n+|\n+$/g, "")
+    .split("\n")
+    .map(line => line.slice(indent))
+    .join("\n");
+};
+
+export const union =
+  <T>(as: ReadonlyArray<T>) =>
+  (bs: ReadonlyArray<T>) => {
+    const union: Record<string, T> = {};
+    for (const x of as.concat(bs))
+      union[JSON.stringify(x)] ??= x;
+    return Object.values(union) as ReadonlyArray<T>;
+  };

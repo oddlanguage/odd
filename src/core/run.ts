@@ -1,12 +1,21 @@
 import { readFile } from "fs/promises";
 import _eval from "./eval.js";
 import parse, { defaultEnv } from "./odd.js";
+import {
+  defaultTypeClasses,
+  defaultTypeEnv,
+  infer,
+} from "./type.js";
 import { serialise } from "./util.js";
 
 const [target, outfile] = process.argv.slice(2);
-outfile;
 
-const compile = async (target: string) => {
+const compile = async (
+  target: string,
+  outfile: string
+) => {
+  // This prevents typescript from being an idiot and telling me I need to "use" the variable
+  outfile;
   throw `Cannot compile "${target}": the compiler is not implemented yet.`;
 };
 
@@ -19,6 +28,8 @@ const repl = async () => {
   process.stdout.write(`${versionString}\n> `);
 
   let env = defaultEnv;
+  let typeEnv = defaultTypeEnv;
+  let classes = defaultTypeClasses;
   const history: string[] = [];
 
   for await (const input of process.stdin) {
@@ -30,6 +41,13 @@ const repl = async () => {
 
     try {
       const ast = parse(inputWithoutFinalNewline);
+      const [type, , newTypeEnv, newTypeClasses] =
+        infer(
+          ast,
+          typeEnv,
+          classes,
+          inputWithoutFinalNewline
+        );
       const [result, , newEnv] = _eval(
         ast,
         env,
@@ -37,6 +55,8 @@ const repl = async () => {
       );
       console.log(serialise(result));
       env = newEnv;
+      typeEnv = newTypeEnv;
+      classes = newTypeClasses;
     } catch (error: any) {
       console.error(
         error instanceof Error
@@ -50,7 +70,6 @@ const repl = async () => {
                     "\n" +
                     error.stack
                       ?.split("\n")
-                      .slice(5)
                       .filter(
                         line =>
                           !/node:internal/.test(
@@ -75,8 +94,8 @@ const repl = async () => {
   }
 };
 
-if (target) {
-  await compile(target);
+if (target && outfile) {
+  await compile(target, outfile);
 } else {
   await repl();
 }
