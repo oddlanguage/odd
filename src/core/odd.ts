@@ -55,11 +55,11 @@ const number = label("a number")(
   )
 );
 
+export const operatorRegex =
+  /[-=!@#$%^&*_+:|/\\.<>?]+(?<!^(?:\.(?=\d)|->|[=:]))/;
+
 const operator = label("an operator")(
-  pattern(
-    /[-=!@#$%^&*_+:|/\\.<>?]+(?<!^(?:\.(?=\d)|->|[=:]))/,
-    "operator"
-  )
+  pattern(operatorRegex, "operator")
 );
 
 const ws = _try(
@@ -403,8 +403,178 @@ const atom = choice([
   parenthesised(lazy(() => expression)),
 ]);
 
+const typeDeclaration = node("type-declaration")(
+  map(children => {
+    if (children.length === 2) {
+      if (children[0]?.type === "infix-pattern") {
+        const body = children[1]!;
+        const [lhs, op, rhs] = (children[0] as Branch)
+          .children as [Token, Token, Token];
+        return [
+          {
+            type: "literal-pattern",
+            children: [op],
+            offset: op.offset,
+            size: op.size,
+          },
+          {
+            type: "type-lambda",
+            children: [
+              rhs,
+              {
+                type: "type-lambda",
+                children: [lhs, body],
+                offset: rhs.offset,
+                size:
+                  body.offset - rhs.offset + body.size,
+              },
+            ],
+            offset: op.offset,
+            size: body.offset - op.offset + body.size,
+          },
+        ];
+      } else {
+        return children;
+      }
+    }
+    // Wrap multi-param into separate lambdas
+    const funPart = children.slice(1);
+    const offset = funPart[0]!.offset;
+    const size =
+      funPart[funPart.length - 1]!.offset +
+      funPart[funPart.length - 1]!.size -
+      offset;
+    const node = {
+      type: "type-lambda",
+      children: funPart,
+      offset,
+      size,
+    };
+    let i = funPart.length;
+    const step = 2;
+    while (i > step) {
+      const body = node.children.slice(i - step, i);
+      const offset = body[0]!.offset;
+      const size =
+        body[body.length - 1]!.offset - offset;
+      node.children = [
+        ...funPart.slice(0, i - step),
+        {
+          type: "type-lambda",
+          children: body,
+          offset,
+          size,
+        },
+      ];
+      i -= 1;
+    }
+    return [children[0]!, node as Branch];
+  })(
+    chain([
+      choice([
+        infixPattern,
+        separatedBy(ws)(_pattern),
+      ]),
+      ws,
+      ignore(string(":")),
+      ws,
+      lazy(() => type),
+    ])
+  )
+);
+
+const typeLambda = node("type-lambda")(
+  chain([
+    _pattern,
+    ws,
+    ignore(string("->")),
+    ws,
+    lazy(() => type),
+  ])
+);
+
+const typeApplication = nodeLeft("type-application")(
+  chain([
+    lazy(() => typeAtom),
+    oneOrMore(
+      chain([
+        ws,
+        choice([lazy(() => typeAtom), typeLambda]),
+      ])
+    ),
+  ])
+);
+
+const typeDestructuring = node("destructuring")(
+  chain([ignore(string("...")), ws, lazy(() => atom)])
+);
+
+const typeElement = choice([
+  typeDestructuring,
+  lazy(() => type),
+]);
+
+const typeList = node("type-list")(
+  chain([
+    ignore(string("[")),
+    ws,
+    optional(listOf(typeElement)),
+    ws,
+    ignore(string("]")),
+  ])
+);
+
+const typeField = node("type-field")(
+  choice([typeDestructuring, typeDeclaration, name])
+);
+
+const typeRecord = node("type-record")(
+  chain([
+    ignore(string("{")),
+    ws,
+    optional(listOf(typeField)),
+    ws,
+    ignore(string("}")),
+  ])
+);
+
+const typeLiteral = choice([
+  oddString,
+  name,
+  number,
+  typeList,
+  typeRecord,
+  parenthesised(operator),
+]);
+
+const typeAtom = choice([
+  typeLiteral,
+  parenthesised(lazy(() => type)),
+]);
+
+const type = choice([
+  typeLambda,
+  typeApplication,
+  typeAtom,
+]);
+
+const typeclass = node("typeclass")(
+  chain([
+    ignore(string("class")),
+    ws,
+    name,
+    ws,
+    name,
+    ws,
+    ignore(string("where")),
+    ws,
+    listOf(typeDeclaration),
+  ])
+);
+
 const statement = choice([
   declaration,
+  typeclass,
   lazy(() => expression),
 ]);
 
@@ -434,6 +604,11 @@ export default parse;
 
 export const nothing = Symbol("nothing");
 
+/** A special key for signalling objects to be treated as typeclasses */
+export const typeclassTag = Symbol(
+  "this is a typeclass"
+);
+
 // TODO: write these declarations in odd itself through a prelude
 export const defaultEnv: ReadonlyRecord = {
   "/": (b: number) => (a: number) => a / b,
@@ -446,8 +621,11 @@ export const defaultEnv: ReadonlyRecord = {
   ">": (b: any) => (a: any) => a > b,
   "<=": (b: any) => (a: any) => a <= b,
   ">=": (b: any) => (a: any) => a >= b,
-  "==": (b: any) => (a: any) => equal(a, b),
-  "!=": (b: any) => (a: any) => !equal(a, b),
+  Eq: {
+    [typeclassTag]: true,
+    "==": (b: any) => (a: any) => equal(a, b),
+    "!=": (b: any) => (a: any) => !equal(a, b),
+  },
   "&": (b: any) => (a: any) => a && b,
   "|": (b: any) => (a: any) => a || b,
   "++": (b: any) => (a: any) =>

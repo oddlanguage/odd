@@ -1,251 +1,231 @@
+import { operatorRegex } from "./odd.js";
 import { Branch, Token, Tree } from "./parse.js";
 import { makeError } from "./problem.js";
-import {
-  Mutable,
-  ReadonlyRecord,
-  equal,
-  log,
-  unique,
-  zip,
-} from "./util.js";
+import { Mutable, equal, log, union } from "./util.js";
 
-export type TypeConstructor = Readonly<{
+type Type =
+  | AtomicType
+  | TypeVar
+  | ParametricType
+  | TypeConstraint
+  | TypeClass;
+
+type AtomicType = Readonly<{
+  type: "atomic";
   name: symbol;
-  children: ReadonlyArray<Type>;
-  stringify?: (self: TypeConstructor) => string;
+  instances?:
+    | ReadonlyArray<TypeClass["name"]>
+    | undefined;
 }>;
 
-type TypeScheme = Readonly<{
-  vars: ReadonlyArray<number>;
-  type: Type;
+type TypeVar = Readonly<{ type: "var"; var: number }>;
+
+type ParametricType = Readonly<{
+  type: "parametric";
+  atom: AtomicType;
+  infix?: string;
+  children: ReadonlyArray<Type>;
 }>;
-const newScheme = (type: Type): TypeScheme => ({
-  vars: free(type),
-  type,
-});
-const instantiate = (scheme: TypeScheme): Type => {
-  const _inst = (
-    type: Type,
-    vars: ReadonlyRecord<string, number>
-  ): Type => {
-    if (typeof type === "symbol") {
-      return type;
-    } else if (typeof type === "number") {
-      return vars[type]!;
-    } else if (isTypeConstraint(type)) {
-      return newTypeConstraint(
-        type.constraints.map(([k, v]) => [
-          vars[k]!,
-          v,
-        ]),
-        _inst(type.type, vars)
-      );
-    } else if (isConstructor(type)) {
-      return {
-        ...type,
-        children: type.children.map(c =>
-          _inst(c, vars)
-        ),
-      };
-    } else {
-      return type;
-    }
-  };
-  let i = 0;
-  const vars = Object.fromEntries(
-    scheme.vars.map(v => [v, i++])
-  );
-  return _inst(scheme.type, vars);
-};
 
 type TypeConstraint = Readonly<{
-  constraints: ReadonlyArray<readonly [number, Type]>;
-  type: Type;
+  type: "constraint";
+  constraints: ReadonlyArray<
+    readonly [TypeVar, TypeClass]
+  >;
+  child: Type;
 }>;
-const newTypeConstraint = (
-  constraints: ReadonlyArray<readonly [number, Type]>,
-  type: Type
-): TypeConstraint => ({
-  constraints,
-  type,
+
+type TypeClass = Readonly<{
+  type: "class";
+  name: symbol;
+  params: ReadonlyArray<TypeVar>;
+  members: TypeEnv;
+}>;
+
+type TypeEnv = Readonly<Record<string, Type>>;
+type TypeClasses = Readonly<Record<string, TypeClass>>;
+
+const newAtomic = (
+  name: AtomicType["name"],
+  instances?: AtomicType["instances"]
+): AtomicType => ({
+  type: "atomic",
+  name,
+  instances,
+});
+export const neverType = newAtomic(Symbol("Never"));
+export const lambdaType = newAtomic(Symbol("Lambda"));
+export const recordType = newAtomic(Symbol("Record"));
+export const listType = newAtomic(Symbol("List"));
+
+const newLambda = (
+  input: Type,
+  output: Type
+): ParametricType => ({
+  type: "parametric",
+  atom: lambdaType,
+  infix: "->",
+  children: [input, output],
 });
 
-export type Type =
-  | number
-  | symbol
-  | ListType
-  | RecordType
-  | TypeScheme
-  | TypeConstraint;
+const newList = (type: Type): ParametricType => ({
+  type: "parametric",
+  atom: listType,
+  children: [type],
+});
 
-const isConstructor = (
+const newRecord = (
+  key: Type,
   type: Type
-): type is TypeConstructor | ListType | RecordType =>
-  !!(type as TypeConstructor).children;
+): ParametricType => ({
+  type: "parametric",
+  atom: recordType,
+  children: [key, type],
+});
 
-const isRecord = (type: Type): type is RecordType =>
-  isConstructor(type) && !!(type as RecordType).labels;
+const newConstraint = (
+  constraints: TypeConstraint["constraints"],
+  child: TypeConstraint["child"]
+): TypeConstraint => ({
+  type: "constraint",
+  constraints,
+  child,
+});
 
-const isScheme = (type: Type): type is TypeScheme =>
-  !!(type as TypeScheme).vars;
+const newClass = (
+  name: TypeClass["name"],
+  params: TypeClass["params"],
+  members: TypeClass["members"]
+): TypeClass => ({
+  type: "class",
+  name,
+  params,
+  members,
+});
 
-const isTypeConstraint = (
+// TODO: Type schemes
+
+let __LAST_TYPE_VAR = 0;
+const newVar = (): TypeVar => ({
+  type: "var",
+  var: __LAST_TYPE_VAR++,
+});
+
+export const booleanType = newAtomic(
+  Symbol("Boolean")
+);
+const Eq = (() => {
+  const a = newVar();
+  return newClass(Symbol("Eq"), [a], {
+    "==": newLambda(a, newLambda(a, booleanType)),
+    "!=": newLambda(a, newLambda(a, booleanType)),
+  });
+})();
+
+// This is ugly but necessary :)
+((booleanType.instances as Mutable<
+  AtomicType["instances"]
+>) ??= []).push(Eq.name);
+
+export const numberType = newAtomic(Symbol("Number"), [
+  Eq.name,
+]);
+export const nothingType = newAtomic(
+  Symbol("Nothing"),
+  [Eq.name]
+);
+export const stringType = newAtomic(Symbol("String"), [
+  Eq.name,
+]);
+
+const isAtomic = (type: Type): type is AtomicType =>
+  (type as AtomicType).type === "atomic";
+
+const isConstraint = (
   type: Type
 ): type is TypeConstraint =>
-  !!(type as TypeConstraint).constraints;
+  (type as TypeConstraint).type === "constraint";
+
+const isClass = (type: Type): type is TypeClass =>
+  (type as TypeClass).type === "class";
+
+const isParametric = (
+  type: Type
+): type is ParametricType =>
+  (type as ParametricType).type === "parametric";
+
+const isVar = (type: Type): type is TypeVar =>
+  (type as TypeVar).type === "var";
 
 const alphabet = "αβγδεζηθικλμνξοπρστυφχψω";
 const subscript = "₀₁₂₃₄₅₆₇₈₉";
-export const stringify = (type: Type): string =>
-  typeof type === "number"
-    ? alphabet[type] ??
-      alphabet[type % alphabet.length] +
+export const stringify = (type: Type): string => {
+  if (isAtomic(type)) {
+    return type.name.description!;
+  } else if (isVar(type)) {
+    return (
+      alphabet[type.var] ??
+      alphabet[type.var % alphabet.length] +
         [
           ...Math.floor(
-            type / alphabet.length
+            type.var / alphabet.length
           ).toString(),
         ]
           .map(x => subscript[Number(x)])
           .join("")
-    : typeof type === "symbol"
-    ? type.description!
-    : isScheme(type)
-    ? `∀${type.vars
-        .map(stringify)
-        .join(",")}.${stringify(type.type)}`
-    : isTypeConstraint(type)
-    ? `(${type.constraints
-        .map(constraint => {
-          const reversed = constraint
-            .map(stringify)
-            .slice()
-            .reverse();
-          return reversed.join(" ");
-        })
-        .join(", ")}) => ${stringify(type.type)}`
-    : type.stringify?.(type as any) ??
-      [type.name, ...type.children]
-        .map(stringify)
-        .join(" ");
-
-export const lambdaType = Symbol("Lambda");
-export const newLambda = (
-  arg: Type,
-  body: Type
-): TypeConstructor => ({
-  name: lambdaType,
-  children: [arg, body],
-  stringify: self =>
-    (isConstructor(self.children[0]!) &&
-    self.children[0].name === lambdaType
-      ? `(${stringify(self.children[0])})`
-      : stringify(self.children[0]!)) +
-    " -> " +
-    stringify(self.children[1]!),
-});
-
-export const unionType = Symbol("Union");
-export const newUnion = (
-  types: ReadonlyArray<Type>
-): Type =>
-  types.length == 1
-    ? types[0]!
-    : ({
-        name: unionType,
-        // TODO: Sort?
-        children: types,
-        stringify: self =>
-          self.children.map(stringify).join(" | "),
-      } as TypeConstructor);
-const isUnion = (
-  type: Type
-): type is TypeConstructor =>
-  isConstructor(type) && type.name === unionType;
-
-export const listType = Symbol("List");
-type ListType = TypeConstructor;
-const newList = (type: Type): ListType => ({
-  name: listType,
-  children: [type],
-  stringify: self =>
-    `List ${
-      isConstructor(self.children[0]!) &&
-      self.children[0].name === unionType
-        ? `(${stringify(self.children[0])})`
-        : stringify(self.children[0]!)
-    }`,
-});
-
-export const recordType = Symbol("Record");
-type RecordType = Omit<TypeConstructor, "stringify"> &
-  Readonly<{
-    labels: ReadonlyArray<string>;
-    extensible?: boolean | undefined;
-    stringify?: (self: RecordType) => string;
-  }>;
-const newRecord = (
-  // TODO: Records should map values to values (thus types to types)
-  rows: ReadonlyArray<readonly [string, Type]>,
-  tree: Tree,
-  input: string,
-  extensible?: boolean
-): RecordType => {
-  const visited: string[] = [];
-  for (const [label] of rows) {
-    if (visited.includes(label))
-      throw makeError(input, [
-        {
-          reason: `Duplicate label "${label}"`,
-          at: tree.offset,
-          size: tree.size,
-        },
-      ]);
-    visited.push(label);
+    );
+  } else if (isParametric(type)) {
+    if (type.infix)
+      return type.children
+        .map((child, i) =>
+          i === 0 &&
+          isParametric(child) &&
+          child.atom === type.atom
+            ? `(${stringify(child)})`
+            : stringify(child)
+        )
+        .join(` ${type.infix} `);
+    return (
+      type.atom.name.description! +
+      " " +
+      type.children.map(stringify).join(" ")
+    );
+  } else if (isConstraint(type)) {
+    return `(${type.constraints
+      .map(
+        ([tvar, tclass]) =>
+          `${tclass.name.description} ${stringify(
+            tvar
+          )}`
+      )
+      .join(", ")}) => ${stringify(type.child)}`;
+  } else if (isClass(type)) {
+    return `class ${
+      type.name.description
+    } ${type.params
+      .map(stringify)
+      .join(", ")} where ${Object.entries(type.members)
+      .map(
+        ([key, type]) =>
+          `${
+            new RegExp(
+              `^${operatorRegex.source}$`,
+              operatorRegex.flags
+            ).test(key)
+              ? `(${key})`
+              : key
+          } : ${stringify(type)}`
+      )
+      .join(", ")}`;
   }
 
-  const sortedRows = rows
-    .slice()
-    .sort(([a], [b]) => a.localeCompare(b));
-  return {
-    name: recordType,
-    labels: sortedRows.map(([label]) => label),
-    children: sortedRows.map(([, type]) => type),
-    extensible,
-    stringify: self => {
-      const rows = self.children
-        .map(
-          (type, i) =>
-            (i === sortedRows.length - 1 && extensible
-              ? "..."
-              : "") +
-            (self.labels[i]! + " : " + stringify(type))
-        )
-        .join(", ");
-      return rows.length === 0
-        ? "{}"
-        : ["{", rows, "}"].join(" ");
-    },
-  };
+  throw `Cannot stringify "${
+    (type as any).type ?? type
+  }"`;
 };
 
-let __LAST_TYPE_VAR = 0;
-const newVar = () => __LAST_TYPE_VAR++;
-
-export const numberType = Symbol("Number");
-export const stringType = Symbol("String");
-export const booleanType = Symbol("Boolean");
-export const nothingType = Symbol("Nothing");
-export const neverType = Symbol("Never");
-// TODO: write these declarations in odd itself through a prelude
-export const defaultTypeEnv: ReadonlyRecord<
-  string,
-  Type
-> = {
-  "+": newLambda(
-    numberType,
-    newLambda(numberType, numberType)
-  ),
-  "-": newLambda(
+export const defaultTypeEnv: TypeEnv = {
+  "/": newLambda(
     numberType,
     newLambda(numberType, numberType)
   ),
@@ -253,7 +233,11 @@ export const defaultTypeEnv: ReadonlyRecord<
     numberType,
     newLambda(numberType, numberType)
   ),
-  "/": newLambda(
+  "+": newLambda(
+    numberType,
+    newLambda(numberType, numberType)
+  ),
+  "-": newLambda(
     numberType,
     newLambda(numberType, numberType)
   ),
@@ -265,407 +249,590 @@ export const defaultTypeEnv: ReadonlyRecord<
     numberType,
     newLambda(numberType, numberType)
   ),
-  ...(() => {
-    const a = newVar();
-    const vars = [[a, Symbol("Ord")] as const];
-    return {
-      "<": newTypeConstraint(
-        vars,
-        newLambda(a, newLambda(a, booleanType))
-      ),
-      ">": newTypeConstraint(
-        vars,
-        newLambda(a, newLambda(a, booleanType))
-      ),
-      "<=": newTypeConstraint(
-        vars,
-        newLambda(a, newLambda(a, booleanType))
-      ),
-      ">=": newTypeConstraint(
-        vars,
-        newLambda(a, newLambda(a, booleanType))
-      ),
-    };
-  })(),
-  ...(() => {
-    const a = newVar();
-    const vars = [[a, Symbol("Eq")] as const];
-    return {
-      "==": newTypeConstraint(
-        vars,
-        newLambda(a, newLambda(a, booleanType))
-      ),
-      "!=": newTypeConstraint(
-        vars,
-        newLambda(a, newLambda(a, booleanType))
-      ),
-    };
-  })(),
-  "|": newLambda(
-    booleanType,
-    newLambda(booleanType, booleanType)
-  ),
   "&": newLambda(
     booleanType,
     newLambda(booleanType, booleanType)
   ),
-  "++": newLambda(
-    stringType,
-    newLambda(stringType, stringType)
+  "|": newLambda(
+    booleanType,
+    newLambda(booleanType, booleanType)
   ),
   true: booleanType,
   false: booleanType,
   nothing: nothingType,
-  infinity: numberType,
-  not: newLambda(booleanType, booleanType),
-  // has: String -> Record -> Boolean,
-  range: newLambda(numberType, newList(numberType)),
-  "range-from": newLambda(
-    numberType,
-    newLambda(numberType, newList(numberType))
-  ),
-  map: (() => {
-    const a = newVar();
-    const b = newVar();
-    return newLambda(
-      newLambda(a, b),
-      newLambda(newList(a), newList(b))
-    );
-  })(),
-  // group: (a -> b) -> { x : a } -> { x : b };
-  fold: (() => {
-    const a = newVar();
-    const b = newVar();
-    return newLambda(
-      newLambda(a, newLambda(b, a)),
-      newLambda(a, newLambda(newList(b), a))
-    );
-  })(),
-  scan: (() => {
-    const a = newVar();
-    const b = newVar();
-    return newLambda(
-      newLambda(b, newLambda(a, b)),
-      newLambda(b, newLambda(newList(a), b))
-    );
-  })(),
-  // replace: a -> b -> { a : c } -> { a : b };
-  reverse: (() => {
-    const a = newVar();
-    return newLambda(newList(a), newList(a));
-  })(),
-  head: (() => {
-    const a = newVar();
-    return newLambda(
-      newList(a),
-      newUnion([a, nothingType])
-    );
-  })(),
-  last: (() => {
-    const a = newVar();
-    return newLambda(
-      newList(a),
-      newUnion([a, nothingType])
-    );
-  })(),
-  tail: (() => {
-    const a = newVar();
-    return newLambda(newList(a), newList(a));
-  })(),
-  drop: (() => {
-    const a = newVar();
-    return newLambda(numberType, newList(a));
-  })(),
-  sort: (() => {
-    const a = newVar();
-    return newLambda(
-      newLambda(a, newLambda(a, numberType)),
-      newLambda(newList(a), newList(a))
-    );
-  })(),
-  // "sort-by": idk???
-  // partition: (a -> Boolean) -> List a -> [List a, List a],
-  // size: Container a => a -> Number,
-  max: newLambda(
-    numberType,
-    newLambda(numberType, numberType)
-  ),
-  min: newLambda(
-    numberType,
-    newLambda(numberType, numberType)
-  ),
-  // show: Serialisable a => a -> a,
-  // import: String -> {},
-  panic: newLambda(stringType, neverType),
-  benchmark: newLambda(
-    newLambda(newVar(), newVar()),
-    numberType
-  ),
 };
 
-const free = (type: Type): ReadonlyArray<number> => {
-  if (typeof type === "symbol") {
-    return [];
-  } else if (typeof type === "number") {
-    return [type];
-  } else if (isConstructor(type)) {
-    return unique(type.children.flatMap(free));
-  } else if (isTypeConstraint(type)) {
-    return unique(
-      type.constraints
-        .map(([typeVar]) => typeVar)
-        .concat(free(type.type))
-    );
-  } else {
-    return free(type.type).filter(
-      freeVar => !type.vars.includes(freeVar)
-    );
-  }
+export const defaultTypeClasses: TypeClasses = {
+  Eq,
 };
 
-const occurs = (a: Type, b: Type): boolean => {
-  if (isConstructor(a)) {
-    return a.children.some(child => occurs(child, b));
-  } else if (isConstructor(b)) {
-    return b.children.some(child => occurs(child, a));
-  } else if (isScheme(a)) {
-    return a.vars.some(child => occurs(child, a.type));
-  } else if (isScheme(b)) {
-    return b.vars.some(child => occurs(child, b.type));
-  } else if (isTypeConstraint(a)) {
-    return (
-      a.constraints.some(([child]) =>
-        occurs(child, b)
-      ) || occurs(a.type, b)
-    );
-  } else if (isTypeConstraint(b)) {
-    return (
-      b.constraints.some(([child]) =>
-        occurs(child, a)
-      ) || occurs(b.type, a)
-    );
-  } else {
-    return a === b;
-  }
-};
+type Substitutions = ReadonlyArray<Substitution>;
 
-type Substitutions = ReadonlyArray<
-  readonly [number, Type]
->;
-const unify = (
-  a: Type,
-  b: Type,
+type Substitution = readonly [TypeVar, Type];
+
+export const infer = (
   tree: Tree,
+  env: TypeEnv,
+  classes: TypeClasses,
   input: string
-): Substitutions => {
-  if (typeof a === "number" || typeof b === "number") {
-    if (occurs(a, b)) {
+): readonly [
+  Type,
+  Substitutions,
+  TypeEnv,
+  TypeClasses
+] => {
+  switch (tree.type) {
+    case "program":
+      return (tree as Branch).children.reduce(
+        ([, , env, classes], branch) =>
+          infer(branch, env, classes, input),
+        [nothingType, [], env, classes] as ReturnType<
+          typeof infer
+        >
+      );
+    case "type-declaration":
+    case "declaration": {
+      const [pattern, value] = (tree as Branch)
+        .children as [Tree, Tree];
+
+      const patternVar = newVar();
+      const [patterns, patternSubs] = extractPatterns(
+        pattern,
+        patternVar,
+        input
+      );
+      const [valueType, valueSubs, newEnv] = infer(
+        value,
+        { ...env, ...patterns },
+        classes,
+        input
+      );
+
+      const subs = compose(
+        compose(valueSubs, patternSubs, tree, input),
+        unify(patternVar, valueType, tree, input),
+        tree,
+        input
+      );
+      const appliedEnv = applyEnv(
+        newEnv,
+        subs,
+        tree,
+        input
+      );
+
+      return [valueType, subs, appliedEnv, classes];
+    }
+    case "number":
+      return [numberType, [], env, classes];
+    case "string":
+      return [stringType, [], env, classes];
+    case "type-lambda":
+    case "lambda": {
+      const [param, body] = (tree as Branch)
+        .children as [Tree, Tree];
+      const paramVar = newVar();
+      const [patterns, paramSubs] = extractPatterns(
+        param,
+        paramVar,
+        input
+      );
+      const bodyVar = newVar();
+      const [bodyType, bodySubs] = infer(
+        body,
+        {
+          ...env,
+          ...patterns,
+        },
+        classes,
+        input
+      );
+      const allSubs = compose(
+        paramSubs,
+        compose(
+          bodySubs,
+          unify(bodyVar, bodyType, body, input),
+          tree,
+          input
+        ),
+        tree,
+        input
+      );
+
+      const lambda = newLambda(
+        apply(paramVar, allSubs, tree, input),
+        bodyVar
+      );
+
+      const finalType = apply(
+        lambda,
+        allSubs,
+        tree,
+        input
+      );
+
+      return [finalType, allSubs, env, classes];
+    }
+    case "name":
+    case "operator": {
+      const { text } = tree as Token;
+
+      for (const typeclass of Object.values(classes)) {
+        if (text in typeclass.members) {
+          return [
+            newConstraint(
+              typeclass.params.map(param => [
+                param,
+                typeclass,
+              ]),
+              typeclass.members[text]!
+            ),
+            [],
+            env,
+            classes,
+          ];
+        }
+      }
+
+      if (!(text in env)) {
+        throw makeError(input, [
+          {
+            reason: `Unknown name "${text}".`,
+            at: tree.offset,
+            size: tree.size,
+          },
+        ]);
+      }
+      return [env[text]!, [], env, classes];
+    }
+    case "infix": {
+      const [lhs, op, rhs] = (tree as Branch)
+        .children as [Tree, Tree, Tree];
+
+      const [lhsType, lhsSubs, env1, classes1] = infer(
+        lhs,
+        env,
+        classes,
+        input
+      );
+      const [opType, opSubs, env2, classes2] = infer(
+        op,
+        env1,
+        classes1,
+        input
+      );
+      const [rhsType, rhsSubs, env3, classes3] = infer(
+        rhs,
+        env2,
+        classes2,
+        input
+      );
+      const returnVar = newVar();
+      const lambda = newLambda(
+        rhsType,
+        newLambda(lhsType, returnVar)
+      );
+      const subs = compose(
+        lhsSubs,
+        compose(
+          opSubs,
+          compose(
+            rhsSubs,
+            unify(opType, lambda, tree, input),
+            tree,
+            input
+          ),
+          tree,
+          input
+        ),
+        tree,
+        input
+      );
+      const type = apply(lambda, subs, tree, input);
+      const returnType = (
+        (type as ParametricType)
+          .children[1] as ParametricType
+      ).children[1]!;
+
+      return [returnType, subs, env3, classes3];
+    }
+    case "application": {
+      const [lhs, rhs] = (tree as Branch).children as [
+        Tree,
+        Tree
+      ];
+
+      const [lhsType, lhsSubs, env1, classes1] = infer(
+        lhs,
+        env,
+        classes,
+        input
+      );
+
+      // TODO: Implement this through typeclasses
+      // e.g. (Indexable a, Index b) => b -> a -> a[b]
+      if (
+        isParametric(lhsType) &&
+        (lhsType.atom.name === recordType.name ||
+          lhsType.atom.name === listType.name)
+      ) {
+        throw "Not implemented.";
+      }
+
+      const argVar = newVar();
+      const returnVar = newVar();
+      const funVar = newLambda(argVar, returnVar);
+      const funSubs = unify(
+        funVar,
+        lhsType,
+        tree,
+        input
+      );
+      const allFunSubs = compose(
+        lhsSubs,
+        funSubs,
+        tree,
+        input
+      );
+      const [argType, argSubs, env2, classes2] = infer(
+        rhs,
+        env1,
+        classes1,
+        input
+      );
+      const moreArgSubs = unify(
+        argVar,
+        argType,
+        tree,
+        input
+      );
+      const allArgsSubs = compose(
+        argSubs,
+        moreArgSubs,
+        tree,
+        input
+      );
+      const allSubs = compose(
+        allFunSubs,
+        allArgsSubs,
+        tree,
+        input
+      );
+      const applied = apply(
+        lhsType,
+        allSubs,
+        tree,
+        input
+      ) as ParametricType | TypeConstraint;
+      const returnType = isParametric(applied)
+        ? applied.children[1]!
+        : applied.constraints.some(([constraint]) =>
+            occurs(
+              constraint,
+              (applied.child as ParametricType)
+                .children[1]!
+            )
+          )
+        ? // TODO Ensure only constraints that are used get
+          // mapped into the new constrained type
+          newConstraint(
+            applied.constraints,
+            (applied.child as ParametricType)
+              .children[1]!
+          )
+        : (applied.child as ParametricType)
+            .children[1]!;
+
+      return [returnType, allSubs, env2, classes2];
+    }
+    case "list": {
+      if ((tree as Branch).children.length === 0)
+        return [newList(neverType), [], env, classes];
+
+      const [type, subs, newEnv, classes1] = (
+        tree as Branch
+      ).children.reduce(
+        ([type, subs, env, classes], child) => {
+          const [newType, newSubs, newEnv, classes1] =
+            infer(
+              child.type === "destructuring"
+                ? (child as Branch).children[0]!
+                : child,
+              env,
+              classes,
+              input
+            );
+          const actualNewType =
+            child.type === "destructuring"
+              ? (newType as ParametricType)
+                  .children[0]!
+              : newType;
+          return [
+            apply(
+              actualNewType,
+              unify(type, actualNewType, child, input),
+              child,
+              input
+            ),
+            compose(subs, newSubs, child, input),
+            { ...env, ...newEnv },
+            classes1,
+          ] as const;
+        },
+        [
+          newVar() as Type,
+          [] as Substitutions,
+          env,
+          classes,
+        ] as const
+      );
+      return [newList(type), subs, newEnv, classes1];
+    }
+    case "record": {
+      if ((tree as Branch).children.length === 0)
+        return [
+          // TODO: Allow arbitrary key types
+          newRecord(stringType, neverType),
+          [],
+          env,
+          classes,
+        ];
+
+      const [type, subs] = (
+        tree as Branch
+      ).children.reduce(
+        ([type, subs, env, classes], field) => {
+          const child = (field as Branch).children[0]!;
+          const [newType, newSubs, newEnv, classes1] =
+            infer(
+              child.type === "destructuring"
+                ? (child as Branch).children[0]!
+                : child,
+              env,
+              classes,
+              input
+            );
+          const actualNewType =
+            child.type === "destructuring"
+              ? (newType as ParametricType)
+                  .children[1]!
+              : newType;
+          return [
+            apply(
+              actualNewType,
+              unify(type, actualNewType, child, input),
+              child,
+              input
+            ),
+            compose(subs, newSubs, child, input),
+            { ...env, ...newEnv },
+            classes1,
+          ] as const;
+        },
+        [
+          newVar() as Type,
+          [] as Substitutions,
+          env,
+          classes,
+        ] as const
+      );
+      return [
+        // TODO: Allow arbitrary key types
+        newRecord(stringType, type),
+        subs,
+        env,
+        classes,
+      ];
+    }
+    case "typeclass": {
+      const [{ text: name }, param, ...memberNodes] = (
+        tree as Branch
+      ).children as [Token, Token, ...Branch[]];
+      const paramType = newVar();
+      const [patterns, patternSubs] = extractPatterns(
+        param,
+        paramType,
+        input
+      );
+      const members = Object.fromEntries(
+        memberNodes.map(
+          member =>
+            [
+              (
+                (member.children[0] as Branch)
+                  .children[0] as Token
+              ).text,
+              infer(
+                member,
+                {
+                  Nothing: nothingType,
+                  Boolean: booleanType,
+                  Number: numberType,
+                  String: stringType,
+                  ...env,
+                  ...patterns,
+                },
+                classes,
+                input
+              )[0],
+            ] as const
+        )
+      );
+      log({
+        name,
+        patterns,
+        members,
+      });
+      const _class = newClass(
+        Symbol(name),
+        Object.values(
+          patterns
+        ) as ReadonlyArray<TypeVar>,
+        members
+      );
+      return [
+        _class,
+        patternSubs,
+        { ...env },
+        { ...classes, [name]: _class },
+      ];
+    }
+    default: {
       throw makeError(input, [
         {
-          reason: `Recursive types:\n  ${[a, b]
-            .map(stringify)
-            .join("\n  ")}`,
+          reason: `Cannot infer nodes of type "${tree.type}".`,
           at: tree.offset,
           size: tree.size,
         },
       ]);
     }
-    return [
-      typeof a === "number"
-        ? [a, b]
-        : [b as number, a],
-    ];
-  } else if (
-    typeof a === "symbol" &&
-    typeof b === "symbol"
-  ) {
-    return [];
-  } else if (isUnion(a) || isUnion(b)) {
-    // TODO: Clean up this mess
-    if (isUnion(a)) {
-      for (const type of a.children) {
-        try {
-          return unify(type, b, tree, input);
-        } catch (_) {}
-      }
-    } else if (isUnion(b)) {
-      for (const type of b.children) {
-        try {
-          return unify(type, a, tree, input);
-        } catch (_) {}
-      }
+  }
+};
+
+const apply = (
+  target: Type,
+  subs: Substitutions,
+  tree: Tree,
+  input: string
+): Type => {
+  if (!subs.length) return target;
+
+  if (isAtomic(target)) {
+    return target;
+  } else if (isVar(target)) {
+    for (const [tvar, sub] of subs) {
+      if (tvar.var === target.var) return sub;
     }
-  } else if (isRecord(a) && isRecord(b)) {
-    // TODO: Clean up this mess
-    outer: {
-      // extensible records
-      const [shortest, longest] =
-        a.labels.length <= b.labels.length
-          ? [a, b]
-          : [b, a];
-      let subs: Substitutions = [];
-      for (
-        let i = 0;
-        i < shortest.labels.length;
-        i++
-      ) {
-        const labelA = shortest.labels[i];
-        const labelB = longest.labels[i];
-        const isLast =
-          i === shortest.labels.length - 1;
-        if (labelA !== labelB) {
-          if (!isLast) break outer;
-          subs = subs.concat(
-            unify(
-              shortest.children[i]!,
-              newRecord(
-                zip(
-                  longest.labels.slice(i),
-                  longest.children.slice(i)
-                ),
-                tree,
-                input
-              ),
-              tree,
-              input
-            )
-          );
-        } else {
-          subs = subs.concat(
-            unify(
-              shortest.children[i]!,
-              longest.children[i]!,
-              tree,
-              input
-            )
-          );
-        }
-      }
-      return subs;
-    }
-  } else if (
-    isTypeConstraint(a) ||
-    isTypeConstraint(b)
-  ) {
-    const [constraint, other] = (
-      isTypeConstraint(a) ? [a, b] : [b, a]
-    ) as [TypeConstraint, Type];
-    return unify(
-      constraint.type,
-      other,
+    return target;
+  } else if (isParametric(target)) {
+    return {
+      ...target,
+      children: target.children.map(type =>
+        apply(type, subs, tree, input)
+      ),
+    };
+  } else if (isConstraint(target)) {
+    const hoisted = hoistConstraints(
+      apply(target.child, subs, tree, input),
       tree,
       input
-    ).map(([tvar, tsub]) => {
-      return [
-        tvar,
-        occurs(constraint, tsub)
-          ? newTypeConstraint(
-              constraint.constraints,
-              tsub
-            )
-          : tsub,
-      ];
-    });
-  } else if (
-    (a as any as TypeConstructor).name ===
-      (b as any as TypeConstructor).name &&
-    (a as any as TypeConstructor).children.length ===
-      (b as any as TypeConstructor).children.length
-  ) {
-    return (
-      a as any as TypeConstructor
-    ).children.flatMap((a, i) =>
-      unify(
-        a,
-        (b as any as TypeConstructor).children[i]!,
-        tree,
-        input
-      )
     );
+    const constraints = target.constraints.concat(
+      isConstraint(hoisted) ? hoisted.constraints : []
+    );
+    return isConstraint(hoisted)
+      ? { ...hoisted, constraints }
+      : { ...target, child: hoisted };
   }
 
   throw makeError(input, [
     {
-      reason: `Cannot unify ${stringify(
-        a
-      )} and ${stringify(b)}`,
+      reason: `Cannot apply to "${
+        (target as any).type ?? target
+      }".`,
       at: tree.offset,
       size: tree.size,
     },
   ]);
 };
 
-const compose = (
-  a: Substitutions | null,
-  b: Substitutions | null,
-  tree: Tree,
-  input: string
-): Substitutions => {
-  const subs = (a ?? []) as Mutable<Substitutions>;
-  if (b) {
-    for (const sub of b) {
-      const duplicateIndex = subs?.findIndex(
-        ([tvar]) => tvar === sub[0]
-      );
-      if (duplicateIndex !== -1) {
-        const extraSubs = unify(
-          sub[1],
-          subs[duplicateIndex]![1],
-          tree,
-          input
-        );
-        subs.splice(duplicateIndex, 1, [
-          sub[0],
-          apply(sub[1], extraSubs, tree, input),
-        ] as const);
-        subs.unshift(...extraSubs);
-      } else {
-        subs.push(sub);
-      }
-    }
-  }
-
-  // TODO: Figure out how to do this in the earlier loop
-  for (let i = 0; i < subs.length; i++) {
-    const [tvar, sub] = subs[i]!;
-    const applied = apply(sub, subs, tree, input);
-    subs.splice(i, 1, [tvar, applied]);
-  }
-
-  return subs;
-};
-
-const apply = (
+const hoistConstraints = (
   type: Type,
-  subs: Substitutions | null,
   tree: Tree,
   input: string
 ): Type => {
-  if (typeof type === "symbol") {
+  if (isAtomic(type)) {
     return type;
-  } else if (typeof type === "number") {
-    return (
-      subs?.find(([t]) => t === type)?.[1] ?? type
+  } else if (isVar(type)) {
+    return type;
+  } else if (isParametric(type)) {
+    const constraints = type.children
+      .map(child =>
+        hoistConstraints(child, tree, input)
+      )
+      .map(type =>
+        isConstraint(type)
+          ? ([type.constraints, type.child] as const)
+          : ([[], type] as const)
+      );
+    // TODO: Extract to some function `mergeConstraints`
+    const uniqueConstraints = Object.entries(
+      constraints
+        .flatMap(c => c[0])
+        .reduce(
+          (constraints, [tvar, tclass]) => ({
+            ...constraints,
+            [tvar.var]: tclass,
+          }),
+          {} as Record<number, TypeClass>
+        )
+    ).map(
+      ([tvar, tclass]) =>
+        [
+          { type: "var", var: Number(tvar) },
+          tclass,
+        ] as const
     );
-  } else if (isTypeConstraint(type)) {
-    // TODO: What if x : (Eq a) => a and x : Number?
-    log({ type, subs });
-    return {
+    const children = constraints.flatMap(c => c[1]);
+    return newConstraint(uniqueConstraints, {
       ...type,
-      type: apply(type.type, subs, tree, input),
-    };
-  } else if (isConstructor(type)) {
-    return {
-      ...type,
-      children: type.children.map(child =>
-        apply(child, subs, tree, input)
-      ),
-    };
+      children,
+    });
+  } else if (isConstraint(type)) {
+    const hoisted = hoistConstraints(
+      type.child,
+      tree,
+      input
+    );
+    return isConstraint(hoisted)
+      ? newConstraint(
+          // TODO: Extract to some function `mergeConstraints`
+          Object.entries(
+            type.constraints
+              .concat(hoisted.constraints)
+              .reduce(
+                (constraints, [tvar, tclass]) => ({
+                  ...constraints,
+                  [tvar.var]: tclass,
+                }),
+                {} as Record<number, TypeClass>
+              )
+          ).map(
+            ([tvar, tclass]) =>
+              [
+                { type: "var", var: Number(tvar) },
+                tclass,
+              ] as const
+          ),
+          hoisted.child
+        )
+      : { ...type, child: hoisted };
   }
-
   throw makeError(input, [
     {
-      reason: `Cannot apply "${stringify(type)}"`,
+      reason: `Cannot hoist constraints in "${
+        (type as any).type ?? type
+      }"`,
       at: tree.offset,
       size: tree.size,
     },
@@ -673,8 +840,8 @@ const apply = (
 };
 
 const applyEnv = (
-  env: ReadonlyRecord<string, Type>,
-  subs: Substitutions | null,
+  env: TypeEnv,
+  subs: Substitutions,
   tree: Tree,
   input: string
 ) =>
@@ -685,652 +852,255 @@ const applyEnv = (
     ])
   );
 
-type Infer = (
+const compose = (
+  a: Substitutions,
+  b: Substitutions,
   tree: Tree,
-  env: ReadonlyRecord<string, Type>,
   input: string
-) => readonly [
-  Type,
-  ReadonlyRecord<string, Type>,
-  Substitutions | null
-];
-export const infer: Infer = (tree, env, input) => {
-  switch (tree.type) {
-    case "program":
-      return program(tree, env, input);
-    case "lambda":
-      return lambda(tree, env, input);
-    case "name":
-      return name(tree, env, input);
-    case "operator":
-      return operator(tree, env, input);
-    case "infix":
-      return infix(tree, env, input);
-    case "number":
-      return [numberType, env, null];
-    case "string":
-      return [stringType, env, null];
-    case "application":
-      return application(tree, env, input);
-    case "declaration":
-      return declaration(true)(tree, env, input);
-    case "list":
-      return list(tree, env, input);
-    case "record":
-      return record(tree, env, input);
-    case "match":
-      return match(tree, env, input);
-    default:
+): Substitutions => {
+  const result = union(a)(
+    b.map(([tvar, tsub]) => [
+      tvar,
+      apply(tsub, a, tree, input),
+    ])
+  ).reduce((subs, [tvarA, subA]) => {
+    const subB = subs.find(
+      ([tvarB]) => tvarB.var === tvarA.var
+    )?.[1];
+    return subs.concat(
+      subB
+        ? unify(subA, subB, tree, input)
+        : [[tvarA, subA]]
+    );
+  }, [] as Substitutions);
+  return result;
+};
+
+const unify = (
+  a: Type,
+  b: Type,
+  tree: Tree,
+  input: string
+): Substitutions => {
+  if (
+    isAtomic(a) &&
+    isAtomic(b) &&
+    a.name === b.name
+  ) {
+    return [];
+  } else if (isVar(a) || isVar(b)) {
+    if (occurs(a, b)) {
       throw makeError(input, [
         {
-          reason: `Cannot infer type for "${tree.type}" nodes`,
+          reason: `Recursive types "${stringify(
+            a
+          )}" and "${stringify(b)}".`,
           at: tree.offset,
           size: tree.size,
         },
       ]);
-  }
-};
-
-const program: Infer = (tree, env, input) => {
-  let type: Type = nothingType;
-  for (const child of (tree as Branch).children) {
-    [type, env] = infer(child, env, input);
-  }
-  return [instantiate(newScheme(type)), env, null];
-};
-
-const lambda: Infer = (tree, env, input) => {
-  const param = (tree as Branch).children[0]!;
-  const paramVar = newVar();
-  const [patterns, paramSubs] = extractPatterns(
-    param,
-    paramVar,
-    input
-  );
-
-  const bodyVar = newVar();
-  const lambda = newLambda(paramVar, bodyVar);
-
-  const body = (tree as Branch).children[1]!;
-  const [bodyType, , subs] = infer(
-    body,
-    {
-      ...env,
-      ...patterns,
-    },
-    input
-  );
-  const bodyVarSubs = unify(
-    bodyVar,
-    bodyType,
-    body,
-    input
-  );
-  const bodySubs = compose(
-    subs,
-    bodyVarSubs,
-    body,
-    input
-  );
-  const allSubs = compose(
-    paramSubs,
-    bodySubs,
-    param,
-    input
-  );
-
-  const finalType = apply(
-    lambda,
-    allSubs,
-    tree,
-    input
-  );
-
-  return [finalType, env, allSubs];
-};
-
-const name: Infer = (tree, env, input) => {
-  const token = tree as Token;
-  const name = token.text;
-  if (!(name in env))
-    throw makeError(input, [
-      {
-        reason: `Unknown name "${name}".`,
-        at: token.offset,
-        size: token.size,
-      },
-    ]);
-  return [env[name]!, env, null];
-};
-
-const operator: Infer = (tree, env, input) => {
-  const token = tree as Token;
-  const op = token.text;
-  if (!(op in env))
-    throw makeError(input, [
-      {
-        reason: `Unknown operator "${op}".`,
-        at: token.offset,
-        size: token.size,
-      },
-    ]);
-  return [env[op]!, env, null];
-};
-
-const infix: Infer = (tree, env, input) => {
-  const [lhs, op, rhs] = (tree as Branch).children as [
-    Tree,
-    Token,
-    Tree
-  ];
-  const [lhsType, , lhsSubs] = infer(lhs, env, input);
-  const [opType] = infer(op, env, input);
-  const [rhsType] = infer(rhs, env, input);
-
-  const opReturnType = newVar();
-  const newType = newLambda(
-    rhsType,
-    newLambda(lhsType, opReturnType)
-  );
-  const subs = unify(opType, newType, tree, input);
-  const allSubs = compose(subs, lhsSubs, tree, input);
-
-  const finalType = apply(
-    newType,
-    allSubs,
-    tree,
-    input
-  );
-  const returnType = (
-    (finalType as TypeConstructor)
-      .children[1] as TypeConstructor
-  ).children[1]!;
-
-  return [returnType, env, allSubs];
-};
-
-const application: Infer = (tree, env, input) => {
-  const [lhs, rhs] = (tree as Branch).children as [
-    Tree,
-    Tree
-  ];
-  const [lhsType, , lhsSubs] = infer(lhs, env, input);
-
-  if (
-    isConstructor(lhsType) &&
-    lhsType.name === listType
-  ) {
-    return [
-      newUnion([lhsType.children[0]!, nothingType]),
-      env,
-      null,
-    ];
+    }
+    return [isVar(a) ? [a, b] : [b as TypeVar, a]];
   } else if (
-    isConstructor(lhsType) &&
-    lhsType.name === recordType
+    isParametric(a) &&
+    isParametric(b) &&
+    a.atom.name === b.atom.name &&
+    a.children.length === b.children.length
   ) {
-    const [key] = infer(rhs, env, input);
-    if (key !== stringType) {
-      // TODO: When literal types are implemented,
-      // show union of all keys instead of String
-      throw makeError(input, [
-        {
-          reason: `Type "${stringify(
-            key
-          )}" cannot be used to index ${stringify(
-            lhsType
-          )}`,
-          at: rhs.offset,
-          size: rhs.size,
-        },
-      ]);
+    return a.children.flatMap((a, i) =>
+      unify(a, b.children[i]!, tree, input)
+    );
+  } else if (isConstraint(a) || isConstraint(b)) {
+    // TODO: Ugly, merge
+    if (
+      isConstraint(a) &&
+      isAtomic(b) &&
+      isVar(a.child) &&
+      a.constraints[0]![0].var === a.child.var
+    ) {
+      const className = a.constraints[0]![1].name;
+      const instance =
+        b.instances?.includes(className);
+      if (!instance)
+        throw makeError(input, [
+          {
+            reason: `No instance of ${
+              className.description
+            } found for ${stringify(b)}`,
+            at: tree.offset,
+            size: tree.size,
+          },
+        ]);
+      return [];
     }
-    const label = (rhs as Token).text.slice(2, -2);
-    const typeIndex = (
-      lhsType as RecordType
-    ).labels.findIndex(l => l === label);
-    if (typeIndex === -1) {
-      throw makeError(input, [
-        {
-          reason: `Type "${label}" cannot be used to index ${stringify(
-            lhsType
-          )}`,
-          at: rhs.offset,
-          size: rhs.size,
-        },
-      ]);
-    }
-    return [lhsType.children[typeIndex]!, env, null];
-  } else {
-    const argVar = newVar();
-    const returnVar = newVar();
-    const funVar = newLambda(argVar, returnVar);
-
-    const moreFunSubs = unify(
-      funVar,
-      lhsType,
-      tree,
-      input
-    );
-    const allFunSubs = compose(
-      lhsSubs,
-      moreFunSubs,
-      tree,
-      input
-    );
-
-    const [argType, , argSubs] = infer(
-      rhs,
-      env,
-      input
-    );
-    const moreArgSubs = unify(
-      argVar,
-      argType,
-      tree,
-      input
-    );
-    const allArgSubs = compose(
-      argSubs,
-      moreArgSubs,
-      tree,
-      input
-    );
-
-    const allSubs = compose(
-      allFunSubs,
-      allArgSubs,
-      tree,
-      input
-    );
-    const appliedFun = apply(
-      funVar,
-      allSubs,
-      tree,
-      input
-    ) as TypeConstructor;
-    const returnType = appliedFun.children[1]!;
-
-    return [returnType, env, allSubs];
-  }
-};
-
-const declaration =
-  (preventRedeclaration: boolean): Infer =>
-  (tree, env, input) => {
-    const lhs = (tree as Branch).children[0]!;
-    const lhsVar = newVar();
-    const [patterns, lhsSubs] = extractPatterns(
-      lhs,
-      lhsVar,
-      input
-    );
-
-    if (preventRedeclaration) {
-      for (const key of Object.keys(patterns)) {
-        if (key in env) {
-          throw makeError(input, [
-            {
-              reason: `Cannot redeclare "${key}"`,
-              at: lhs.offset,
-              size: lhs.size,
-            },
-          ]);
-        }
-      }
+    if (
+      isConstraint(b) &&
+      isAtomic(a) &&
+      isVar(b.child) &&
+      b.constraints[0]![0].var === b.child.var
+    ) {
+      const className = b.constraints[0]![1].name;
+      const instance =
+        a.instances?.includes(className);
+      if (!instance)
+        throw makeError(input, [
+          {
+            reason: `No instance of ${
+              className.description
+            } found for ${stringify(a)}`,
+            at: tree.offset,
+            size: tree.size,
+          },
+        ]);
+      return [];
     }
 
-    const [rhsType, newEnv] = infer(
-      (tree as Branch).children[1]!,
-      {
-        ...env,
-        ...patterns,
-      },
-      input
-    );
-    const subs = unify(lhsVar, rhsType, tree, input);
-    const allSubs = compose(
-      lhsSubs,
-      subs,
-      tree,
-      input
-    );
-
-    const appliedEnv = applyEnv(
-      newEnv,
-      allSubs,
-      tree,
-      input
-    );
-
-    return [rhsType, appliedEnv, null];
-  };
-
-const list: Infer = (tree, env, input) => {
-  const types = (tree as Branch).children
-    .map(child => infer(child!, env, input)[0]!)
-    .reduce(
-      (uniques, type) =>
-        uniques.find(unique =>
-          equal(
-            unique,
-            type,
-            ([key]) => key !== "stringify"
-          )
+    const typeA = isConstraint(a) ? a.child : a;
+    const typeB = isConstraint(b) ? b.child : b;
+    // TODO: Extract to some function `mergeConstraints`
+    const constraints = Object.entries(
+      (isConstraint(a) ? a.constraints : [])
+        .concat(isConstraint(b) ? b.constraints : [])
+        .reduce(
+          (constraints, [tvar, tclass]) => ({
+            ...constraints,
+            [tvar.var]: tclass,
+          }),
+          {} as Record<number, TypeClass>
         )
-          ? uniques
-          : uniques.concat(type),
-      [] as ReadonlyArray<Type>
+    ).map(
+      ([tvar, tclass]) =>
+        [
+          { type: "var", var: Number(tvar) },
+          tclass,
+        ] as const
     );
-  return [newList(newUnion(types)), env, null];
-};
-
-const record: Infer = (tree, env, input) => [
-  newRecord(
-    ((tree as Branch).children as Branch[]).flatMap(
-      ({ children: [row] }) => {
-        switch (row!.type) {
-          case "name":
-            return [
-              [
-                (row as Token).text,
-                infer(row!, env, input)[0],
-              ],
-            ];
-          case "declaration": {
-            return [
-              [
-                (
-                  (
-                    (row as Branch)
-                      .children[0] as Branch
-                  ).children[0] as Token
-                ).text,
-                declaration(false)(
-                  row!,
-                  env,
-                  input
-                )[0],
-              ],
-            ];
-          }
-          default:
-            throw `Unhandled row type "${row!.type}".`;
-        }
-      }
-    ),
-    tree,
-    input
-  ),
-  env,
-  null,
-];
-
-const match: Infer = (tree, env, input) => {
-  const [pattern, ...cases] = (tree as Branch)
-    .children as [Token, ...Branch[]];
-  const [patternType] = infer(pattern, env, input);
-  const caseTypes = cases.map(
-    ({ children: [pattern, _case] }) => {
-      matchType(pattern!, patternType, env, input);
-      return infer(_case!, env, input)[0];
-    }
-  );
-  return [newUnion(caseTypes), env, null];
-};
-
-const matchType = (
-  pattern: Tree,
-  type: Type,
-  env: ReadonlyRecord<string, Type>,
-  input: string
-): void => {
-  switch (pattern.type) {
-    case "literal-pattern": {
-      const literal = (pattern as Branch)
-        .children[0] as Token;
-      switch (literal.type) {
-        case "name":
-        case "operator": {
-          if (!(literal.text in env))
-            throw makeError(input, [
-              {
-                reason: `Unknown name "${literal.text}".`,
-                at: literal.offset,
-                size: literal.size,
-              },
-            ]);
-          if (env[literal.text] !== type)
-            throw makeError(input, [
-              {
-                reason: `Expected ${stringify(
-                  type
-                )} but got ${stringify(
-                  env[literal.text]!
-                )}`,
-                at: literal.offset,
-                size: literal.size,
-              },
-            ]);
-          return;
-        }
-        case "number": {
-          if (type !== numberType)
-            throw makeError(input, [
-              {
-                reason: `Expected Number but got ${stringify(
-                  type
-                )}`,
-                at: literal.offset,
-                size: literal.size,
-              },
-            ]);
-          return;
-        }
-        case "string": {
-          if (type !== stringType)
-            throw makeError(input, [
-              {
-                reason: `Expected String but got ${stringify(
-                  type
-                )}`,
-                at: literal.offset,
-                size: literal.size,
-              },
-            ]);
-          return;
-        }
-        case "boolean": {
-          if (type !== booleanType)
-            throw makeError(input, [
-              {
-                reason: `Expected Boolean but got ${stringify(
-                  type
-                )}`,
-                at: literal.offset,
-                size: literal.size,
-              },
-            ]);
-          return;
-        }
-        case "wildcard":
-          return;
-        default:
-          throw makeError(input, [
-            {
-              reason: `Cannot match literal patterns of type "${literal.type}"`,
-              at: literal.offset,
-              size: literal.size,
-            },
-          ]);
-      }
-    }
-    default: {
-      log(pattern);
-      throw makeError(input, [
-        {
-          reason: `Cannot match patterns of type "${pattern.type}"`,
-          at: pattern.offset,
-          size: pattern.size,
-        },
-      ]);
-    }
+    const subs = unify(typeA, typeB, tree, input);
+    const constrainedSubs = subs.map(
+      ([tvar, sub]) =>
+        [
+          tvar,
+          constraints.some(([tvar]) =>
+            occurs(tvar, sub)
+          )
+            ? newConstraint(constraints, sub)
+            : sub,
+        ] as const
+    );
+    return constrainedSubs;
   }
+  throw makeError(input, [
+    {
+      reason: `Cannot unify "${stringify(
+        a
+      )}" and "${stringify(b)}"`,
+      at: tree.offset,
+      size: tree.size,
+    },
+  ]);
+};
+
+const occurs = (a: Type, b: Type): boolean => {
+  if (isParametric(a)) {
+    return a.children.some(child => occurs(child, b));
+  } else if (isParametric(b)) {
+    return b.children.some(child => occurs(child, a));
+  }
+  return equal(a, b);
 };
 
 const extractPatterns = (
   pattern: Tree,
   type: Type,
   input: string
-): readonly [
-  ReadonlyRecord<string, Type>, // patterns
-  Substitutions | null, // substitutions
-  Record<string, Type> | null // record type state
-] => {
+): readonly [TypeEnv, Substitutions] => {
   switch (pattern.type) {
     case "literal-pattern": {
-      const literal = (pattern as Branch)
-        .children[0] as Token;
-      switch (literal.type) {
-        case "name":
-        case "operator":
-          return [
-            { [literal.text]: type },
-            null,
-            null,
-          ];
-        case "number":
-          return [
-            {},
-            [[type as number, numberType]],
-            null,
-          ];
-        case "string":
-          return [
-            {},
-            [[type as number, stringType]],
-            null,
-          ];
-        case "boolean":
-          return [
-            {},
-            [[type as number, booleanType]],
-            null,
-          ];
-        case "wildcard":
-          return [{}, null, null];
-        default:
-          throw makeError(input, [
-            {
-              reason: `Cannot extract literal patterns from "${literal.type}" nodes`,
-              at: literal.offset,
-              size: literal.size,
-            },
-          ]);
-      }
-    }
-    case "list-pattern": {
-      // TODO: Clean up this mess 😱
-      const element = newVar();
-      const container = newList(element);
-      let subs: Substitutions = [
-        [type as number, container],
-      ];
-      let patterns = {};
-      for (const child of (pattern as Branch)
-        .children) {
-        const [pat, sub] = extractPatterns(
-          child.type === "rest-pattern"
-            ? {
-                ...(child as Branch).children[0]!,
-                type: "literal-pattern",
-                children: [
-                  (child as Branch).children[0]!,
-                ],
-              }
-            : child,
-          child.type === "rest-pattern"
-            ? container
-            : element,
-          input
-        );
-        patterns = { ...patterns, ...pat };
-        if (sub) {
-          subs = compose(subs, sub, child, input);
-        }
-      }
-      return [patterns, subs, null];
-    }
-    case "record-pattern": {
-      // TODO: Clean up this mess 😱
-      let subs: Substitutions = [];
-      let patterns: Record<string, Type> = {};
-      let container: Record<string, Type> = {};
-      let extensible = false;
-
-      for (const child of (pattern as Branch)
-        .children as Branch[]) {
-        const field =
-          child.children.length === 1
-            ? child.children[0]! // literal / extensible
-            : (child.children[1] as Branch); // assignment
-        const [extracted, sub, extraContainer] =
-          extractPatterns(field, newVar(), input);
-        patterns = { ...patterns, ...extracted };
-        if (sub) {
-          subs = compose(subs, sub, field, input);
-        }
-        if (field.type === "rest-pattern") {
-          extensible = true;
-        }
-        if (child.children.length === 1) {
-          // literal / extensible
-          container = { ...container, ...extracted };
-        } else {
-          // assignment
-          const name = (
-            (child.children[0] as Branch)
-              .children[0] as Token
-          ).text;
-          container = {
-            ...container,
-            [name]: newRecord(
-              Object.entries(extraContainer!),
-              child,
-              input
-            ),
-          };
-        }
-      }
-
-      subs = compose(
-        [
-          [
-            type as number,
-            newRecord(
-              Object.entries(container),
-              pattern,
-              input,
-              extensible
-            ),
-          ],
-        ],
-        subs,
-        pattern,
+      return extractPatterns(
+        (pattern as Branch).children[0]!,
+        type,
         input
       );
-      return [patterns, subs, container];
     }
-    case "rest-pattern": {
-      const name = (
-        (pattern as Branch).children[0] as Token
-      ).text;
-      return [{ [name]: newVar() }, null, null];
+    case "operator":
+    case "name":
+      return [{ [(pattern as Token).text]: type }, []];
+    case "list-pattern": {
+      const elementType = newVar();
+      const listType = newList(elementType);
+      const [patterns, subs] = (
+        pattern as Branch
+      ).children.reduce(
+        ([env, subs], pattern) => {
+          const [newEnv, newSubs] = extractPatterns(
+            pattern.type === "rest-pattern"
+              ? (pattern as Branch).children[0]!
+              : pattern,
+            pattern.type === "rest-pattern"
+              ? listType
+              : elementType,
+            input
+          );
+          return [
+            { ...env, ...newEnv },
+            compose(subs, newSubs, pattern, input),
+          ] as const;
+        },
+        [{} as TypeEnv, [] as Substitutions] as const
+      );
+      return [
+        patterns,
+        compose(
+          subs,
+          unify(type, listType, pattern, input),
+          pattern,
+          input
+        ),
+      ];
+    }
+    case "record-pattern": {
+      const elementType = newVar();
+      // TODO: Allow arbitrary key types
+      const recordType = newRecord(
+        stringType,
+        elementType
+      );
+      const [patterns, subs] = (
+        pattern as Branch
+      ).children.reduce(
+        ([env, subs], field) => {
+          const pattern = (field as Branch)
+            .children[0]!;
+          const [newEnv, newSubs] = extractPatterns(
+            pattern.type === "rest-pattern"
+              ? (pattern as Branch).children[0]!
+              : pattern,
+            pattern.type === "rest-pattern"
+              ? recordType
+              : elementType,
+            input
+          );
+          return [
+            { ...env, ...newEnv },
+            compose(subs, newSubs, pattern, input),
+          ] as const;
+        },
+        [{} as TypeEnv, [] as Substitutions] as const
+      );
+      return [
+        patterns,
+        compose(
+          subs,
+          unify(type, recordType, pattern, input),
+          pattern,
+          input
+        ),
+      ];
     }
     default:
       throw makeError(input, [
         {
-          reason: `Cannot extract patterns from "${pattern.type}" nodes`,
+          reason: `Cannot extract from patterns of type "${pattern.type}"`,
           at: pattern.offset,
           size: pattern.size,
         },

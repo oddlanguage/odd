@@ -294,3 +294,12 @@ export const dedent = (string: string) => {
     .map(line => line.slice(indent))
     .join("\n");
 };
+
+export const union =
+  <T>(as: ReadonlyArray<T>) =>
+  (bs: ReadonlyArray<T>) => {
+    const union: Record<string, T> = {};
+    for (const x of as.concat(bs))
+      union[JSON.stringify(x)] ??= x;
+    return Object.values(union) as ReadonlyArray<T>;
+  };

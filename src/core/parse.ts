@@ -65,7 +65,7 @@ export const run =
 export const string =
   (string: string, type?: string): Parser =>
   state =>
-    state.input.slice(state.offset).startsWith(string)
+    state.input.startsWith(string, state.offset)
       ? {
           ...state,
           ok: true,

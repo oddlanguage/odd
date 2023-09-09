@@ -1,4 +1,4 @@
-import { nothing } from "./odd.js";
+import { nothing, typeclassTag } from "./odd.js";
 import { Branch, Token, Tree } from "./parse.js";
 import { makeError } from "./problem.js";
 import { Mutable, ReadonlyRecord } from "./util.js";
@@ -21,10 +21,9 @@ const _eval: Eval = (tree, env, input) => {
       return declaration(tree, env, input);
     case "number":
       return number(tree, env, input);
+    case "operator":
     case "name":
       return name(tree, env, input);
-    case "operator":
-      return operator(tree, env, input);
     case "application":
       return application(tree, env, input);
     case "string":
@@ -41,6 +40,9 @@ const _eval: Eval = (tree, env, input) => {
       return field(tree, env, input);
     case "match":
       return match(tree, env, input);
+    case "typeclass":
+      // TODO: Carry around the impl of typeclasses
+      return [nothing, {}, env];
     default:
       throw makeError(input, [
         {
@@ -107,17 +109,21 @@ const number: Eval = (tree, env) => [
   env,
 ];
 
-const name: Eval = (tree, env) => [
-  env[(tree as Token).text],
-  null,
-  env,
-];
-
-const operator: Eval = (tree, env) => [
-  env[(tree as Token).text],
-  null,
-  env,
-];
+const name: Eval = (tree, env) => {
+  const text = (tree as Token).text;
+  return [
+    env[text] ??
+      Object.values(env)
+        .filter(
+          value =>
+            value.constructor === Object &&
+            typeclassTag in value
+        )
+        .find(value => value[text])?.[text],
+    null,
+    env,
+  ];
+};
 
 const application: Eval = (tree, env, input) => {
   const lhsTree = (tree as Branch).children[0]!;

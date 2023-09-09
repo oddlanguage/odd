@@ -36,6 +36,16 @@ type Failure = Readonly<{
   error: string;
 }>;
 
+const exit = (ok: boolean) => {
+  if (ok) {
+    process.exitCode = 0;
+  } else {
+    process.exitCode = 1;
+  }
+  // NOTE: Clearing the "busywork" to tell node it can stop the process
+  clearTimeout(timeout);
+};
+
 const loadingChars = ["⠋", "⠙", "⠸", "⠴", "⠦", "⠇"];
 const { version } = JSON.parse(
   await readFile("package.json", "utf-8")
@@ -104,7 +114,9 @@ for (let line = 0; line < files.length; line++) {
               0,
               startY + files.length + 2
             );
-            if (Object.keys(failures).length) {
+            const ok =
+              Object.keys(failures).length === 0;
+            if (!ok) {
               console.log(
                 `Found ${pluralise(
                   "issue",
@@ -116,8 +128,8 @@ for (let line = 0; line < files.length; line++) {
               );
             } else {
               console.log(
-                `${ansi.green(
-                  "Done!"
+                `${ansi.bold(
+                  ansi.green("Done!")
                 )} No issues found 😎`
               );
             }
@@ -133,8 +145,7 @@ for (let line = 0; line < files.length; line++) {
                 );
               }
             }
-            // NOTE: Clearing the "busywork" to tell node it can stop the process
-            clearTimeout(timeout);
+            exit(ok);
           }
         }
       }

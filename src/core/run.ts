@@ -2,6 +2,7 @@ import { readFile } from "fs/promises";
 import _eval from "./eval.js";
 import parse, { defaultEnv } from "./odd.js";
 import {
+  defaultTypeClasses,
   defaultTypeEnv,
   infer,
   stringify,
@@ -29,6 +30,7 @@ const repl = async () => {
 
   let env = defaultEnv;
   let typeEnv = defaultTypeEnv;
+  let classes = defaultTypeClasses;
   const history: string[] = [];
 
   for await (const input of process.stdin) {
@@ -40,11 +42,13 @@ const repl = async () => {
 
     try {
       const ast = parse(inputWithoutFinalNewline);
-      const [type, newTypeEnv] = infer(
-        ast,
-        typeEnv,
-        inputWithoutFinalNewline
-      );
+      const [type, , newTypeEnv, newTypeClasses] =
+        infer(
+          ast,
+          typeEnv,
+          classes,
+          inputWithoutFinalNewline
+        );
       const [result, , newEnv] = _eval(
         ast,
         env,
@@ -57,6 +61,7 @@ const repl = async () => {
       );
       env = newEnv;
       typeEnv = newTypeEnv;
+      classes = newTypeClasses;
     } catch (error: any) {
       console.error(
         error instanceof Error
@@ -70,7 +75,6 @@ const repl = async () => {
                     "\n" +
                     error.stack
                       ?.split("\n")
-                      .slice(5)
                       .filter(
                         line =>
                           !/node:internal/.test(

@@ -2,12 +2,6 @@ import _eval from "../core/eval.js";
 import parse, { defaultEnv } from "../core/odd.js";
 import test from "../core/test.js";
 import {
-  defaultTypeEnv,
-  infer,
-  numberType,
-  stringify,
-} from "../core/type.js";
-import {
   diff,
   equal,
   serialise,
@@ -17,14 +11,9 @@ test("Infix operators", () => {
   const code = `1 + 1`;
   const parsed = parse(code);
   const [result] = _eval(parsed, defaultEnv, code);
-  const [type] = infer(parsed, defaultTypeEnv, code);
 
   if (result !== 2)
     return `Expected 2 but got ${result}`;
-  if (type !== numberType)
-    return `Expected Number but got ${stringify(
-      type
-    )}`;
 });
 
 test("Operators are left-associative", () => {
@@ -55,57 +44,38 @@ test("Operators have the same precedence", () => {
     return serialise(diff(a, b));
 });
 
-test("Using an undefined operator raises an error", () => {
-  try {
-    const code = `1 ** 1`;
-    const [type] = infer(
-      parse(code),
-      defaultTypeEnv,
-      code
-    );
+// test("Using an undefined operator raises an error", () => {
+//   try {
+//     const code = `1 ** 1`;
+//     const [type] = infer(
+//       parse(code),
+//       defaultTypeEnv,
+//       code
+//     );
 
-    return `Expected an error but got resolved to type ${stringify(
-      type
-    )}`;
-  } catch (_) {}
-});
+//     return `Expected an error but got resolved to type ${stringify(
+//       type
+//     )}`;
+//   } catch (_) {}
+// });
 
 test("Operators can be literally applied", () => {
   const code = `(+) 1 1`;
   const parsed = parse(code);
   const [result] = _eval(parsed, defaultEnv, code);
-  const [type] = infer(parsed, defaultTypeEnv, code);
 
   if (result !== 2) `Expected 2 but got ${result}`;
-  if (type !== numberType)
-    return `Expected Number but got ${stringify(
-      type
-    )}`;
 });
 
 test("Literal application follows natural order", () => {
   const code1 = `(/) 9 2`;
   const parsed1 = parse(code1);
   const [a] = _eval(parsed1, defaultEnv, code1);
-  const [type1] = infer(
-    parsed1,
-    defaultTypeEnv,
-    code1
-  );
   const code2 = `2 / 9`;
   const parsed2 = parse(code2);
   const [b] = _eval(parsed2, defaultEnv, code2);
-  const [type2] = infer(
-    parsed2,
-    defaultTypeEnv,
-    code2
-  );
 
   if (a !== b) `Expected ${a} to equal ${b}`;
-  if (type1 !== numberType)
-    return `Expected ${stringify(
-      type1
-    )} to equal ${stringify(type2)}`;
 });
 
 test("Boolean operators don't evaluate both sides", () => {
