@@ -5,7 +5,6 @@ import {
   defaultTypeClasses,
   defaultTypeEnv,
   infer,
-  neverType,
   stringify,
 } from "./type.js";
 import { log, serialise } from "./util.js";
@@ -65,30 +64,24 @@ const repl = async () => {
 
     try {
       const ast = parse(inputWithoutFinalNewline);
-      let type, newTypeEnv, newTypeClasses;
-      try {
-        [type, , newTypeEnv, newTypeClasses] = infer(
+      const [type, , newTypeEnv, newTypeClasses] =
+        infer(
           ast,
           typeEnv,
           classes,
           inputWithoutFinalNewline
         );
-      } catch (err: any) {
-        console.log(err.toString());
-      }
       const [result, , newEnv] = _eval(
         ast,
         env,
         inputWithoutFinalNewline
       );
       console.log(
-        serialise(result) +
-          " : " +
-          stringify(type ?? neverType)
+        serialise(result) + " : " + stringify(type)
       );
       env = newEnv;
-      typeEnv = newTypeEnv ?? typeEnv;
-      classes = newTypeClasses ?? classes;
+      typeEnv = newTypeEnv;
+      classes = newTypeClasses;
     } catch (error: any) {
       console.error(
         error instanceof Error
