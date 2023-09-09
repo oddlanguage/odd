@@ -59,7 +59,7 @@ Some work has yet to be done for odd to release as v1.0. The following is a list
 - [x] **0.1**: CLI REPL
 - [x] **0.2**: Modules
 - [x] **0.3**: Pattern matching
-- [ ] **0.4**: Type system
+- [x] **0.4**: Type system
 - [ ] **0.5**: LSP for proper editor integration
 - [ ] **0.6**: Intelligble and helpful errors
 

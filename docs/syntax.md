@@ -759,7 +759,47 @@ a = b -> c -> d -> 3;
 
 ## Types
 
-> ℹ️ Types are a planned feature. Odd will feature a strict HM type system. Any value will be soundly typed, but type syntax should stay out of the programmer's way.
+> ℹ️ Types are currently in an "alpha" phase, meaning they're not guaranteed to work as intended. Please submit your issues when they arise!
+
+Types are written like expressions. The convention is to start types with an uppercase letter, except for type variables, which are serialised as Greek letters:
+
+```hs
+[1, 2, 3] -- [ 1, 2, 3 ] : List Number
+double a = 2 * a -- double : Number -> Number
+return x = x -- α -> α
+```
+
+### Typeclasses
+
+> ℹ️ [For a far more complete introduction into typeclasses, please read this article about typeclasses in Haskell.](http://learnyouahaskell.com/types-and-typeclasses)
+
+To support polymorphism in a _non-hacky_ way ("hacky" is commonly referred to as ad-hoc), Odd uses typeclasses. In short, this is a method to allow typing expressions such as `1 == 2`.
+
+If there are no typeclasses, the operator `==` might be typed as follows:
+
+```hs
+(==) : Number -> Number -> Boolean
+```
+
+So that we can write the expression `1 == 2` to get the value `false`, as expected.
+
+But then, what about strings, booleans or any other datatype? We can't define the type for `==` multiple times, so we need another way. For values that can be checked for equality, there is the `Eq` class, which defines the types for `==` and `!=` as follows:
+
+```hs
+class Eq a where
+  (==) : a -> a -> Boolean,
+  (!=) : a -> a -> Boolean;
+```
+
+To provide an implementation of `==` or `!=` form any datatype you must create an instance of the desired class for the type(s) you want it to apply to:
+
+```hs
+instance Eq Number where
+  a == b = equal a b,
+  a != b = not (equal a b);
+```
+
+Under the hood, this allows Odd to select the correct implementation when you write an expression such as `1 == 2`.
 
 <br/>
 <br/>

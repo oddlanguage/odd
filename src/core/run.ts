@@ -5,8 +5,10 @@ import {
   defaultTypeClasses,
   defaultTypeEnv,
   infer,
+  neverType,
+  stringify,
 } from "./type.js";
-import { serialise } from "./util.js";
+import { log, serialise } from "./util.js";
 
 const [target, outfile] = process.argv.slice(2);
 
@@ -39,24 +41,54 @@ const repl = async () => {
     );
     history.push(inputWithoutFinalNewline);
 
+    switch (inputWithoutFinalNewline) {
+      case "!clear": {
+        console.clear();
+        continue;
+      }
+      case "!env": {
+        log(env);
+        continue;
+      }
+      case "!tenv": {
+        log(
+          Object.fromEntries(
+            Object.entries(typeEnv).map(([k, t]) => [
+              k,
+              stringify(t),
+            ])
+          )
+        );
+        continue;
+      }
+    }
+
     try {
       const ast = parse(inputWithoutFinalNewline);
-      const [type, , newTypeEnv, newTypeClasses] =
-        infer(
+      let type, newTypeEnv, newTypeClasses;
+      try {
+        [type, , newTypeEnv, newTypeClasses] = infer(
           ast,
           typeEnv,
           classes,
           inputWithoutFinalNewline
         );
+      } catch (err: any) {
+        console.log(err.toString());
+      }
       const [result, , newEnv] = _eval(
         ast,
         env,
         inputWithoutFinalNewline
       );
-      console.log(serialise(result));
+      console.log(
+        serialise(result) +
+          " : " +
+          stringify(type ?? neverType)
+      );
       env = newEnv;
-      typeEnv = newTypeEnv;
-      classes = newTypeClasses;
+      typeEnv = newTypeEnv ?? typeEnv;
+      classes = newTypeClasses ?? classes;
     } catch (error: any) {
       console.error(
         error instanceof Error
