@@ -667,12 +667,12 @@ export const defaultEnv: ReadonlyRecord = {
     (xs: any[]) =>
       xs.reduce((a, x) => f(x)(a), a),
   scan:
-    (f: (x: any, y: any) => any) =>
+    (f: (x: any) => (y: any) => any) =>
     (start: any) =>
     (arr: any[]) =>
       arr
         .reduce(
-          (xs, x, i) => xs.concat(f(xs[i], x)),
+          (xs, x, i) => xs.concat(f(xs[i])(x)),
           [start]
         )
         .slice(1),

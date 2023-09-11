@@ -43,10 +43,12 @@ const repl = async () => {
     switch (inputWithoutFinalNewline) {
       case "!clear": {
         console.clear();
+        process.stdout.write("> ");
         continue;
       }
       case "!env": {
         log(env);
+        process.stdout.write("> ");
         continue;
       }
       case "!tenv": {
@@ -58,6 +60,7 @@ const repl = async () => {
             ])
           )
         );
+        process.stdout.write("> ");
         continue;
       }
     }

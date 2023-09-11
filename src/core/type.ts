@@ -123,7 +123,6 @@ const Eq = (() => {
 })();
 
 // This is ugly but necessary :)
-__LAST_TYPE_VAR = 0;
 ((booleanType.instances as Mutable<
   AtomicType["instances"]
 >) ??= []).push(Eq.name);
