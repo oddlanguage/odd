@@ -7,7 +7,6 @@ import {
 } from "./problem.js";
 import {
   formatBytes,
-  Mutable,
   serialise,
   unique,
 } from "./util.js";
@@ -19,12 +18,7 @@ type Result = State & (Success | Failure);
 type State = Readonly<{
   input: string;
   offset: number;
-  cache: Readonly<
-    Record<
-      number,
-      ReadonlyArray<readonly [Parser, Result]>
-    >
-  >;
+  cache: Record<number, Map<Parser, Result>>;
 }>;
 
 type Success = Readonly<{
@@ -430,15 +424,11 @@ export const notBefore =
 export const memo =
   (parser: Parser): Parser =>
   state => {
-    const cached = state.cache[state.offset]?.find(
-      ([p]) => p === parser
-    );
-    if (cached) return cached[1];
+    const cached =
+      state.cache[state.offset]?.get(parser);
+    if (cached) return cached;
     const result = parser(state);
-    (state.cache[state.offset] as Mutable<
-      (typeof state)["cache"][number]
-    >) = (state.cache[state.offset] ?? []).concat([
-      [parser, result],
-    ]);
+    state.cache[state.offset] ??= new Map();
+    state.cache[state.offset]!.set(parser, result);
     return result;
   };

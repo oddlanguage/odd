@@ -118,10 +118,10 @@ for (let line = 0; line < files.length; line++) {
               Object.keys(failures).length === 0;
             if (!ok) {
               console.log(
-                `Found ${pluralise(
-                  "issue",
+                `${pluralise(
+                  "test",
                   Object.values(failures).flat().length
-                )} in ${pluralise(
+                )} failed in ${pluralise(
                   "file",
                   Object.keys(failures).length
                 )}:\n`

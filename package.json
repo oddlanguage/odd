@@ -3,8 +3,8 @@
   "name": "odd",
   "version": "0.4.0-alpha",
   "scripts": {
-    "repl": "tsc && node --enable-source-maps dist/core/run.js",
-    "test": "tsc && node --enable-source-maps dist/test/run.js"
+    "repl": "tsc && clear && node --enable-source-maps dist/core/run.js",
+    "test": "tsc && clear && node --enable-source-maps dist/test/run.js"
   },
   "devDependencies": {
     "@types/node": "^20.4.1",

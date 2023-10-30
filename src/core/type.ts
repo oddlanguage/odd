@@ -1,7 +1,7 @@
 import { operatorRegex } from "./odd.js";
 import { Branch, Token, Tree } from "./parse.js";
 import { makeError } from "./problem.js";
-import { Mutable, equal, log, union } from "./util.js";
+import { Mutable, equal, union } from "./util.js";
 
 type Type =
   | AtomicType
@@ -276,10 +276,10 @@ export const defaultTypeEnv: TypeEnv = (() => {
       numberType,
       newLambda(numberType, newList(numberType))
     ),
-    map: newLambda(
-      newLambda(a, b),
-      newLambda(newList(a), newList(b))
-    ),
+    // map: newLambda(
+    //   newLambda(a, b),
+    //   newLambda(newList(a), newList(b))
+    // ),
     filter: newLambda(
       newLambda(a, booleanType),
       newLambda(newList(a), newList(a))
@@ -307,6 +307,14 @@ export const defaultTypeEnv: TypeEnv = (() => {
     ".>": newLambda(
       newLambda(a, b),
       newLambda(newLambda(b, c), newLambda(a, c))
+    ),
+    prepend: newLambda(
+      a,
+      newLambda(newList(a), newList(a))
+    ),
+    append: newLambda(
+      a,
+      newLambda(newList(a), newList(a))
     ),
     panic: newLambda(stringType, neverType),
     benchmark: newLambda(newLambda(a, b), numberType),
@@ -342,7 +350,8 @@ export const defaultTypeEnv: TypeEnv = (() => {
     //       return clone;
     //     }
     //   },
-    // head: (xs: any[]) => xs[0] ?? nothing,
+    // TODO: Union with nothing
+    head: newLambda(newList(a), a),
     // last: (xs: any[]) => xs[xs.length - 1] ?? nothing,
     // sort:
     //   (f: (b: any) => (a: any) => number) =>
@@ -427,6 +436,14 @@ export const infer = (
           typeof infer
         >
       );
+    case "statement": {
+      return infer(
+        (tree as Branch).children[0]!,
+        env,
+        classes,
+        input
+      );
+    }
     case "type-declaration":
     case "declaration": {
       const [pattern, value] = (tree as Branch)
@@ -815,11 +832,6 @@ export const infer = (
             ] as const
         )
       );
-      log({
-        name,
-        patterns,
-        members,
-      });
       const _class = newClass(
         Symbol(name),
         Object.values(
@@ -833,6 +845,103 @@ export const infer = (
         { ...env },
         { ...classes, [name]: _class },
       ];
+    }
+    case "type-application": {
+      const arg = newVar();
+      const ret = newVar();
+      const lambda = newLambda(arg, ret);
+      const [lhs, subs1, env1, classes1] = infer(
+        (tree as Branch).children[0]!,
+        env,
+        classes,
+        input
+      );
+      const [rhs, subs2, env2, classes2] = infer(
+        (tree as Branch).children[1]!,
+        env1,
+        classes1,
+        input
+      );
+      const subs3 = unify(
+        lhs,
+        arg,
+        (tree as Branch).children[0]!,
+        input
+      );
+      const subs4 = unify(
+        rhs,
+        arg,
+        (tree as Branch).children[1]!,
+        input
+      );
+      const allSubs = compose(
+        subs1,
+        compose(
+          subs2,
+          compose(subs3, subs4, tree, input),
+          tree,
+          input
+        ),
+        tree,
+        input
+      );
+      const newEnv = applyEnv(
+        env2,
+        allSubs,
+        tree,
+        input
+      );
+      return [lambda, allSubs, newEnv, classes2];
+    }
+    case "match": {
+      const [type] = infer(
+        (tree as Branch).children[0]!,
+        env,
+        classes,
+        input
+      );
+      const cases = (tree as Branch).children
+        .slice(1)
+        .map(child => {
+          const [pattern, expr] = (child as Branch)
+            .children as [Branch, Branch];
+          const [env2, subs2] = extractPatterns(
+            pattern,
+            type,
+            input
+          );
+          const [caseType] = infer(
+            expr,
+            applyEnv(
+              { ...env, ...env2 },
+              subs2,
+              child,
+              input
+            ),
+            classes,
+            input
+          );
+          return caseType;
+        });
+      const [returnType, allSubs] = cases.reduce(
+        ([type, subs], _case) => {
+          const newSubs = compose(
+            subs,
+            unify(type, _case, tree, input),
+            tree,
+            input
+          );
+          return [
+            apply(type, newSubs, tree, input),
+            newSubs,
+          ] as const;
+        },
+        [newVar(), []] as readonly [
+          Type,
+          Substitutions
+        ]
+      );
+      return [returnType, allSubs, env, classes];
     }
     default: {
       throw makeError(input, [
@@ -1233,6 +1342,61 @@ const extractPatterns = (
           input
         ),
       ];
+    }
+    case "type-lambda-pattern": {
+      const arg = newVar();
+      const ret = newVar();
+      const [env1, subs1] = extractPatterns(
+        (pattern as Branch).children[0]!,
+        arg,
+        input
+      );
+      const [env2, subs2] = extractPatterns(
+        (pattern as Branch).children[1]!,
+        ret,
+        input
+      );
+      const env = { ...env1, ...env2 };
+      const lambda = newLambda(arg, ret);
+      const subs = compose(
+        subs1,
+        compose(
+          subs2,
+          unify(type, lambda, pattern, input),
+          pattern,
+          input
+        ),
+        pattern,
+        input
+      );
+      return [env, subs];
+    }
+    case "type-pattern-application": {
+      const arg = newVar();
+      const lambda = newLambda(arg, type);
+      const [env1, subs1] = extractPatterns(
+        (pattern as Branch).children[0]!,
+        arg,
+        input
+      );
+      const [env2, subs2] = extractPatterns(
+        (pattern as Branch).children[1]!,
+        type,
+        input
+      );
+      const subs = compose(
+        subs1,
+        compose(
+          subs2,
+          unify(newVar(), lambda, pattern, input),
+          pattern,
+          input
+        ),
+        pattern,
+        input
+      );
+      const env = { ...env1, ...env2 };
+      return [env, subs];
     }
     default:
       throw makeError(input, [

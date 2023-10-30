@@ -29,6 +29,7 @@ import {
   ReadonlyRecord,
   ansi,
   equal,
+  last,
   serialise,
 } from "./util.js";
 
@@ -75,9 +76,9 @@ const listOf = (parser: Parser) =>
     _try(ignore(string(","))),
   ]);
 
-const parenthesised = between(ignore(string("(")))(
-  ignore(string(")"))
-);
+const parenthesised = between(
+  chain([ignore(string("(")), ws])
+)(chain([ws, ignore(string(")"))]));
 
 const _pattern = choice([
   lazy(() => literalPattern),
@@ -483,9 +484,34 @@ const typeDeclaration = node("type-declaration")(
   )
 );
 
+const lambdaTypePattern = map(children => [
+  { ...children[0]!, type: "type-lambda-pattern" },
+])(parenthesised(lazy(() => typeLambda)));
+
+const typePattern = choice([
+  lambdaTypePattern,
+  _pattern,
+]);
+
 const typeLambda = node("type-lambda")(
   chain([
-    _pattern,
+    map(children => {
+      if (children.length <= 1) return children;
+      // TODO: Allow more than 1 level
+      return [
+        {
+          type: "type-pattern-application",
+          children: children.flatMap(
+            node => (node as Branch).children
+          ),
+          offset: children[0]!.offset,
+          size:
+            last(children)!.offset -
+            children[0]!.offset +
+            last(children)!.size,
+        },
+      ];
+    })(separatedBy(ws)(typePattern)),
     ws,
     ignore(string("->")),
     ws,
@@ -572,13 +598,18 @@ const typeclass = node("typeclass")(
   ])
 );
 
-const statement = choice([
-  declaration,
-  typeclass,
-  lazy(() => expression),
-]);
+const statement = node("statement")(
+  choice([
+    declaration,
+    typeclass,
+    lazy(() => expression),
+  ])
+);
 
-const expression = precedenceMatch;
+const expression = chain([
+  precedenceMatch,
+  // optional(chain([ws, ignore(string(":")), ws, type])),
+]);
 
 const statements = chain([
   separatedBy(chain([ws, ignore(string(";")), ws]))(
@@ -646,8 +677,8 @@ export const defaultEnv: ReadonlyRecord = {
   range: (n: number) => [...Array(n).keys()],
   "range-from": (from: number) => (to: number) =>
     [...Array(to).keys()].slice(from),
-  map: (f: (x: any) => any) => (xs: any[]) =>
-    xs.map(f),
+  // map: (f: (x: any) => any) => (xs: any[]) =>
+  //   xs.map(f),
   group:
     (f: (x: any) => string) =>
     (x: Record<any, any>[]) => {
@@ -726,6 +757,8 @@ export const defaultEnv: ReadonlyRecord = {
       ? Array.from(new Intl.Segmenter().segment(x))
       : Object.keys(x)
     ).length,
+  prepend: (x: any) => (xs: any[]) => [x, ...xs],
+  append: (x: any) => (xs: any[]) => xs.concat(x),
   max: (a: any) => (b: any) => Math.max(a, b),
   min: (a: any) => (b: any) => Math.min(a, b),
   show: (x: any) => {

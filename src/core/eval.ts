@@ -17,6 +17,12 @@ const _eval: Eval = (tree, env, input) => {
   switch (tree.type) {
     case "program":
       return program(tree, env, input);
+    case "statement":
+      return _eval(
+        (tree as Branch).children[0]!,
+        env,
+        input
+      );
     case "declaration":
       return declaration(tree, env, input);
     case "number":

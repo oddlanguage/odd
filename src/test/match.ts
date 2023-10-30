@@ -2,6 +2,11 @@ import _eval from "../core/eval.js";
 import parse, { defaultEnv } from "../core/odd.js";
 import test from "../core/test.js";
 import {
+  defaultTypeClasses,
+  defaultTypeEnv,
+  infer,
+} from "../core/type.js";
+import {
   diff,
   equal,
   serialise,
@@ -99,4 +104,19 @@ test("Match expressions do not pollute scope", () => {
 
   if (!equal(env, defaultEnv))
     return serialise(diff(defaultEnv, env));
+});
+
+test("Type inference", () => {
+  const code = `
+		map f xs = case xs of
+			[] = [],
+			[x, ...xs] = prepend (f x) (map f xs);
+	`;
+  const [type] = infer(
+    parse(code),
+    defaultTypeEnv,
+    defaultTypeClasses,
+    code
+  );
+  throw serialise(type);
 });
