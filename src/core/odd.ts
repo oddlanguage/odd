@@ -30,7 +30,7 @@ import {
   ansi,
   equal,
   last,
-  serialise,
+  showOddValue,
 } from "./util.js";
 
 const comment = pattern(/--[^\n]+/);
@@ -602,9 +602,13 @@ const statement = node("statement")(
   choice([
     declaration,
     typeclass,
-    lazy(() => expression),
+    lazy(() => expressionStatement),
   ])
 );
+
+const expressionStatement = node(
+  "expression-statement"
+)(lazy(() => expression));
 
 const expression = chain([
   precedenceMatch,
@@ -762,8 +766,7 @@ export const defaultEnv: ReadonlyRecord = {
   max: (a: any) => (b: any) => Math.max(a, b),
   min: (a: any) => (b: any) => Math.min(a, b),
   show: (x: any) => {
-    // TODO: Serialise as odd values instead of js values
-    console.log(serialise(x));
+    console.log(showOddValue(x));
     return x;
   },
   import: (name: string) => {

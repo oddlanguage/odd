@@ -4,7 +4,7 @@ import test from "../core/test.js";
 import {
   diff,
   equal,
-  serialise,
+  showOddValue,
 } from "../core/util.js";
 
 test("Empty lists", () => {
@@ -17,7 +17,7 @@ test("Empty lists", () => {
   );
 
   if (!equal(result, expected))
-    return serialise(diff(expected, result));
+    return showOddValue(diff(expected, result));
 });
 
 test("Simple elements", () => {
@@ -30,7 +30,7 @@ test("Simple elements", () => {
   const expected = [1, "a", true];
 
   if (!equal(result, expected))
-    return serialise(diff(expected, result));
+    return showOddValue(diff(expected, result));
 });
 
 test("Complex elements", () => {
@@ -52,7 +52,7 @@ test("Dangling commas are ignored", () => {
   const expected = [1];
 
   if (!equal(result, expected))
-    return serialise(diff(expected, result));
+    return showOddValue(diff(expected, result));
 });
 
 test("Destructuring", () => {
@@ -65,5 +65,5 @@ test("Destructuring", () => {
   const expected = [1];
 
   if (!equal(result, expected))
-    return serialise(diff(expected, result));
+    return showOddValue(diff(expected, result));
 });

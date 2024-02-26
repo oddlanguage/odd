@@ -5,7 +5,7 @@ import {
   diff,
   difference,
   equal,
-  serialise,
+  showOddValue,
 } from "../core/util.js";
 
 test("Lambdas do not pollute parent scope", () => {
@@ -17,7 +17,7 @@ test("Lambdas do not pollute parent scope", () => {
   );
 
   if (!equal(difference(env, defaultEnv), {}))
-    return serialise(diff(env, defaultEnv));
+    return showOddValue(diff(env, defaultEnv));
 });
 
 test("Multiple parameters are desugared", () => {
@@ -31,7 +31,7 @@ test("Multiple parameters are desugared", () => {
       ([key]) => !["offset", "size"].includes(key)
     )
   )
-    return serialise(diff(a, b));
+    return showOddValue(diff(a, b));
 });
 
 test("First-order record pattern argument destructuring", () => {
@@ -57,46 +57,60 @@ test("Lambdas are folded properly", () => {
     type: "program",
     children: [
       {
-        type: "lambda",
+        type: "statement",
         children: [
           {
-            type: "literal-pattern",
+            type: "expression-statement",
             children: [
               {
-                type: "name",
-                text: "a",
+                type: "lambda",
+                children: [
+                  {
+                    type: "literal-pattern",
+                    children: [
+                      {
+                        type: "name",
+                        text: "a",
+                        offset: 0,
+                        size: 1,
+                      },
+                    ],
+                    offset: 0,
+                    size: 1,
+                  },
+                  {
+                    type: "lambda",
+                    children: [
+                      {
+                        type: "literal-pattern",
+                        children: [
+                          {
+                            type: "name",
+                            text: "b",
+                            offset: 5,
+                            size: 1,
+                          },
+                        ],
+                        offset: 5,
+                        size: 1,
+                      },
+                      {
+                        type: "number",
+                        text: "0",
+                        offset: 10,
+                        size: 1,
+                      },
+                    ],
+                    offset: 5,
+                    size: 6,
+                  },
+                ],
                 offset: 0,
-                size: 1,
+                size: 11,
               },
             ],
             offset: 0,
-            size: 1,
-          },
-          {
-            type: "lambda",
-            children: [
-              {
-                type: "literal-pattern",
-                children: [
-                  {
-                    type: "name",
-                    text: "b",
-                    offset: 5,
-                    size: 1,
-                  },
-                ],
-                offset: 5,
-                size: 1,
-              },
-              {
-                type: "number",
-                text: "0",
-                offset: 10,
-                size: 1,
-              },
-            ],
-            offset: 5,
-            size: 6,
+            size: 11,
           },
         ],
         offset: 0,
@@ -109,5 +123,5 @@ test("Lambdas are folded properly", () => {
   const got = parse("a -> b -> 0");
 
   if (!equal(got, expected))
-    return serialise(diff(got, expected));
+    return showOddValue(diff(got, expected));
 });

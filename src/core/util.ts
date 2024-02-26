@@ -1,17 +1,51 @@
 import { inspect } from "node:util";
 
-export const serialise = (x: any) =>
+export const showOddValue = (x: any): string =>
+  // TODO: Make better
   typeof x === "string"
-    ? x
-    : inspect(x, {
-        depth: Infinity,
-        colors: true,
-        compact: 1,
-        breakLength: 110,
-      });
+    ? ansi.green(`''${x}''`)
+    : ["number", "bigint"].includes(typeof x)
+    ? ansi.magenta(
+        (() => {
+          let str = x.toString();
+          if (x === Infinity || x === -Infinity)
+            return str.toLowerCase();
+          let i = str.toString().indexOf(".");
+          if (i === -1) i = str.length;
+          while (i > 0) {
+            if (i-- % 3 === 0) {
+              str =
+                str.slice(0, i) + "," + str.slice(i);
+            }
+          }
+          return str;
+        })()
+      )
+    : Array.isArray(x)
+    ? `[ ${x.map(showOddValue).join(", ")} ]`.replace(
+        "[  ]",
+        "[]"
+      )
+    : typeof x === "function"
+    ? ansi.cyan(x.name ? x.name : ansi.italic("ƒ"))
+    : x.constructor === Object
+    ? `{ ${Object.entries(x)
+        .map(entry =>
+          entry
+            .map(showOddValue)
+            .join(ansi.magenta(" = "))
+        )
+        .join(", ")} }`.replace("{  }", "{}")
+    : x.toString();
 
 export const log = <T>(x: T) => {
-  console.log(serialise(x));
+  console.log(
+    inspect(x, {
+      depth: Infinity,
+      colors: true,
+      compact: false,
+    })
+  );
   return x;
 };
 
@@ -22,7 +56,7 @@ export const ansi = {
     "\x1b[31m" + string + "\x1b[0m",
   green: (string: string) =>
     "\x1b[32m" + string + "\x1b[0m",
-  yellow: (string: string) =>
+  gold: (string: string) =>
     "\x1b[33m" + string + "\x1b[0m",
   blue: (string: string) =>
     "\x1b[34m" + string + "\x1b[0m",
@@ -30,8 +64,16 @@ export const ansi = {
     "\x1b[35m" + string + "\x1b[0m",
   cyan: (string: string) =>
     "\x1b[36m" + string + "\x1b[0m",
+  white: (string: string) =>
+    "\x1b[37m" + string + "\x1b[0m",
   grey: (string: string) =>
     "\x1b[90m" + string + "\x1b[0m",
+  rose: (string: string) =>
+    "\x1b[91m" + string + "\x1b[0m",
+  lime: (string: string) =>
+    "\x1b[92m" + string + "\x1b[0m",
+  yellow: (string: string) =>
+    "\x1b[93m" + string + "\x1b[0m",
   bold: (string: string) =>
     "\x1b[1m" + string + "\x1b[0m",
   dim: (string: string) =>
@@ -55,6 +97,8 @@ export const ansi = {
       "\x1b[45m" + string + "\x1b[0m",
     cyan: (string: string) =>
       "\x1b[46m" + string + "\x1b[0m",
+    white: (string: string) =>
+      "\x1b[47m" + string + "\x1b[0m",
     grey: (string: string) =>
       "\x1b[100m" + string + "\x1b[0m",
   },

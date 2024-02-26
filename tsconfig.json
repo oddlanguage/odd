@@ -8,7 +8,7 @@
     "noUnusedParameters": true,
     "exactOptionalPropertyTypes": true,
     "target": "esnext",
-    "module": "esnext",
+    "module": "NodeNext",
     "incremental": true,
     "outDir": "dist",
     "removeComments": true,

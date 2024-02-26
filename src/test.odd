@@ -1,0 +1,14 @@
+x {y,...t} [z,...u] = { y, z, a = [ 1, { z }, {}, [], ''wahooo'', 5 ] };
+
+-- This a comment about `b`, which is 5 :)
+b = 5;
+
+-- This beauty prints some data
+print ([
+	{ a = 1 } ''a'',
+	x {y=5,m=''a'',b} [''[[]]'']
+] 1);
+
+log [[[x]]] = print x;
+
+log [[[''wahooo'']]]

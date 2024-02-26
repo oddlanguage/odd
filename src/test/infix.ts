@@ -4,7 +4,7 @@ import test from "../core/test.js";
 import {
   diff,
   equal,
-  serialise,
+  showOddValue,
 } from "../core/util.js";
 
 test("Infix operators", () => {
@@ -27,7 +27,7 @@ test("Operators are left-associative", () => {
       ([key]) => !["offset", "size"].includes(key)
     )
   )
-    return serialise(diff(a, b));
+    return showOddValue(diff(a, b));
 });
 
 test("Operators have the same precedence", () => {
@@ -41,7 +41,7 @@ test("Operators have the same precedence", () => {
       ([key]) => !["offset", "size"].includes(key)
     )
   )
-    return serialise(diff(a, b));
+    return showOddValue(diff(a, b));
 });
 
 // test("Using an undefined operator raises an error", () => {

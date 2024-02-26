@@ -36,9 +36,11 @@ Feel free to contribute. [Please read our contributing guidelines](./CONTRIBUTIN
 
 ## 🖥️ Usage
 
-> ℹ️ Odd is guaranteed to work with [NodeJS version 16.13.1](https://nodejs.org/dist/v16.13.1/), but should be compatible with earlier versions down to v12, possibly requiring the `--harmony` flag.
+Firstly, make sure you have installed NodeJS and its package manager, npm.
 
-To try out Odd, download the repo and run it:
+Odd is guaranteed to work with [NodeJS version 20.11.1](https://nodejs.org/dist/v20.11.1/), but should be compatible with earlier versions down to v12 (inclusive, possibly requiring the `--harmony` flag).
+
+Afterwards, open up your shell of choice and run the following commands:
 
 ```sh
 npm i; # install dependencies

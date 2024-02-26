@@ -5,7 +5,7 @@ import {
   dedent,
   diff,
   equal,
-  serialise,
+  showOddValue,
 } from "../core/util.js";
 
 test("Declared values are stored in scope", () => {
@@ -37,7 +37,7 @@ test("Function declarations are desugared into lambdas", () => {
       ([key]) => !["offset", "size"].includes(key)
     )
   )
-    return serialise(diff(a, b));
+    return showOddValue(diff(a, b));
 });
 
 test("Custom infix operators", () => {
@@ -76,7 +76,7 @@ test("Infix declarations are desugared into lambdas", () => {
       ([key]) => !["offset", "size"].includes(key)
     )
   )
-    return serialise(diff(a, b));
+    return showOddValue(diff(a, b));
 });
 
 test("Infix declarations allow arbitrary patterns", () => {
@@ -103,7 +103,7 @@ test("Nth-order list pattern destructuring", () => {
   if (env["c"] !== 3)
     return `Expected 3 but got ${env["c"]}`;
   if (!equal(env["de"], [4, 5]))
-    return `Expected [4, 5] but got ${serialise(
+    return `Expected [4, 5] but got ${showOddValue(
       env["de"]
     )}`;
 });
@@ -127,9 +127,11 @@ test("List destructuring rest pattern", () => {
   const [, , env] = _eval(parsed, defaultEnv, code);
 
   if (env["a"] !== 1)
-    return `Expected 1 but got ${serialise(env["a"])}`;
+    return `Expected 1 but got ${showOddValue(
+      env["a"]
+    )}`;
   if (!equal(env["b"], [2, 3]))
-    return `Expected [2, 3] but got ${serialise(
+    return `Expected [2, 3] but got ${showOddValue(
       env["b"]
     )}`;
 });
@@ -148,7 +150,7 @@ test("Record destructuring rest pattern", () => {
   if (env["d"] !== 4)
     return `Expected 4 but got ${env["d"]}`;
   if (!equal(env["x"], { y: 5, z: 6 }))
-    return `Expected { y: 5, z: 6 } but got ${serialise(
+    return `Expected { y: 5, z: 6 } but got ${showOddValue(
       env["x"]
     )}`;
 });
@@ -177,7 +179,16 @@ test("Mutual recursion", () => {
     is-odd 3;
   `);
   const parsed = parse(code);
-  const [result] = _eval(parsed, defaultEnv, code);
+  const [result] = _eval(
+    parsed,
+    {
+      true: true,
+      false: false,
+      "==": (b: any) => (a: any) => a === b,
+      "-": (b: any) => (a: any) => a - b,
+    },
+    code
+  );
 
   if (result !== true)
     return `Expected true but got ${result}`;
@@ -188,46 +199,53 @@ test("Curried declarations are folded properly", () => {
     type: "program",
     children: [
       {
-        type: "declaration",
+        type: "statement",
         children: [
           {
-            type: "literal-pattern",
-            children: [
-              {
-                type: "name",
-                text: "a",
-                offset: 0,
-                size: 1,
-              },
-            ],
-            offset: 0,
-            size: 1,
-          },
-          {
-            type: "lambda",
+            type: "declaration",
             children: [
               {
                 type: "literal-pattern",
                 children: [
                   {
                     type: "name",
-                    text: "b",
+                    text: "a",
+                    offset: 0,
+                    size: 1,
+                  },
+                ],
+                offset: 0,
+                size: 1,
+              },
+              {
+                type: "lambda",
+                children: [
+                  {
+                    type: "literal-pattern",
+                    children: [
+                      {
+                        type: "name",
+                        text: "b",
+                        offset: 2,
+                        size: 1,
+                      },
+                    ],
                     offset: 2,
+                    size: 1,
+                  },
+                  {
+                    type: "number",
+                    text: "0",
+                    offset: 6,
                     size: 1,
                   },
                 ],
                 offset: 2,
-                size: 1,
-              },
-              {
-                type: "number",
-                text: "0",
-                offset: 6,
-                size: 1,
+                size: 5,
               },
             ],
-            offset: 2,
-            size: 5,
+            offset: 0,
+            size: 7,
           },
         ],
         offset: 0,
@@ -237,8 +255,8 @@ test("Curried declarations are folded properly", () => {
     offset: 0,
     size: 7,
   };
-  const a = parse("a b = 0");
+  const got = parse("a b = 0");
 
-  if (!equal(expected, a))
-    return serialise(diff(expected, a));
+  if (!equal(expected, got))
+    return showOddValue(diff(expected, got));
 });

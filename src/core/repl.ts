@@ -1,30 +1,29 @@
-import { readFile } from "fs/promises";
 import _eval from "./eval.js";
 import parse, { defaultEnv } from "./odd.js";
 import {
-	defaultTypeClasses,
-	defaultTypeEnv,
-	infer,
-	stringify,
+  defaultTypeEnv,
+  infer,
+  stringify,
 } from "./type.js";
-import { log, serialise } from "./util.js";
+import { showOddValue } from "./util.js";
 
-export default async () => {
-  const { version } = JSON.parse(
-    await readFile("package.json", "utf-8")
-  );
-  const versionString = `Odd v${version} repl`;
-  process.stdin.setEncoding("utf-8");
-  process.stdout.write(
+export default async (
+  inputStream: {
+    [Symbol.asyncIterator](): AsyncIterator<string>;
+  },
+  outputStream: { write(data: string): void },
+  errorStream: { write(data: string): void },
+  versionString: string
+) => {
+  outputStream.write(
     `${versionString}\n\nℹ️ Use "!help" to see all available commands.\n\n> `
   );
 
   let env = defaultEnv;
   let typeEnv = defaultTypeEnv;
-  let classes = defaultTypeClasses;
   const history: string[] = [];
 
-  for await (const input of process.stdin) {
+  for await (const input of inputStream) {
     const inputWithoutFinalNewline = input.replace(
       /\r*\n$/,
       ""
@@ -37,34 +36,38 @@ export default async () => {
       switch (command) {
         case "clear": {
           console.clear();
-          process.stdout.write("> ");
+          outputStream.write("> ");
           continue;
         }
         case "env": {
-          log(env);
-          process.stdout.write("> ");
+          outputStream.write(showOddValue(env));
+          outputStream.write("> ");
           continue;
         }
         case "tenv": {
-          log(
-            Object.fromEntries(
-              Object.entries(typeEnv).map(([k, t]) => [
-                k,
-                stringify(t),
-              ])
+          outputStream.write(
+            showOddValue(
+              Object.fromEntries(
+                Object.entries(typeEnv).map(
+                  ([k, t]) => [
+                    k,
+                    stringify(t, { color: true }),
+                  ]
+                )
+              )
             )
           );
-          process.stdout.write("> ");
+          outputStream.write("> ");
           continue;
         }
         case "help": {
-          process.stdout.write(
+          outputStream.write(
             `${versionString}\n!clear - Clear the screen\n!env   - Log the current environment\n!help  - Print this message\n!tenv  - Log the current type environment\n> `
           );
           continue;
         }
         default: {
-          process.stdout.write(
+          outputStream.write(
             `Unknown command "${command}".\n> `
           );
           continue;
@@ -74,26 +77,26 @@ export default async () => {
 
     try {
       const ast = parse(inputWithoutFinalNewline);
-      const [type, , newTypeEnv, newTypeClasses] =
-        infer(
-          ast,
-          typeEnv,
-          classes,
-          inputWithoutFinalNewline
-        );
+      const [type, , newTypeEnv] = infer(
+        ast,
+        typeEnv,
+        inputWithoutFinalNewline
+      );
       const [result, , newEnv] = _eval(
         ast,
         env,
         inputWithoutFinalNewline
       );
-      console.log(
-        serialise(result) + " : " + stringify(type)
+      outputStream.write(
+        showOddValue(result) +
+          " : " +
+          stringify(type, { color: true }) +
+          "\n"
       );
       env = newEnv;
       typeEnv = newTypeEnv;
-      classes = newTypeClasses;
     } catch (error: any) {
-      console.error(
+      errorStream.write(
         error instanceof Error
           ? `❌ Uh oh! An internal Javascript error occured.\n\nPlease submit this issue by clicking the following link:\n\nhttps://github.com/oddlanguage/odd/issues/new?${new URLSearchParams(
               Object.entries({
@@ -125,6 +128,6 @@ export default async () => {
       );
     }
 
-    process.stdout.write("\n> ");
+    outputStream.write("\n> ");
   }
 };

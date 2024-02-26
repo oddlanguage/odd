@@ -1,4 +1,4 @@
-import { writeFile } from "fs/promises";
+import { readFile, writeFile } from "fs/promises";
 
 const args = process.argv.slice(2);
 
@@ -15,24 +15,39 @@ const [input, output] = args.filter(
 );
 
 if (input) {
-  switch (options.arch) {
-    case undefined:
-      throw "Missing architecture.";
-    case "ts": {
-      const { default: run } = await import(
-        "./arch/typescript.js"
-      );
-      const content = await run(input);
-      if (output) {
-        await writeFile(output, content);
-      } else {
-        process.stdout.write(content);
-      }
-      break;
-    }
-    default:
-      throw `Unknown arhcitecture "${options.arch}".`;
+  if (!options.arch) {
+    throw "Missing architecture.";
+  }
+
+  if (/[^a-z0-9\-]/i.test(options.arch)) {
+    throw "Architecture names can only contain alphanumerical characters and hyphens.";
+  }
+
+  let run: (input: string) => Promise<string> | string;
+  try {
+    const result = await import(
+      `./arch/${options.arch}.js`
+    );
+    run = result.default;
+  } catch (_) {
+    throw `Unknown arhcitecture "${options.arch}".`;
+  }
+  const content = await run(input);
+  if (output) {
+    await writeFile(output, content);
+  } else {
+    process.stdout.write(content);
   }
 } else {
-  (await import("./repl.js")).default();
+  process.stdin.setEncoding("utf-8");
+  (await import("./repl.js")).default(
+    process.stdin,
+    process.stdout,
+    process.stderr,
+    `Odd v${
+      JSON.parse(
+        await readFile("package.json", "utf-8")
+      ).version
+    } repl`
+  );
 }

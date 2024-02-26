@@ -225,7 +225,7 @@ name2;
 > ℹ️ For those who can read it, it's recognised with the following regex:
 >
 > ```
-> /[a-z]+\w*(?:-\w+)*/i
+> /[a-z]\w*(?:-\w+)*/i
 > ```
 
 To separate words within a name, you can use _hyphens_ (`-`):

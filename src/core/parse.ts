@@ -5,11 +5,7 @@ import {
   makeError,
   Problem,
 } from "./problem.js";
-import {
-  formatBytes,
-  serialise,
-  unique,
-} from "./util.js";
+import { formatBytes, log, unique } from "./util.js";
 
 export type Parser = (input: State) => Result;
 
@@ -350,7 +346,7 @@ export const trace =
   (parser: Parser): Parser =>
   state => {
     const result = parser(state);
-    console.log(serialise(result));
+    log(result);
     return result;
   };
 
@@ -380,9 +376,9 @@ export const except =
           ok: false,
           problems: [
             {
-              unexpected: `"${state.input[
-                state.offset
-              ]!}"`,
+              reason: `Illegal ${
+                result.value.at(-1)?.type
+              }`,
               at: state.offset,
             },
           ],
@@ -428,7 +424,9 @@ export const memo =
       state.cache[state.offset]?.get(parser);
     if (cached) return cached;
     const result = parser(state);
-    state.cache[state.offset] ??= new Map();
-    state.cache[state.offset]!.set(parser, result);
+    (state.cache[state.offset] ??= new Map()).set(
+      parser,
+      result
+    );
     return result;
   };

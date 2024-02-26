@@ -2,14 +2,14 @@ import _eval from "../core/eval.js";
 import parse, { defaultEnv } from "../core/odd.js";
 import test from "../core/test.js";
 import {
-  defaultTypeClasses,
   defaultTypeEnv,
   infer,
+  stringify,
 } from "../core/type.js";
 import {
   diff,
   equal,
-  serialise,
+  showOddValue,
 } from "../core/util.js";
 
 test("Match expression selects correct case", () => {
@@ -103,7 +103,7 @@ test("Match expressions do not pollute scope", () => {
   );
 
   if (!equal(env, defaultEnv))
-    return serialise(diff(defaultEnv, env));
+    return showOddValue(diff(defaultEnv, env));
 });
 
 test("Type inference", () => {
@@ -115,8 +115,13 @@ test("Type inference", () => {
   const [type] = infer(
     parse(code),
     defaultTypeEnv,
-    defaultTypeClasses,
     code
   );
-  throw serialise(type);
+
+  const expected = "(a -> b) -> List a -> List b";
+  if (stringify(type) !== expected)
+    return `Expected\n  ${expected}\nBut got\n  ${stringify(
+      type,
+      { color: true }
+    )}`;
 });

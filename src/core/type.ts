@@ -1,76 +1,85 @@
 import { operatorRegex } from "./odd.js";
 import { Branch, Token, Tree } from "./parse.js";
 import { makeError } from "./problem.js";
-import { Mutable, equal, union } from "./util.js";
+import {
+  ReadonlyRecord,
+  ansi,
+  equal,
+  union,
+} from "./util.js";
 
-type Type =
-  | AtomicType
+export type Type =
+  | symbol
   | TypeVar
   | ParametricType
-  | TypeConstraint
+  | ConstrainedType
   | TypeClass;
-
-type AtomicType = Readonly<{
-  type: "atomic";
-  name: symbol;
-  instances?:
-    | ReadonlyArray<TypeClass["name"]>
-    | undefined;
-}>;
 
 type TypeVar = Readonly<{ type: "var"; var: number }>;
 
 type ParametricType = Readonly<{
   type: "parametric";
-  atom: AtomicType;
+  constructor: Type;
   infix?: string;
   children: ReadonlyArray<Type>;
 }>;
 
-type TypeConstraint = Readonly<{
-  type: "constraint";
-  constraints: ReadonlyArray<
-    readonly [TypeVar, TypeClass]
-  >;
-  child: Type;
+type ConstrainedType = Readonly<{
+  type: "constrained";
+  constructor: Type;
+  class: TypeClass;
+  var: TypeVar;
 }>;
 
 type TypeClass = Readonly<{
   type: "class";
   name: symbol;
-  params: ReadonlyArray<TypeVar>;
-  members: TypeEnv;
+  var: TypeVar;
+  methods: ReadonlyRecord<string, Type>;
 }>;
 
-type TypeEnv = Readonly<Record<string, Type>>;
-type TypeClasses = Readonly<Record<string, TypeClass>>;
-
-const newAtomic = (
-  name: AtomicType["name"],
-  instances?: AtomicType["instances"]
-): AtomicType => ({
-  type: "atomic",
-  name,
-  instances,
+const newConstrainedType = (
+  type: Type,
+  _class: TypeClass,
+  _var: TypeVar
+): ConstrainedType => ({
+  type: "constrained",
+  constructor: type,
+  class: _class,
+  var: _var,
 });
-export const neverType = newAtomic(Symbol("Never"));
-export const lambdaType = newAtomic(Symbol("Lambda"));
-export const recordType = newAtomic(Symbol("Record"));
-export const listType = newAtomic(Symbol("List"));
+
+const newClass = (
+  name: string,
+  _var: TypeVar,
+  methods: ReadonlyRecord<string, Type>
+): TypeClass => ({
+  type: "class",
+  name: Symbol(name),
+  var: _var,
+  methods,
+});
+
+type TypeEnv = Readonly<Record<string, Type>>;
+
+export const neverType = Symbol("Never");
+export const lambdaType = Symbol("Lambda");
+export const recordType = Symbol("Record");
+export const listType = Symbol("List");
 
 const newLambda = (
   input: Type,
   output: Type
 ): ParametricType => ({
   type: "parametric",
-  atom: lambdaType,
+  constructor: lambdaType,
   infix: "->",
   children: [input, output],
 });
 
 const newList = (type: Type): ParametricType => ({
   type: "parametric",
-  atom: listType,
+  constructor: listType,
   children: [type],
 });
 
@@ -79,31 +88,9 @@ const newRecord = (
   type: Type
 ): ParametricType => ({
   type: "parametric",
-  atom: recordType,
+  constructor: recordType,
   children: [key, type],
 });
-
-const newConstraint = (
-  constraints: TypeConstraint["constraints"],
-  child: TypeConstraint["child"]
-): TypeConstraint => ({
-  type: "constraint",
-  constraints,
-  child,
-});
-
-const newClass = (
-  name: TypeClass["name"],
-  params: TypeClass["params"],
-  members: TypeClass["members"]
-): TypeClass => ({
-  type: "class",
-  name,
-  params,
-  members,
-});
-
-// TODO: Type schemes
 
 let __LAST_TYPE_VAR = 0;
 const newVar = (): TypeVar => ({
@@ -111,43 +98,13 @@ const newVar = (): TypeVar => ({
   var: __LAST_TYPE_VAR++,
 });
 
-export const booleanType = newAtomic(
-  Symbol("Boolean")
-);
-const Eq = (() => {
-  const a = newVar();
-  return newClass(Symbol("Eq"), [a], {
-    "==": newLambda(a, newLambda(a, booleanType)),
-    "!=": newLambda(a, newLambda(a, booleanType)),
-  });
-})();
+export const booleanType = Symbol("Boolean");
+export const numberType = Symbol("Number");
+export const nothingType = Symbol("Nothing");
+export const stringType = Symbol("String");
 
-// This is ugly but necessary :)
-((booleanType.instances as Mutable<
-  AtomicType["instances"]
->) ??= []).push(Eq.name);
-
-export const numberType = newAtomic(Symbol("Number"), [
-  Eq.name,
-]);
-export const nothingType = newAtomic(
-  Symbol("Nothing"),
-  [Eq.name]
-);
-export const stringType = newAtomic(Symbol("String"), [
-  Eq.name,
-]);
-
-const isAtomic = (type: Type): type is AtomicType =>
-  (type as AtomicType).type === "atomic";
-
-const isConstraint = (
-  type: Type
-): type is TypeConstraint =>
-  (type as TypeConstraint).type === "constraint";
-
-const isClass = (type: Type): type is TypeClass =>
-  (type as TypeClass).type === "class";
+const isAtomic = (type: Type): type is symbol =>
+  typeof type === "symbol";
 
 const isParametric = (
   type: Type
@@ -157,13 +114,25 @@ const isParametric = (
 const isVar = (type: Type): type is TypeVar =>
   (type as TypeVar).type === "var";
 
-const alphabet = "αβγδεζηθικλμνξοπρστυφχψω";
+const isConstrainedType = (
+  type: Type
+): type is ConstrainedType =>
+  (type as ConstrainedType).type === "constrained";
+
+const isClass = (type: Type): type is TypeClass =>
+  (type as TypeClass).type === "class";
+
+const alphabet = "abcdefghijklmnopqrstuvwxyz";
 const subscript = "₀₁₂₃₄₅₆₇₈₉";
-export const stringify = (type: Type): string => {
+export const stringify = (
+  type: Type,
+  options: { color?: boolean } = {}
+): string => {
   if (isAtomic(type)) {
-    return type.name.description!;
+    const str = type.description!;
+    return options.color ? ansi.gold(str) : str;
   } else if (isVar(type)) {
-    return (
+    const str =
       alphabet[type.var] ??
       alphabet[type.var % alphabet.length] +
         [
@@ -172,49 +141,52 @@ export const stringify = (type: Type): string => {
           ).toString(),
         ]
           .map(x => subscript[Number(x)])
-          .join("")
-    );
+          .join("");
+    return options.color ? ansi.italic(str) : str;
   } else if (isParametric(type)) {
-    if (type.infix)
+    if (type.infix) {
       return type.children
         .map((child, i) =>
           i === 0 &&
           isParametric(child) &&
-          child.atom === type.atom
-            ? `(${stringify(child)})`
-            : stringify(child)
+          child.constructor === type.constructor
+            ? `(${stringify(child, options)})`
+            : stringify(child, options)
         )
-        .join(` ${type.infix} `);
-    return (
-      type.atom.name.description! +
-      " " +
-      type.children.map(stringify).join(" ")
-    );
-  } else if (isConstraint(type)) {
-    return `(${type.constraints
-      .map(
-        ([tvar, tclass]) =>
-          `${tclass.name.description} ${stringify(
-            tvar
-          )}`
-      )
-      .join(", ")}) => ${stringify(type.child)}`;
+        .join(
+          ` ${
+            options.color
+              ? ansi.magenta(type.infix)
+              : type.infix
+          } `
+        );
+    } else {
+      return [type.constructor, ...type.children]
+        .map(type => stringify(type, options))
+        .join(" ");
+    }
+  } else if (isConstrainedType(type)) {
+    return `(${
+      options.color
+        ? ansi.blue(type.class.name.description!)
+        : type.class.name.description
+    } ${stringify(type.var, options)}) => ${stringify(
+      type.constructor,
+      options
+    )}`;
   } else if (isClass(type)) {
-    return `class ${
-      type.name.description
-    } ${type.params
-      .map(stringify)
-      .join(", ")} where ${Object.entries(type.members)
+    return `class ${type.name
+      .description!} ${stringify(
+      type.var,
+      options
+    )} where ${Object.entries(type.methods)
       .map(
-        ([key, type]) =>
+        ([k, v]) =>
           `${
-            new RegExp(
-              `^${operatorRegex.source}$`,
-              operatorRegex.flags
-            ).test(key)
-              ? `(${key})`
-              : key
-          } : ${stringify(type)}`
+            k.match(operatorRegex)?.[0] === k
+              ? `(${k})`
+              : k
+          } : ${stringify(v, options)}`
       )
       .join(", ")}`;
   }
@@ -408,10 +380,6 @@ export const defaultTypeEnv: TypeEnv = (() => {
   };
 })();
 
-export const defaultTypeClasses: TypeClasses = {
-  Eq,
-};
-
 type Substitutions = ReadonlyArray<Substitution>;
 
 type Substitution = readonly [TypeVar, Type];
@@ -419,28 +387,22 @@ type Substitution = readonly [TypeVar, Type];
 export const infer = (
   tree: Tree,
   env: TypeEnv,
-  classes: TypeClasses,
   input: string
-): readonly [
-  Type,
-  Substitutions,
-  TypeEnv,
-  TypeClasses
-] => {
+): readonly [Type, Substitutions, TypeEnv] => {
   switch (tree.type) {
     case "program":
       return (tree as Branch).children.reduce(
-        ([, , env, classes], branch) =>
-          infer(branch, env, classes, input),
-        [nothingType, [], env, classes] as ReturnType<
+        ([, , env], branch) =>
+          infer(branch, env, input),
+        [nothingType, [], env] as ReturnType<
           typeof infer
         >
       );
-    case "statement": {
+    case "statement":
+    case "expression-statement": {
       return infer(
         (tree as Branch).children[0]!,
         env,
-        classes,
         input
       );
     }
@@ -458,7 +420,6 @@ export const infer = (
       const [valueType, valueSubs, newEnv] = infer(
         value,
         { ...env, ...patterns },
-        classes,
         input
       );
 
@@ -475,12 +436,12 @@ export const infer = (
         input
       );
 
-      return [valueType, subs, appliedEnv, classes];
+      return [valueType, subs, appliedEnv];
     }
     case "number":
-      return [numberType, [], env, classes];
+      return [numberType, [], env];
     case "string":
-      return [stringType, [], env, classes];
+      return [stringType, [], env];
     case "type-lambda":
     case "lambda": {
       const [param, body] = (tree as Branch)
@@ -489,16 +450,20 @@ export const infer = (
       const [patterns, paramSubs] = extractPatterns(
         param,
         paramVar,
-        input
+        input,
+        tree.type === "type-lambda" ? env : undefined
       );
       const bodyVar = newVar();
       const [bodyType, bodySubs] = infer(
         body,
         {
+          Boolean: booleanType,
+          String: stringType,
+          Number: numberType,
+          Nothing: nothingType,
           ...env,
           ...patterns,
         },
-        classes,
         input
       );
       const allSubs = compose(
@@ -525,29 +490,11 @@ export const infer = (
         input
       );
 
-      return [finalType, allSubs, env, classes];
+      return [finalType, allSubs, env];
     }
     case "name":
     case "operator": {
       const { text } = tree as Token;
-
-      for (const typeclass of Object.values(classes)) {
-        if (text in typeclass.members) {
-          return [
-            newConstraint(
-              typeclass.params.map(param => [
-                param,
-                typeclass,
-              ]),
-              typeclass.members[text]!
-            ),
-            [],
-            env,
-            classes,
-          ];
-        }
-      }
-
       if (!(text in env)) {
         throw makeError(input, [
           {
@@ -557,28 +504,25 @@ export const infer = (
           },
         ]);
       }
-      return [env[text]!, [], env, classes];
+      return [env[text]!, [], env];
     }
     case "infix": {
       const [lhs, op, rhs] = (tree as Branch)
         .children as [Tree, Tree, Tree];
 
-      const [lhsType, lhsSubs, env1, classes1] = infer(
+      const [lhsType, lhsSubs, env1] = infer(
         lhs,
         env,
-        classes,
         input
       );
-      const [opType, opSubs, env2, classes2] = infer(
+      const [opType, opSubs, env2] = infer(
         op,
         env1,
-        classes1,
         input
       );
-      const [rhsType, rhsSubs, env3, classes3] = infer(
+      const [rhsType, rhsSubs, env3] = infer(
         rhs,
         env2,
-        classes2,
         input
       );
       const returnVar = newVar();
@@ -608,7 +552,7 @@ export const infer = (
           .children[1] as ParametricType
       ).children[1]!;
 
-      return [returnType, subs, env3, classes3];
+      return [returnType, subs, env3];
     }
     case "application": {
       const [lhs, rhs] = (tree as Branch).children as [
@@ -616,10 +560,9 @@ export const infer = (
         Tree
       ];
 
-      const [lhsType, lhsSubs, env1, classes1] = infer(
+      const [lhsType, lhsSubs, env1] = infer(
         lhs,
         env,
-        classes,
         input
       );
 
@@ -627,8 +570,8 @@ export const infer = (
       // e.g. (Indexable a, Index b) => b -> a -> a[b]
       if (
         isParametric(lhsType) &&
-        (lhsType.atom.name === recordType.name ||
-          lhsType.atom.name === listType.name)
+        (lhsType.constructor === recordType ||
+          lhsType.constructor === listType)
       ) {
         throw "Not implemented.";
       }
@@ -648,10 +591,9 @@ export const infer = (
         tree,
         input
       );
-      const [argType, argSubs, env2, classes2] = infer(
+      const [argType, argSubs, env2] = infer(
         rhs,
         env1,
-        classes1,
         input
       );
       const moreArgSubs = unify(
@@ -677,45 +619,26 @@ export const infer = (
         allSubs,
         tree,
         input
-      ) as ParametricType | TypeConstraint;
-      const returnType = isParametric(applied)
-        ? applied.children[1]!
-        : applied.constraints.some(([constraint]) =>
-            occurs(
-              constraint,
-              (applied.child as ParametricType)
-                .children[1]!
-            )
-          )
-        ? // TODO Ensure only constraints that are used get
-          // mapped into the new constrained type
-          newConstraint(
-            applied.constraints,
-            (applied.child as ParametricType)
-              .children[1]!
-          )
-        : (applied.child as ParametricType)
-            .children[1]!;
+      ) as ParametricType;
+      const returnType = applied.children[1]!;
 
-      return [returnType, allSubs, env2, classes2];
+      return [returnType, allSubs, env2];
     }
     case "list": {
       if ((tree as Branch).children.length === 0)
-        return [newList(neverType), [], env, classes];
+        return [newList(neverType), [], env];
 
-      const [type, subs, newEnv, classes1] = (
+      const [type, subs, newEnv] = (
         tree as Branch
       ).children.reduce(
-        ([type, subs, env, classes], child) => {
-          const [newType, newSubs, newEnv, classes1] =
-            infer(
-              child.type === "destructuring"
-                ? (child as Branch).children[0]!
-                : child,
-              env,
-              classes,
-              input
-            );
+        ([type, subs, env], child) => {
+          const [newType, newSubs, newEnv] = infer(
+            child.type === "destructuring"
+              ? (child as Branch).children[0]!
+              : child,
+            env,
+            input
+          );
           const actualNewType =
             child.type === "destructuring"
               ? (newType as ParametricType)
@@ -730,42 +653,37 @@ export const infer = (
             ),
             compose(subs, newSubs, child, input),
             { ...env, ...newEnv },
-            classes1,
           ] as const;
         },
         [
           newVar() as Type,
           [] as Substitutions,
           env,
-          classes,
         ] as const
       );
-      return [newList(type), subs, newEnv, classes1];
+      return [newList(type), subs, newEnv];
     }
     case "record": {
+      // TODO: Allow arbitrary key types
       if ((tree as Branch).children.length === 0)
         return [
-          // TODO: Allow arbitrary key types
-          newRecord(stringType, neverType),
+          newRecord(neverType, neverType),
           [],
           env,
-          classes,
         ];
 
       const [type, subs] = (
         tree as Branch
       ).children.reduce(
-        ([type, subs, env, classes], field) => {
+        ([type, subs, env], field) => {
           const child = (field as Branch).children[0]!;
-          const [newType, newSubs, newEnv, classes1] =
-            infer(
-              child.type === "destructuring"
-                ? (child as Branch).children[0]!
-                : child,
-              env,
-              classes,
-              input
-            );
+          const [newType, newSubs, newEnv] = infer(
+            child.type === "destructuring"
+              ? (child as Branch).children[0]!
+              : child,
+            env,
+            input
+          );
           const actualNewType =
             child.type === "destructuring"
               ? (newType as ParametricType)
@@ -780,14 +698,12 @@ export const infer = (
             ),
             compose(subs, newSubs, child, input),
             { ...env, ...newEnv },
-            classes1,
           ] as const;
         },
         [
           newVar() as Type,
           [] as Substitutions,
           env,
-          classes,
         ] as const
       );
       return [
@@ -795,109 +711,12 @@ export const infer = (
         newRecord(stringType, type),
         subs,
         env,
-        classes,
       ];
-    }
-    case "typeclass": {
-      const [{ text: name }, param, ...memberNodes] = (
-        tree as Branch
-      ).children as [Token, Token, ...Branch[]];
-      const paramType = newVar();
-      const [patterns, patternSubs] = extractPatterns(
-        param,
-        paramType,
-        input
-      );
-      const members = Object.fromEntries(
-        memberNodes.map(
-          member =>
-            [
-              (
-                (member.children[0] as Branch)
-                  .children[0] as Token
-              ).text,
-              infer(
-                member,
-                {
-                  Nothing: nothingType,
-                  Boolean: booleanType,
-                  Number: numberType,
-                  String: stringType,
-                  ...env,
-                  ...patterns,
-                },
-                classes,
-                input
-              )[0],
-            ] as const
-        )
-      );
-      const _class = newClass(
-        Symbol(name),
-        Object.values(
-          patterns
-        ) as ReadonlyArray<TypeVar>,
-        members
-      );
-      return [
-        _class,
-        patternSubs,
-        { ...env },
-        { ...classes, [name]: _class },
-      ];
-    }
-    case "type-application": {
-      const arg = newVar();
-      const ret = newVar();
-      const lambda = newLambda(arg, ret);
-      const [lhs, subs1, env1, classes1] = infer(
-        (tree as Branch).children[0]!,
-        env,
-        classes,
-        input
-      );
-      const [rhs, subs2, env2, classes2] = infer(
-        (tree as Branch).children[1]!,
-        env1,
-        classes1,
-        input
-      );
-      const subs3 = unify(
-        lhs,
-        arg,
-        (tree as Branch).children[0]!,
-        input
-      );
-      const subs4 = unify(
-        rhs,
-        arg,
-        (tree as Branch).children[1]!,
-        input
-      );
-      const allSubs = compose(
-        subs1,
-        compose(
-          subs2,
-          compose(subs3, subs4, tree, input),
-          tree,
-          input
-        ),
-        tree,
-        input
-      );
-      const newEnv = applyEnv(
-        env2,
-        allSubs,
-        tree,
-        input
-      );
-      return [lambda, allSubs, newEnv, classes2];
     }
     case "match": {
       const [type] = infer(
         (tree as Branch).children[0]!,
         env,
-        classes,
         input
       );
       const cases = (tree as Branch).children
@@ -918,7 +737,6 @@ export const infer = (
               child,
               input
             ),
-            classes,
             input
           );
           return caseType;
@@ -941,7 +759,34 @@ export const infer = (
           Substitutions
         ]
       );
-      return [returnType, allSubs, env, classes];
+      return [returnType, allSubs, env];
+    }
+    case "typeclass": {
+      const [name, param, ...methods] = (
+        tree as Branch
+      ).children as [Token, Token, ...Branch[]];
+      const [patterns] = extractPatterns(
+        param,
+        newVar(),
+        input
+      );
+      const klass = newClass(
+        name.text,
+        Object.values(patterns)[0] as TypeVar,
+        methods.reduce(
+          (acc, { children: [name, type] }) => ({
+            ...acc,
+            [((name as Branch).children[0] as Token)
+              .text]: infer(type!, patterns, input)[0],
+          }),
+          {}
+        )
+      );
+      return [
+        klass,
+        [],
+        { ...env, [name.text]: klass },
+      ];
     }
     default: {
       throw makeError(input, [
@@ -977,18 +822,6 @@ const apply = (
         apply(type, subs, tree, input)
       ),
     };
-  } else if (isConstraint(target)) {
-    const hoisted = hoistConstraints(
-      apply(target.child, subs, tree, input),
-      tree,
-      input
-    );
-    const constraints = target.constraints.concat(
-      isConstraint(hoisted) ? hoisted.constraints : []
-    );
-    return isConstraint(hoisted)
-      ? { ...hoisted, constraints }
-      : { ...target, child: hoisted };
   }
 
   throw makeError(input, [
@@ -996,89 +829,6 @@ const apply = (
       reason: `Cannot apply to "${
         (target as any).type ?? target
       }".`,
-      at: tree.offset,
-      size: tree.size,
-    },
-  ]);
-};
-
-const hoistConstraints = (
-  type: Type,
-  tree: Tree,
-  input: string
-): Type => {
-  if (isAtomic(type)) {
-    return type;
-  } else if (isVar(type)) {
-    return type;
-  } else if (isParametric(type)) {
-    const constraints = type.children
-      .map(child =>
-        hoistConstraints(child, tree, input)
-      )
-      .map(type =>
-        isConstraint(type)
-          ? ([type.constraints, type.child] as const)
-          : ([[], type] as const)
-      );
-    // TODO: Extract to some function `mergeConstraints`
-    const uniqueConstraints = Object.entries(
-      constraints
-        .flatMap(c => c[0])
-        .reduce(
-          (constraints, [tvar, tclass]) => ({
-            ...constraints,
-            [tvar.var]: tclass,
-          }),
-          {} as Record<number, TypeClass>
-        )
-    ).map(
-      ([tvar, tclass]) =>
-        [
-          { type: "var", var: Number(tvar) },
-          tclass,
-        ] as const
-    );
-    const children = constraints.flatMap(c => c[1]);
-    return newConstraint(uniqueConstraints, {
-      ...type,
-      children,
-    });
-  } else if (isConstraint(type)) {
-    const hoisted = hoistConstraints(
-      type.child,
-      tree,
-      input
-    );
-    return isConstraint(hoisted)
-      ? newConstraint(
-          // TODO: Extract to some function `mergeConstraints`
-          Object.entries(
-            type.constraints
-              .concat(hoisted.constraints)
-              .reduce(
-                (constraints, [tvar, tclass]) => ({
-                  ...constraints,
-                  [tvar.var]: tclass,
-                }),
-                {} as Record<number, TypeClass>
-              )
-          ).map(
-            ([tvar, tclass]) =>
-              [
-                { type: "var", var: Number(tvar) },
-                tclass,
-              ] as const
-          ),
-          hoisted.child
-        )
-      : { ...type, child: hoisted };
-  }
-  throw makeError(input, [
-    {
-      reason: `Cannot hoist constraints in "${
-        (type as any).type ?? type
-      }"`,
       at: tree.offset,
       size: tree.size,
     },
@@ -1128,19 +878,17 @@ const unify = (
   tree: Tree,
   input: string
 ): Substitutions => {
-  if (
-    isAtomic(a) &&
-    isAtomic(b) &&
-    a.name === b.name
-  ) {
+  if (isAtomic(a) && isAtomic(b) && a === b) {
     return [];
   } else if (isVar(a) || isVar(b)) {
     if (occurs(a, b)) {
       throw makeError(input, [
         {
-          reason: `Recursive types "${stringify(
-            a
-          )}" and "${stringify(b)}".`,
+          reason: `Recursive types "${stringify(a, {
+            color: true,
+          })}" and "${stringify(b, {
+            color: true,
+          })}".`,
           at: tree.offset,
           size: tree.size,
         },
@@ -1150,96 +898,19 @@ const unify = (
   } else if (
     isParametric(a) &&
     isParametric(b) &&
-    a.atom.name === b.atom.name &&
+    a.constructor === b.constructor &&
     a.children.length === b.children.length
   ) {
     return a.children.flatMap((a, i) =>
       unify(a, b.children[i]!, tree, input)
     );
-  } else if (isConstraint(a) || isConstraint(b)) {
-    // TODO: Ugly, merge
-    if (
-      isConstraint(a) &&
-      isAtomic(b) &&
-      isVar(a.child) &&
-      a.constraints[0]![0].var === a.child.var
-    ) {
-      const className = a.constraints[0]![1].name;
-      const instance =
-        b.instances?.includes(className);
-      if (!instance)
-        throw makeError(input, [
-          {
-            reason: `No instance of ${
-              className.description
-            } found for ${stringify(b)}`,
-            at: tree.offset,
-            size: tree.size,
-          },
-        ]);
-      return [];
-    }
-    if (
-      isConstraint(b) &&
-      isAtomic(a) &&
-      isVar(b.child) &&
-      b.constraints[0]![0].var === b.child.var
-    ) {
-      const className = b.constraints[0]![1].name;
-      const instance =
-        a.instances?.includes(className);
-      if (!instance)
-        throw makeError(input, [
-          {
-            reason: `No instance of ${
-              className.description
-            } found for ${stringify(a)}`,
-            at: tree.offset,
-            size: tree.size,
-          },
-        ]);
-      return [];
-    }
-
-    const typeA = isConstraint(a) ? a.child : a;
-    const typeB = isConstraint(b) ? b.child : b;
-    // TODO: Extract to some function `mergeConstraints`
-    const constraints = Object.entries(
-      (isConstraint(a) ? a.constraints : [])
-        .concat(isConstraint(b) ? b.constraints : [])
-        .reduce(
-          (constraints, [tvar, tclass]) => ({
-            ...constraints,
-            [tvar.var]: tclass,
-          }),
-          {} as Record<number, TypeClass>
-        )
-    ).map(
-      ([tvar, tclass]) =>
-        [
-          { type: "var", var: Number(tvar) },
-          tclass,
-        ] as const
-    );
-    const subs = unify(typeA, typeB, tree, input);
-    const constrainedSubs = subs.map(
-      ([tvar, sub]) =>
-        [
-          tvar,
-          constraints.some(([tvar]) =>
-            occurs(tvar, sub)
-          )
-            ? newConstraint(constraints, sub)
-            : sub,
-        ] as const
-    );
-    return constrainedSubs;
   }
+
   throw makeError(input, [
     {
-      reason: `Cannot unify "${stringify(
-        a
-      )}" and "${stringify(b)}"`,
+      reason: `Cannot unify "${stringify(a, {
+        color: true,
+      })}" and "${stringify(b, { color: true })}"`,
       at: tree.offset,
       size: tree.size,
     },
@@ -1258,19 +929,28 @@ const occurs = (a: Type, b: Type): boolean => {
 const extractPatterns = (
   pattern: Tree,
   type: Type,
-  input: string
+  input: string,
+  env?: TypeEnv
 ): readonly [TypeEnv, Substitutions] => {
   switch (pattern.type) {
     case "literal-pattern": {
       return extractPatterns(
         (pattern as Branch).children[0]!,
         type,
-        input
+        input,
+        env
       );
     }
     case "operator":
-    case "name":
-      return [{ [(pattern as Token).text]: type }, []];
+    case "name": {
+      const name = (pattern as Token).text;
+      return [
+        { [name]: type },
+        env?.[name]
+          ? [[type as TypeVar, env[name]!]]
+          : [],
+      ];
+    }
     case "list-pattern": {
       const elementType = newVar();
       const listType = newList(elementType);
@@ -1285,7 +965,8 @@ const extractPatterns = (
             pattern.type === "rest-pattern"
               ? listType
               : elementType,
-            input
+            input,
+            env
           );
           return [
             { ...env, ...newEnv },
@@ -1314,20 +995,21 @@ const extractPatterns = (
       const [patterns, subs] = (
         pattern as Branch
       ).children.reduce(
-        ([env, subs], field) => {
+        ([record, subs], field) => {
           const pattern = (field as Branch)
             .children[0]!;
-          const [newEnv, newSubs] = extractPatterns(
+          const [newRecord, newSubs] = extractPatterns(
             pattern.type === "rest-pattern"
               ? (pattern as Branch).children[0]!
               : pattern,
             pattern.type === "rest-pattern"
               ? recordType
               : elementType,
-            input
+            input,
+            env
           );
           return [
-            { ...env, ...newEnv },
+            { ...record, ...newRecord },
             compose(subs, newSubs, pattern, input),
           ] as const;
         },
@@ -1346,17 +1028,19 @@ const extractPatterns = (
     case "type-lambda-pattern": {
       const arg = newVar();
       const ret = newVar();
-      const [env1, subs1] = extractPatterns(
+      const [patterns1, subs1] = extractPatterns(
         (pattern as Branch).children[0]!,
         arg,
-        input
+        input,
+        env
       );
-      const [env2, subs2] = extractPatterns(
+      const [patterns2, subs2] = extractPatterns(
         (pattern as Branch).children[1]!,
         ret,
-        input
+        input,
+        env
       );
-      const env = { ...env1, ...env2 };
+      const patterns3 = { ...patterns1, ...patterns2 };
       const lambda = newLambda(arg, ret);
       const subs = compose(
         subs1,
@@ -1369,20 +1053,22 @@ const extractPatterns = (
         pattern,
         input
       );
-      return [env, subs];
+      return [patterns3, subs];
     }
     case "type-pattern-application": {
       const arg = newVar();
       const lambda = newLambda(arg, type);
-      const [env1, subs1] = extractPatterns(
+      const [patterns1, subs1] = extractPatterns(
         (pattern as Branch).children[0]!,
         arg,
-        input
+        input,
+        env
       );
-      const [env2, subs2] = extractPatterns(
+      const [patterns2, subs2] = extractPatterns(
         (pattern as Branch).children[1]!,
         type,
-        input
+        input,
+        env
       );
       const subs = compose(
         subs1,
@@ -1395,8 +1081,8 @@ const extractPatterns = (
         pattern,
         input
       );
-      const env = { ...env1, ...env2 };
-      return [env, subs];
+      const patterns3 = { ...patterns1, ...patterns2 };
+      return [patterns3, subs];
     }
     default:
       throw makeError(input, [

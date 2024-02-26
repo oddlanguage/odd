@@ -5,7 +5,7 @@ import {
   diff,
   difference,
   equal,
-  serialise,
+  showOddValue,
 } from "../core/util.js";
 
 test("Empty record", () => {
@@ -18,7 +18,7 @@ test("Empty record", () => {
 
   const expected = {};
   if (!equal(result, expected))
-    return serialise(diff(result, expected));
+    return showOddValue(diff(result, expected));
 });
 
 test("Simple fields", () => {
@@ -31,7 +31,7 @@ test("Simple fields", () => {
 
   const expected = { a: 1 };
   if (!equal(result, expected))
-    return serialise(diff(result, expected));
+    return showOddValue(diff(result, expected));
 });
 
 test("Function fields", () => {
@@ -55,7 +55,7 @@ test("Dangling commas are ignored", () => {
 
   const expected = { a: 1 };
   if (!equal(result, expected))
-    return serialise(diff(result, expected));
+    return showOddValue(diff(result, expected));
 });
 
 test("Property shorthands", () => {
@@ -68,7 +68,7 @@ test("Property shorthands", () => {
 
   const expected = { a: 1 };
   if (!equal(result, expected))
-    return serialise(diff(result, expected));
+    return showOddValue(diff(result, expected));
 });
 
 test("Destructuring", () => {
@@ -81,7 +81,7 @@ test("Destructuring", () => {
 
   const expected = { a: 1 };
   if (!equal(result, expected))
-    return serialise(diff(result, expected));
+    return showOddValue(diff(result, expected));
 });
 
 test("Properties do not pollute scope", () => {
@@ -93,7 +93,7 @@ test("Properties do not pollute scope", () => {
   );
 
   if (!equal(difference(defaultEnv, env), {}))
-    return serialise(diff(defaultEnv, env));
+    return showOddValue(diff(defaultEnv, env));
 });
 
 test("Fields can reference outer scope", () => {

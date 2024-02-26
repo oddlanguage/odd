@@ -4,7 +4,7 @@ import test from "../core/test.js";
 import {
   diff,
   equal,
-  serialise,
+  showOddValue,
 } from "../core/util.js";
 
 test("Function application", () => {
@@ -66,7 +66,7 @@ test("Record access and application", () => {
       ([key]) => !["offset", "size"].includes(key)
     )
   )
-    return serialise(diff(tree1, tree2));
+    return showOddValue(diff(tree1, tree2));
   if (result !== 2)
     return `Expected 2 but got ${result}`;
 });
