@@ -1,3 +1,4 @@
+import Readline from "node:readline/promises";
 import _eval from "./eval.js";
 import parse, { defaultEnv } from "./odd.js";
 import {
@@ -8,40 +9,36 @@ import {
 import { showOddValue } from "./util.js";
 
 export default async (
-  inputStream: {
-    [Symbol.asyncIterator](): AsyncIterator<string>;
-  },
-  outputStream: { write(data: string): void },
-  errorStream: { write(data: string): void },
+  inputStream: NodeJS.ReadStream,
+  outputStream: NodeJS.WritableStream,
+  errorStream: NodeJS.WritableStream,
   versionString: string
 ) => {
   outputStream.write(
     `${versionString}\n\nℹ️ Use "!help" to see all available commands.\n\n> `
   );
+  const tty = Readline.createInterface({
+    input: inputStream,
+    output: outputStream,
+  });
 
   let env = defaultEnv;
   let typeEnv = defaultTypeEnv;
-  const history: string[] = [];
+  const history: Array<string> = [];
 
-  for await (const input of inputStream) {
-    const inputWithoutFinalNewline = input.replace(
-      /\r*\n$/,
-      ""
-    );
-    history.push(inputWithoutFinalNewline);
+  while (true) {
+    const input = await tty.question("> ");
+    history.push(input);
 
-    if (inputWithoutFinalNewline.startsWith("!")) {
-      const command =
-        inputWithoutFinalNewline.slice(1);
+    if (input.startsWith("!")) {
+      const command = input.slice(1);
       switch (command) {
         case "clear": {
-          console.clear();
-          outputStream.write("> ");
+          outputStream.write("\u001B[2J\u001B[0;0f");
           continue;
         }
         case "env": {
           outputStream.write(showOddValue(env));
-          outputStream.write("> ");
           continue;
         }
         case "tenv": {
@@ -57,35 +54,35 @@ export default async (
               )
             )
           );
-          outputStream.write("> ");
           continue;
         }
         case "help": {
           outputStream.write(
-            `${versionString}\n!clear - Clear the screen\n!env   - Log the current environment\n!help  - Print this message\n!tenv  - Log the current type environment\n> `
+            `${versionString}\n!clear - Clear the screen (CTRL + L)\n!env   - Log the current environment\n!help  - Print this message\n!tenv  - Log the current type environment\n!quit  - Quit the REPL (CTRL + C)\n`
           );
           continue;
         }
+        case "quit": {
+          process.exit();
+        }
         default: {
-          outputStream.write(
-            `Unknown command "${command}".\n> `
-          );
+          tty.write(`Unknown command "${command}".\n`);
           continue;
         }
       }
     }
 
     try {
-      const ast = parse(inputWithoutFinalNewline);
+      const ast = parse(input);
       const [type, , newTypeEnv] = infer(
         ast,
         typeEnv,
-        inputWithoutFinalNewline
+        input
       );
       const [result, , newEnv] = _eval(
         ast,
         env,
-        inputWithoutFinalNewline
+        input
       );
       outputStream.write(
         showOddValue(result) +

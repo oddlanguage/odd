@@ -1,9 +1,11 @@
 import { inspect } from "node:util";
+import { operatorRegex } from "./odd.js";
+import { string } from "./parse.js";
 
 export const showOddValue = (x: any): string =>
   // TODO: Make better
   typeof x === "string"
-    ? ansi.green(`''${x}''`)
+    ? ansi.green(`''${ansi.clear(x)}''`)
     : ["number", "bigint"].includes(typeof x)
     ? ansi.magenta(
         (() => {
@@ -12,11 +14,16 @@ export const showOddValue = (x: any): string =>
             return str.toLowerCase();
           let i = str.toString().indexOf(".");
           if (i === -1) i = str.length;
+          let n = 0;
           while (i > 0) {
-            if (i-- % 3 === 0) {
+            if (
+              n++ % 3 === 0 &&
+              n !== string.length - 1
+            ) {
               str =
                 str.slice(0, i) + "," + str.slice(i);
             }
+            i -= 1;
           }
           return str;
         })()
@@ -27,7 +34,18 @@ export const showOddValue = (x: any): string =>
         "[]"
       )
     : typeof x === "function"
-    ? ansi.cyan(x.name ? x.name : ansi.italic("ƒ"))
+    ? (() => {
+        let name = x.name ? x.name : ansi.italic("ƒ");
+        if (
+          new RegExp(
+            `^(?:${operatorRegex.source})$`,
+            operatorRegex.flags
+          ).test(name)
+        ) {
+          name = `(${name})`;
+        }
+        return ansi.cyan(name);
+      })()
     : x.constructor === Object
     ? `{ ${Object.entries(x)
         .map(entry =>
@@ -36,6 +54,10 @@ export const showOddValue = (x: any): string =>
             .join(ansi.magenta(" = "))
         )
         .join(", ")} }`.replace("{  }", "{}")
+    : typeof x === "boolean"
+    ? ansi.magenta(x.toString())
+    : typeof x === "symbol"
+    ? ansi.magenta(x.description!)
     : x.toString();
 
 export const log = <T>(x: T) => {
@@ -102,6 +124,11 @@ export const ansi = {
     grey: (string: string) =>
       "\x1b[100m" + string + "\x1b[0m",
   },
+  clear: (string: string) =>
+    string.replaceAll(
+      /[\u001b\u009b][[()#;?]*(?:[0-9]{1,4}(?:;[0-9]{0,4})*)?[0-9A-ORZcf-nqry=><]/g,
+      ""
+    ),
 };
 
 type Primitive =
