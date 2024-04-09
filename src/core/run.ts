@@ -1,4 +1,4 @@
-import { readFile, writeFile } from "fs/promises";
+import { readFile, writeFile } from "node:fs/promises";
 
 const args = process.argv.slice(2);
 
@@ -30,7 +30,7 @@ if (input) {
     );
     run = result.default;
   } catch (_) {
-    throw `Unknown arhcitecture "${options.arch}".`;
+    throw `Unknown architecture "${options.arch}".`;
   }
   const content = await run(input);
   if (output) {
