@@ -933,6 +933,9 @@ const extractPatterns = (
   env?: TypeEnv
 ): readonly [TypeEnv, Substitutions] => {
   switch (pattern.type) {
+    case "wildcard": {
+      return [{}, []];
+    }
     case "literal-pattern": {
       return extractPatterns(
         (pattern as Branch).children[0]!,
