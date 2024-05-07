@@ -62,6 +62,7 @@ const newClass = (
 
 type TypeEnv = Readonly<Record<string, Type>>;
 
+export const anyType = Symbol("Any");
 export const neverType = Symbol("Never");
 export const lambdaType = Symbol("Lambda");
 export const recordType = Symbol("Record");
@@ -202,6 +203,14 @@ export const defaultTypeEnv: TypeEnv = (() => {
   const c = newVar();
 
   return {
+    "==": newLambda(
+      anyType,
+      newLambda(anyType, booleanType)
+    ),
+    "!=": newLambda(
+      anyType,
+      newLambda(anyType, booleanType)
+    ),
     "/": newLambda(
       numberType,
       newLambda(numberType, numberType)
@@ -879,6 +888,11 @@ const unify = (
   input: string
 ): Substitutions => {
   if (isAtomic(a) && isAtomic(b) && a === b) {
+  if (
+    (isAtomic(a) && isAtomic(b) && a === b) ||
+    a === anyType ||
+    b === anyType
+  ) {
     return [];
   } else if (isVar(a) || isVar(b)) {
     if (occurs(a, b)) {
