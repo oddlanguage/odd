@@ -1,8 +1,4 @@
 import { readFile, writeFile } from "node:fs/promises";
-import {
-  ReadableStream,
-  WritableStream,
-} from "node:stream/web";
 
 const args = process.argv.slice(2);
 
@@ -42,24 +38,6 @@ if (input) {
   }
 } else {
   (await import("./repl.js")).default(
-    new ReadableStream({
-      start: async controller => {
-        process.stdin.setEncoding("utf-8");
-        process.stdin.setRawMode(true);
-        for await (const chunk of process.stdin)
-          controller.enqueue(chunk);
-      },
-    }),
-    new WritableStream({
-      write: chunk => {
-        process.stdout.write(chunk);
-      },
-    }),
-    new WritableStream({
-      write: chunk => {
-        process.stderr.write(chunk);
-      },
-    }),
     `Odd v${
       JSON.parse(
         await readFile("package.json", "utf-8")

@@ -1,80 +1,37 @@
-import {
-  type ReadableStream,
-  type WritableStream,
-} from "node:stream/web";
 import _eval from "./eval.js";
 import parse, { defaultEnv } from "./odd.js";
-import { flatten } from "./parse.js";
-import * as Readline from "./readline.js";
 import {
   defaultTypeEnv,
   infer,
   stringify,
 } from "./type.js";
-import { ansi, showOddValue } from "./util.js";
+import { showOddValue } from "./util.js";
 
-export default async (
-  inputStream: ReadableStream,
-  outputStream: WritableStream,
-  errorStream: WritableStream,
-  versionString: string
-) => {
-  const errorWriter = errorStream.getWriter();
-  const tty = Readline.createInterface({
-    input: inputStream,
-    output: outputStream,
-    colorise: line => {
-      try {
-        const tokens = flatten(parse(line));
-        return tokens.reduce(
-          (line, token) =>
-            line.slice(0, token.offset) +
-            (() => {
-              switch (token.type) {
-                case "number":
-                case "operator":
-                  return ansi.magenta(token.text);
-                case "keyword":
-                  return ansi.blue(token.text);
-                case "string":
-                  return ansi.green(token.text);
-                default:
-                  return token.text;
-              }
-            })() +
-            line.slice(token.offset + token.size),
-          line
-        );
-      } catch (_) {
-        return line;
-      }
-    },
-  });
-  tty.write(
-    `${versionString}\n\nℹ️ Use "!help" to see all available commands.\n\n`
+export default async (versionString: string) => {
+  process.stdout.write(
+    `${versionString}\n\nℹ️ Use "!help" to see all available commands.\n\n> `
   );
 
   let env = defaultEnv;
   let typeEnv = defaultTypeEnv;
   const history: Array<string> = [];
 
-  while (true) {
-    const input = await tty.question("> ");
+  process.stdin.setEncoding("utf-8");
+  for await (const input of process.stdin) {
     history.push(input);
-
     if (input.startsWith("!")) {
       const command = input.slice(1);
       switch (command) {
         case "clear": {
-          tty.write("\x1B[2J\x1B[0;0f");
+          process.stdout.write("\x1B[2J\x1B[0;0f");
           continue;
         }
         case "env": {
-          tty.write(showOddValue(env));
+          process.stdout.write(showOddValue(env));
           continue;
         }
         case "tenv": {
-          tty.write(
+          process.stdout.write(
             showOddValue(
               Object.fromEntries(
                 Object.entries(typeEnv).map(
@@ -89,7 +46,7 @@ export default async (
           continue;
         }
         case "help": {
-          tty.write(
+          process.stdout.write(
             `${versionString}\n!clear - Clear the screen (CTRL + L)\n!env   - Log the current environment\n!help  - Print this message\n!tenv  - Log the current type environment\n!quit  - Quit the REPL (CTRL + C)\n`
           );
           continue;
@@ -98,7 +55,9 @@ export default async (
           process.exit();
         }
         default: {
-          tty.write(`Unknown command "${command}".\n`);
+          process.stdout.write(
+            `Unknown command "${command}".\n`
+          );
           continue;
         }
       }
@@ -116,7 +75,7 @@ export default async (
         env,
         input
       );
-      tty.write(
+      process.stdout.write(
         showOddValue(result) +
           " : " +
           stringify(type, { color: true }) +
@@ -124,8 +83,9 @@ export default async (
       );
       env = newEnv;
       typeEnv = newTypeEnv;
+      process.stdout.write("> ");
     } catch (error: any) {
-      errorWriter.write(
+      process.stderr.write(
         error instanceof Error
           ? `❌ Uh oh! An internal Javascript error occured.\n\nPlease submit this issue by clicking the following link:\n\nhttps://github.com/oddlanguage/odd/issues/new?${new URLSearchParams(
               Object.entries({
