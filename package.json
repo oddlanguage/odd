@@ -7,8 +7,8 @@
     "test": "tsc && (cls || clear) && node --enable-source-maps dist/test/run.js"
   },
   "devDependencies": {
-    "@types/node": "^20.4.1",
-    "typescript": "^5.3.3"
+    "@types/node": "^20.12.7",
+    "typescript": "^5.4.5"
   },
   "license": "MIT"
 }

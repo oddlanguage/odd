@@ -1,26 +1,58 @@
-import Readline from "node:readline/promises";
+import {
+  type ReadableStream,
+  type WritableStream,
+} from "node:stream/web";
 import _eval from "./eval.js";
 import parse, { defaultEnv } from "./odd.js";
+import { flatten } from "./parse.js";
+import * as Readline from "./readline.js";
 import {
   defaultTypeEnv,
   infer,
   stringify,
 } from "./type.js";
-import { showOddValue } from "./util.js";
+import { ansi, showOddValue } from "./util.js";
 
 export default async (
-  inputStream: NodeJS.ReadStream,
-  outputStream: NodeJS.WritableStream,
-  errorStream: NodeJS.WritableStream,
+  inputStream: ReadableStream,
+  outputStream: WritableStream,
+  errorStream: WritableStream,
   versionString: string
 ) => {
-  outputStream.write(
-    `${versionString}\n\nℹ️ Use "!help" to see all available commands.\n\n> `
-  );
+  const errorWriter = errorStream.getWriter();
   const tty = Readline.createInterface({
     input: inputStream,
     output: outputStream,
+    colorise: line => {
+      try {
+        const tokens = flatten(parse(line));
+        return tokens.reduce(
+          (line, token) =>
+            line.slice(0, token.offset) +
+            (() => {
+              switch (token.type) {
+                case "number":
+                case "operator":
+                  return ansi.magenta(token.text);
+                case "keyword":
+                  return ansi.blue(token.text);
+                case "string":
+                  return ansi.green(token.text);
+                default:
+                  return token.text;
+              }
+            })() +
+            line.slice(token.offset + token.size),
+          line
+        );
+      } catch (_) {
+        return line;
+      }
+    },
   });
+  tty.write(
+    `${versionString}\n\nℹ️ Use "!help" to see all available commands.\n\n`
+  );
 
   let env = defaultEnv;
   let typeEnv = defaultTypeEnv;
@@ -34,15 +66,15 @@ export default async (
       const command = input.slice(1);
       switch (command) {
         case "clear": {
-          outputStream.write("\u001B[2J\u001B[0;0f");
+          tty.write("\x1B[2J\x1B[0;0f");
           continue;
         }
         case "env": {
-          outputStream.write(showOddValue(env));
+          tty.write(showOddValue(env));
           continue;
         }
         case "tenv": {
-          outputStream.write(
+          tty.write(
             showOddValue(
               Object.fromEntries(
                 Object.entries(typeEnv).map(
@@ -57,7 +89,7 @@ export default async (
           continue;
         }
         case "help": {
-          outputStream.write(
+          tty.write(
             `${versionString}\n!clear - Clear the screen (CTRL + L)\n!env   - Log the current environment\n!help  - Print this message\n!tenv  - Log the current type environment\n!quit  - Quit the REPL (CTRL + C)\n`
           );
           continue;
@@ -84,7 +116,7 @@ export default async (
         env,
         input
       );
-      outputStream.write(
+      tty.write(
         showOddValue(result) +
           " : " +
           stringify(type, { color: true }) +
@@ -93,38 +125,35 @@ export default async (
       env = newEnv;
       typeEnv = newTypeEnv;
     } catch (error: any) {
-      errorStream.write(
+      errorWriter.write(
         error instanceof Error
           ? `❌ Uh oh! An internal Javascript error occured.\n\nPlease submit this issue by clicking the following link:\n\nhttps://github.com/oddlanguage/odd/issues/new?${new URLSearchParams(
               Object.entries({
-                title: `${versionString} internal error`,
+                title: `${versionString}: ${error.message}`,
                 body: `Given the following input:\n\n\`\`\`\n${history.join(
                   "\n"
                 )}\n\`\`\`\n\nThe following error occured:\n\n\`\`\`\n${
                   error.message +
-                    "\n" +
-                    error.stack
-                      ?.split("\n")
-                      .filter(
-                        line =>
-                          !/node:internal/.test(
-                            line
-                          ) && line.match(/\d\)?\s*$/)
+                  "\n" +
+                  error.stack
+                    ?.split("\n")
+                    .filter(
+                      line =>
+                        !/node:internal/.test(line) &&
+                        line.match(/\d\)?\s*$/)
+                    )
+                    .map(line =>
+                      line.replace(
+                        /\([a-zA-Z]+:[/\\]{1,2}.+(?=core)|(?<=at )null\.|(?:\(<anonymous>)?\)$/g,
+                        ""
                       )
-                      .map(line =>
-                        line.replace(
-                          /\([a-zA-Z]+:[/\\]{1,2}.+(?=core)|(?<=at )null\.|(?:\(<anonymous>)?\)$/g,
-                          ""
-                        )
-                      )
-                      .join("\n") ?? error.toString()
+                    )
+                    .join("\n")
                 }\n\`\`\``,
               })
-            ).toString()}`
-          : error.toString()
+            ).toString()}\n`
+          : error.toString() + "\n"
       );
     }
-
-    outputStream.write("\n> ");
   }
 };

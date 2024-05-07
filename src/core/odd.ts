@@ -639,15 +639,10 @@ export default parse;
 
 export const nothing = Symbol("nothing");
 
-/** A special key for signalling objects to be treated as typeclasses */
-export const typeclassTag = Symbol(
-  "this is a typeclass"
-);
-
 // TODO: write these declarations in odd itself through a prelude
 export const defaultEnv: ReadonlyRecord = {
-  "==": (b: any) => (a: any) => a === b,
-  "!=": (b: any) => (a: any) => a !== b,
+  "==": (b: any) => (a: any) => equal(a, b),
+  "!=": (b: any) => (a: any) => !equal(a, b),
   "/": (b: number) => (a: number) => a / b,
   "*": (b: number) => (a: number) => a * b,
   "+": (b: number) => (a: number) => a + b,
@@ -658,11 +653,6 @@ export const defaultEnv: ReadonlyRecord = {
   ">": (b: any) => (a: any) => a > b,
   "<=": (b: any) => (a: any) => a <= b,
   ">=": (b: any) => (a: any) => a >= b,
-  Eq: {
-    [typeclassTag]: true,
-    "==": (b: any) => (a: any) => equal(a, b),
-    "!=": (b: any) => (a: any) => !equal(a, b),
-  },
   "&": (b: any) => (a: any) => a && b,
   "|": (b: any) => (a: any) => a || b,
   "++": (b: any) => (a: any) =>
@@ -683,8 +673,6 @@ export const defaultEnv: ReadonlyRecord = {
   range: (n: number) => [...Array(n).keys()],
   "range-from": (from: number) => (to: number) =>
     [...Array(to).keys()].slice(from),
-  // map: (f: (x: any) => any) => (xs: any[]) =>
-  //   xs.map(f),
   group:
     (f: (x: any) => string) =>
     (x: Record<any, any>[]) => {

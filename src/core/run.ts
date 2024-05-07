@@ -1,4 +1,8 @@
 import { readFile, writeFile } from "node:fs/promises";
+import {
+  ReadableStream,
+  WritableStream,
+} from "node:stream/web";
 
 const args = process.argv.slice(2);
 
@@ -23,27 +27,39 @@ if (input) {
     throw "Architecture names can only contain alphanumerical characters and hyphens.";
   }
 
-  let run: (input: string) => Promise<string> | string;
   try {
-    const result = await import(
+    const { default: run } = await import(
       `./arch/${options.arch}.js`
     );
-    run = result.default;
+    const content = await run(input);
+    if (output) {
+      await writeFile(output, content);
+    } else {
+      process.stdout.write(content);
+    }
   } catch (_) {
     throw `Unknown architecture "${options.arch}".`;
   }
-  const content = await run(input);
-  if (output) {
-    await writeFile(output, content);
-  } else {
-    process.stdout.write(content);
-  }
 } else {
-  process.stdin.setEncoding("utf-8");
   (await import("./repl.js")).default(
-    process.stdin,
-    process.stdout,
-    process.stderr,
+    new ReadableStream({
+      start: async controller => {
+        process.stdin.setEncoding("utf-8");
+        process.stdin.setRawMode(true);
+        for await (const chunk of process.stdin)
+          controller.enqueue(chunk);
+      },
+    }),
+    new WritableStream({
+      write: chunk => {
+        process.stdout.write(chunk);
+      },
+    }),
+    new WritableStream({
+      write: chunk => {
+        process.stderr.write(chunk);
+      },
+    }),
     `Odd v${
       JSON.parse(
         await readFile("package.json", "utf-8")

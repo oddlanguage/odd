@@ -2,6 +2,7 @@ import { operatorRegex } from "./odd.js";
 import { Branch, Token, Tree } from "./parse.js";
 import { makeError } from "./problem.js";
 import {
+  Mutable,
   ReadonlyRecord,
   ansi,
   equal,
@@ -49,6 +50,10 @@ const newConstrainedType = (
   var: _var,
 });
 
+// TODO: This is to make the compiler shut up.
+// Remove when constrained types are implemented.
+newConstrainedType;
+
 const newClass = (
   name: string,
   _var: TypeVar,
@@ -62,7 +67,12 @@ const newClass = (
 
 type TypeEnv = Readonly<Record<string, Type>>;
 
+/** This type should ***never*** be used and should ***never*** leak
+ * from the equals functions, as it will destroy all type information.
+ * Later on, this should be removed in favour of typeclasses.
+ */
 export const anyType = Symbol("Any");
+
 export const neverType = Symbol("Never");
 export const lambdaType = Symbol("Lambda");
 export const recordType = Symbol("Record");
@@ -131,7 +141,7 @@ export const stringify = (
 ): string => {
   if (isAtomic(type)) {
     const str = type.description!;
-    return options.color ? ansi.gold(str) : str;
+    return options.color ? ansi.yellow(str) : str;
   } else if (isVar(type)) {
     const str =
       alphabet[type.var] ??
@@ -634,6 +644,7 @@ export const infer = (
       return [returnType, allSubs, env2];
     }
     case "list": {
+      // map f [x, ...xs] = [f x, ...(map f xs)];
       if ((tree as Branch).children.length === 0)
         return [newList(neverType), [], env];
 
@@ -648,11 +659,33 @@ export const infer = (
             env,
             input
           );
+
+          // TODO: This is a weird edge case, and I'm not sure if it's correct :)
+          if (child.type === "destructuring") {
+            const x = newVar();
+            (newSubs as Mutable<Substitutions>).push(
+              [x, newType],
+              [x, newList(newVar())]
+            );
+          }
+
+          const allSubs = compose(
+            subs,
+            newSubs,
+            child,
+            input
+          );
+          const appliedType = apply(
+            newType,
+            allSubs,
+            child,
+            input
+          );
           const actualNewType =
             child.type === "destructuring"
-              ? (newType as ParametricType)
+              ? (appliedType as ParametricType)
                   .children[0]!
-              : newType;
+              : appliedType;
           return [
             apply(
               actualNewType,
@@ -660,8 +693,8 @@ export const infer = (
               child,
               input
             ),
-            compose(subs, newSubs, child, input),
-            { ...env, ...newEnv },
+            allSubs,
+            applyEnv(newEnv, allSubs, child, input),
           ] as const;
         },
         [
@@ -887,7 +920,6 @@ const unify = (
   tree: Tree,
   input: string
 ): Substitutions => {
-  if (isAtomic(a) && isAtomic(b) && a === b) {
   if (
     (isAtomic(a) && isAtomic(b) && a === b) ||
     a === anyType ||

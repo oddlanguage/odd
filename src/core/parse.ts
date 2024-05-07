@@ -430,3 +430,10 @@ export const memo =
     );
     return result;
   };
+
+export const flatten = (
+  tree: Tree
+): ReadonlyArray<Token> => {
+  if ((tree as Token).text) return [tree as Token];
+  return (tree as Branch).children.flatMap(flatten);
+};
