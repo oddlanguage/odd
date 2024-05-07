@@ -646,6 +646,8 @@ export const typeclassTag = Symbol(
 
 // TODO: write these declarations in odd itself through a prelude
 export const defaultEnv: ReadonlyRecord = {
+  "==": (b: any) => (a: any) => a === b,
+  "!=": (b: any) => (a: any) => a !== b,
   "/": (b: number) => (a: number) => a / b,
   "*": (b: number) => (a: number) => a * b,
   "+": (b: number) => (a: number) => a + b,
