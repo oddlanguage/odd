@@ -756,51 +756,50 @@ export const infer = (
       ];
     }
     case "match": {
-      const [type] = infer(
+      const [matchType] = infer(
         (tree as Branch).children[0]!,
         env,
         input
       );
-      const cases = (tree as Branch).children
+      const [returnType, allSubs] = (
+        tree as Branch
+      ).children
         .slice(1)
-        .map(child => {
-          const [pattern, expr] = (child as Branch)
-            .children as [Branch, Branch];
-          const [env2, subs2] = extractPatterns(
-            pattern,
-            type,
-            input
-          );
-          const [caseType] = infer(
-            expr,
-            applyEnv(
-              { ...env, ...env2 },
-              subs2,
-              child,
+        .reduce(
+          ([type, subs], child) => {
+            const [pattern, expr] = (child as Branch)
+              .children as [Branch, Branch];
+            const [env2, subs2] = extractPatterns(
+              pattern,
+              matchType,
               input
-            ),
-            input
-          );
-          return caseType;
-        });
-      const [returnType, allSubs] = cases.reduce(
-        ([type, subs], _case) => {
-          const newSubs = compose(
-            subs,
-            unify(type, _case, tree, input),
-            tree,
-            input
-          );
-          return [
-            apply(type, newSubs, tree, input),
-            newSubs,
-          ] as const;
-        },
-        [newVar(), []] as readonly [
-          Type,
-          Substitutions
-        ]
-      );
+            );
+            const [caseType, subs3] = infer(
+              expr,
+              applyEnv(
+                { ...env, ...env2 },
+                compose(subs, subs2, child, input),
+                child,
+                input
+              ),
+              input
+            );
+            const subs4 = compose(
+              subs3,
+              unify(type, caseType, tree, input),
+              tree,
+              input
+            );
+            return [
+              apply(type, subs4, tree, input),
+              subs4,
+            ] as const;
+          },
+          [newVar(), []] as readonly [
+            Type,
+            Substitutions
+          ]
+        );
       return [returnType, allSubs, env];
     }
     case "typeclass": {
