@@ -106,7 +106,7 @@ test("Match expressions do not pollute scope", () => {
     return showOddValue(diff(defaultEnv, env));
 });
 
-test("Type inference", () => {
+test("Type inference (map case 1)", () => {
   const code = `
 		map f xs = case xs of
 			[] = [],
@@ -118,10 +118,30 @@ test("Type inference", () => {
     code
   );
 
-  const expected = "(a -> b) -> List a -> List b";
-  if (stringify(type) !== expected)
-    return `Expected\n  ${expected}\nBut got\n  ${stringify(
-      type,
-      { color: true }
-    )}`;
+  const expected =
+    /\(([^ ]+) -> ([^)]+)\) -> List \1 -> List \2/;
+  if (!expected.test(stringify(type)))
+    return `Expected\n  ${
+      expected.source
+    }\nBut got\n  ${stringify(type, { color: true })}`;
+});
+
+test("Type inference (map case 2)", () => {
+  const code = `
+		map f [x, ...xs] = case xs of
+			[] = [],
+			[x, ...xs] = [f x, ...(map f xs)];
+	`;
+  const [type] = infer(
+    parse(code),
+    defaultTypeEnv,
+    code
+  );
+
+  const expected =
+    /\(([^ ]+) -> ([^)]+)\) -> List \1 -> List \2/;
+  if (!expected.test(stringify(type)))
+    return `Expected\n  ${
+      expected.source
+    }\nBut got\n  ${stringify(type, { color: true })}`;
 });
