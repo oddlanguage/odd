@@ -1,4 +1,6 @@
 import { readFile, readdir } from "node:fs/promises";
+import Path from "node:path";
+import NodeURL from "node:url";
 import { Worker } from "node:worker_threads";
 import {
   ansi,
@@ -6,17 +8,12 @@ import {
   pluralise,
 } from "../core/util.js";
 
-// NOTE: This keeps the event loop alive.
-// Nodejs doesn't wait for "empty" promises
-// https://github.com/nodejs/node/issues/22088
-const timeout = setTimeout(() => {
-  throw "Why did this not terminate in 24 days?";
-}, 2147483647);
+const CWD = Path.dirname(
+  NodeURL.fileURLToPath(import.meta.url)
+);
 
 const files = (
-  await readdir("dist/test", {
-    recursive: true,
-  })
+  await readdir(CWD, { recursive: true })
 ).filter(
   file =>
     !file.endsWith(".map") &&
@@ -36,16 +33,6 @@ type Failure = Readonly<{
   error: string;
 }>;
 
-const exit = (ok: boolean) => {
-  if (ok) {
-    process.exitCode = 0;
-  } else {
-    process.exitCode = 1;
-  }
-  // NOTE: Clearing the "busywork" to tell node it can stop the process
-  clearTimeout(timeout);
-};
-
 const loadingChars = ["⠋", "⠙", "⠸", "⠴", "⠦", "⠇"];
 const { version } = JSON.parse(
   await readFile("package.json", "utf-8")
@@ -57,10 +44,7 @@ let done = 0;
 const failures: Record<string, Failure[]> = {};
 for (let line = 0; line < files.length; line++) {
   const file = files[line]!;
-  const worker = new Worker("./dist/test/" + file, {
-    stdout: true,
-    stderr: true,
-  });
+  const worker = new Worker(Path.join(CWD, file));
   let loadingCharIndex = 0;
   let totalFile = 0;
   let doneFile = 0;
@@ -145,7 +129,7 @@ for (let line = 0; line < files.length; line++) {
                 );
               }
             }
-            exit(ok);
+            process.exit(ok ? 0 : 1);
           }
         }
       }
