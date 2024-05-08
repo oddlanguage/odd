@@ -336,25 +336,25 @@ export const pluralise = (
 ) => count + " " + (count === 1 ? word : word + "s");
 
 export const getCursorPos = () =>
-  new Promise<readonly [number, number]>(resolve => {
-    const encoding =
-      process.stdin.readableEncoding ?? undefined;
-    process.stdin.setEncoding("utf8");
-    process.stdin.setRawMode(true);
-    process.stdin.once("readable", () => {
-      const [y, x] = JSON.stringify(
-        process.stdin.read()
-      )
-        .slice(1, -1)
-        .match(/\\u001b\[(\d+);(\d+)R$/)
-        ?.slice(1)
-        .map(parseInt) as [number, number];
-      process.stdin.setEncoding(encoding);
-      process.stdin.setRawMode(false);
-      resolve([x - 1, y - 1]);
-    });
-    process.stdout.write("\u001b[6n");
-  });
+  new Promise<readonly [number, number]>(
+    async resolve => {
+      const encoding =
+        process.stdin.readableEncoding ?? undefined;
+      process.stdin.setEncoding("utf8");
+      process.stdin.setRawMode(true);
+      process.stdout.write("\u001b[6n");
+      for await (const data of process.stdin) {
+        const [y, x] = JSON.stringify(data)
+          .slice(1, -1)
+          .match(/\\u001b\[(\d+);(\d+)R$/)
+          ?.slice(1)
+          .map(parseInt) as [number, number];
+        process.stdin.setEncoding(encoding);
+        process.stdin.setRawMode(false);
+        resolve([x - 1, y - 1]);
+      }
+    }
+  );
 
 export const dedent = (string: string) => {
   const whitespace = string.match(/^\n*([ \t]+)/)?.[1];
