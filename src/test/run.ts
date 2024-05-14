@@ -87,9 +87,18 @@ for (let line = 0; line < files.length; line++) {
             `${didFail ? "❌" : "✅"} ` +
               file +
               ansi.grey(
-                ` (${Math.floor(
-                  performance.now() - before
-                )}ms)`
+                " ".repeat(
+                  files.reduce((longest, file) =>
+                    file.length > longest.length
+                      ? file
+                      : longest
+                  ).length -
+                    file.length +
+                    1
+                ) +
+                  `(${Math.floor(
+                    performance.now() - before
+                  )}ms)`
               )
           );
 
