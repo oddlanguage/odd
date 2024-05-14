@@ -36,7 +36,7 @@ Feel free to contribute. [Please read our contributing guidelines](./CONTRIBUTIN
 
 ## 🖥️ Usage
 
-Download the latest release from the sidebar.
+[Download the latest release here.](https://github.com/oddlanguage/odd/releases/tag/v0.4.0-alpha)
 
 ### Local development
 
