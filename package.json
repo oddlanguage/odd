@@ -5,7 +5,7 @@
   "scripts": {
     "repl": "bun src/core/run.ts",
     "test": "bun src/test/run.ts",
-    "build": "bun build --target=bun-windows-x64 --compile --minify --sourcemap ./src/core/run.ts --outfile build/windows-x64/odd && bun build --target=bun-linux-x64 --compile --minify --sourcemap ./src/core/run.ts --outfile build/linux-x64/odd && bun build --target=bun-darwin-x64 --compile --minify --sourcemap ./src/core/run.ts --outfile build/darwin-x64/odd"
+    "build": "bun build --compile --minify --sourcemap ./src/core/run.ts --outfile build/odd"
   },
   "devDependencies": {
     "typescript": "^5.4.5"

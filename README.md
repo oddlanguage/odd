@@ -59,7 +59,7 @@ You can compile the source to a binary yourself, using the `build` command:
 
 ```sh
 bun run build; # compile
-./build/YOUR_ARCH/odd # run the repl binary (choose the correct architecture for your system).
+./build/odd # run the repl binary.
 ```
 
 For a more in-depth look at how Odd works, [have a look at the documentation](docs/syntax.md).
