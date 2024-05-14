@@ -853,7 +853,9 @@ const apply = (
     return target;
   } else if (isVar(target)) {
     for (const [tvar, sub] of subs) {
-      if (tvar.var === target.var) return sub;
+      if (tvar.var === target.var) {
+        return apply(sub, subs, tree, input);
+      }
     }
     return target;
   } else if (isParametric(target)) {
