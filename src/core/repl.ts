@@ -1,3 +1,4 @@
+import { createInterface } from "node:readline";
 import _eval from "./eval.js";
 import parse, { defaultEnv } from "./odd.js";
 import {
@@ -16,8 +17,12 @@ export default async (versionString: string) => {
   let typeEnv = defaultTypeEnv;
   const history: Array<string> = [];
 
-  process.stdin.setEncoding("utf-8");
-  for await (const input of process.stdin) {
+  const clapp = createInterface({
+    input: process.stdin,
+    output: process.stdout,
+  });
+  for await (const line of clapp) {
+    const input = line.trim();
     history.push(input);
     if (input.startsWith("!")) {
       const command = input.slice(1);
@@ -56,7 +61,7 @@ export default async (versionString: string) => {
         }
         default: {
           process.stdout.write(
-            `Unknown command "${command}".\n`
+            `Unknown command "${command}".\n> `
           );
           continue;
         }
