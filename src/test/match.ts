@@ -91,7 +91,7 @@ test("Record rest pattern case", () => {
   );
 
   if (!equal(result, { a: 1, b: 2 }))
-    `Expected { a: 1, b: 2 } but got ${result}`;
+    return `Expected { a: 1, b: 2 } but got ${result}`;
 });
 
 test("Match expressions do not pollute scope", () => {
