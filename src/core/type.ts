@@ -207,201 +207,249 @@ export const stringify = (
   }"`;
 };
 
-export const defaultTypeEnv: TypeEnv = (() => {
-  const a = newVar();
-  const b = newVar();
-  const c = newVar();
-
-  return {
-    "==": newLambda(
-      anyType,
-      newLambda(anyType, booleanType)
-    ),
-    "!=": newLambda(
-      anyType,
-      newLambda(anyType, booleanType)
-    ),
-    "/": newLambda(
-      numberType,
-      newLambda(numberType, numberType)
-    ),
-    "*": newLambda(
-      numberType,
-      newLambda(numberType, numberType)
-    ),
-    "+": newLambda(
-      numberType,
-      newLambda(numberType, numberType)
-    ),
-    "-": newLambda(
-      numberType,
-      newLambda(numberType, numberType)
-    ),
-    "%": newLambda(
-      numberType,
-      newLambda(numberType, numberType)
-    ),
-    "^": newLambda(
-      numberType,
-      newLambda(numberType, numberType)
-    ),
-    "&": newLambda(
-      booleanType,
-      newLambda(booleanType, booleanType)
-    ),
-    "|": newLambda(
-      booleanType,
-      newLambda(booleanType, booleanType)
-    ),
-    true: booleanType,
-    false: booleanType,
-    nothing: nothingType,
-    infinity: numberType,
-    not: newLambda(booleanType, booleanType),
-    "++": newLambda(
+export const defaultTypeEnv: TypeEnv = {
+  "==": newLambda(
+    anyType,
+    newLambda(anyType, booleanType)
+  ),
+  "!=": newLambda(
+    anyType,
+    newLambda(anyType, booleanType)
+  ),
+  "/": newLambda(
+    numberType,
+    newLambda(numberType, numberType)
+  ),
+  "*": newLambda(
+    numberType,
+    newLambda(numberType, numberType)
+  ),
+  "+": newLambda(
+    numberType,
+    newLambda(numberType, numberType)
+  ),
+  "-": newLambda(
+    numberType,
+    newLambda(numberType, numberType)
+  ),
+  "%": newLambda(
+    numberType,
+    newLambda(numberType, numberType)
+  ),
+  "^": newLambda(
+    numberType,
+    newLambda(numberType, numberType)
+  ),
+  "&": newLambda(
+    booleanType,
+    newLambda(booleanType, booleanType)
+  ),
+  "|": newLambda(
+    booleanType,
+    newLambda(booleanType, booleanType)
+  ),
+  true: booleanType,
+  false: booleanType,
+  nothing: nothingType,
+  infinity: numberType,
+  not: newLambda(booleanType, booleanType),
+  "++": (() => {
+    const a = newVar();
+    return newLambda(
       newList(a),
       newLambda(newList(a), newList(a))
-    ),
-    range: newLambda(numberType, newList(numberType)),
-    "range-from": newLambda(
-      numberType,
-      newLambda(numberType, newList(numberType))
-    ),
-    // map: newLambda(
-    //   newLambda(a, b),
-    //   newLambda(newList(a), newList(b))
-    // ),
-    filter: newLambda(
+    );
+  })(),
+  range: newLambda(numberType, newList(numberType)),
+  "range-from": newLambda(
+    numberType,
+    newLambda(numberType, newList(numberType))
+  ),
+  // map: newLambda(
+  //   newLambda(a, b),
+  //   newLambda(newList(a), newList(b))
+  // ),
+  filter: (() => {
+    const a = newVar();
+    return newLambda(
       newLambda(a, booleanType),
       newLambda(newList(a), newList(a))
-    ),
-    fold: newLambda(
+    );
+  })(),
+  fold: (() => {
+    const a = newVar();
+    const b = newVar();
+    return newLambda(
       newLambda(b, newLambda(a, b)),
       newLambda(b, newLambda(newList(a), b))
-    ),
-    scan: newLambda(
+    );
+  })(),
+  scan: (() => {
+    const a = newVar();
+    const b = newVar();
+    return newLambda(
       newLambda(b, newLambda(a, b)),
       newLambda(b, newLambda(newList(a), newList(b)))
-    ),
-    reverse: newLambda(newList(a), newList(a)),
-    tail: newLambda(newList(a), newList(a)),
-    drop: newLambda(
+    );
+  })(),
+  reverse: (() => {
+    const a = newVar();
+    return newLambda(newList(a), newList(a));
+  })(),
+  tail: (() => {
+    const a = newVar();
+    return newLambda(newList(a), newList(a));
+  })(),
+  drop: (() => {
+    const a = newVar();
+    return newLambda(
       numberType,
       newLambda(newList(a), newList(a))
-    ),
-    "|>": newLambda(a, newLambda(newLambda(a, b), b)),
-    "<|": newLambda(newLambda(a, b), newLambda(a, b)),
-    "<.": newLambda(
+    );
+  })(),
+  "|>": (() => {
+    const a = newVar();
+    const b = newVar();
+    return newLambda(a, newLambda(newLambda(a, b), b));
+  })(),
+  "<|": (() => {
+    const a = newVar();
+    const b = newVar();
+    return newLambda(newLambda(a, b), newLambda(a, b));
+  })(),
+  "<.": (() => {
+    const a = newVar();
+    const b = newVar();
+    const c = newVar();
+    return newLambda(
       newLambda(b, c),
       newLambda(newLambda(a, b), newLambda(a, c))
-    ),
-    ".>": newLambda(
+    );
+  })(),
+  ".>": (() => {
+    const a = newVar();
+    const b = newVar();
+    const c = newVar();
+    return newLambda(
       newLambda(a, b),
       newLambda(newLambda(b, c), newLambda(a, c))
-    ),
-    prepend: newLambda(
+    );
+  })(),
+  prepend: (() => {
+    const a = newVar();
+    return newLambda(
       a,
       newLambda(newList(a), newList(a))
-    ),
-    append: newLambda(
+    );
+  })(),
+  append: (() => {
+    const a = newVar();
+    return newLambda(
       a,
       newLambda(newList(a), newList(a))
-    ),
-    panic: newLambda(stringType, neverType),
-    benchmark: newLambda(newLambda(a, b), numberType),
-    // TODO: Implement these types as well
-    // "<": Ord a => a -> a -> Boolean,
-    // ">": Ord a => a -> a -> Boolean,
-    // "<=": Ord a => a -> a -> Boolean,
-    // ">=": Ord a => a -> a -> Boolean,
-    // "@": (k: string) => (x: any) => x[k],
-    // has: (k: string) => (x: any) => k in x,
-    // group:
-    //   (f: (x: any) => string) =>
-    //   (x: Record<any, any>[]) => {
-    //     const groups: Record<string, any> = {};
-    //     for (const obj of x) {
-    //       const key = f(obj);
-    //       if (!groups[key]) groups[key] = [];
-    //       groups[key].push(obj);
-    //     }
-    //     return groups;
-    //   },
-    // replace:
-    //   (key: keyof any) =>
-    //   (value: any) =>
-    //   (target: any) => {
-    //     if (Array.isArray(target)) {
-    //       const clone = target.slice();
-    //       clone.splice(key as number, 1, value);
-    //       return clone;
-    //     } else {
-    //       const clone = { ...target };
-    //       clone[key] = value;
-    //       return clone;
-    //     }
-    //   },
-    // TODO: Union with nothing
-    head: newLambda(newList(a), a),
-    // last: (xs: any[]) => xs[xs.length - 1] ?? nothing,
-    // sort:
-    //   (f: (b: any) => (a: any) => number) =>
-    //   (xs: any[]) =>
-    //     xs.slice().sort((a, b) => f(a)(b)),
-    // "sort-by": (key: string | Function) => (xs: any[]) =>
-    //   xs
-    //     .slice()
-    //     .sort((a, b) =>
-    //       typeof key === "function"
-    //         ? key(a) > key(b)
-    //           ? -1
-    //           : key(b) > key(a)
-    //           ? 1
-    //           : 0
-    //         : a[key] > b[key]
-    //         ? 1
-    //         : b[key] > a[key]
-    //         ? -1
-    //         : 0
-    //     ),
-    // partition:
-    //   (f: (x: any) => boolean) => (xs: any[]) => {
-    //     const parts: [any[], any[]] = [[], []];
-    //     for (const x of xs) parts[f(x) ? 1 : 0].push(x);
-    //     return parts;
-    //   },
-    // size: (x: any) =>
-    //   (typeof x === "string"
-    //     ? Array.from(new Intl.Segmenter().segment(x))
-    //     : Object.keys(x)
-    //   ).length,
-    // max: (a: any) => (b: any) => Math.max(a, b),
-    // min: (a: any) => (b: any) => Math.min(a, b),
-    // show: (x: any) => {
-    //   // TODO: Serialise as odd values instead of js values
-    //   console.log(serialise(x));
-    //   return x;
-    // },
-    // import: (name: string) => {
-    //   try {
-    //     const input = readFileSync(
-    //       path.parse(name).ext ? name : name + ".odd",
-    //       "utf8"
-    //     );
-    //     return _eval(parse(input), defaultEnv, input)[1];
-    //   } catch (err: any) {
-    //     // TODO: use `makeError`
-    //     throw err.code === "ENOENT"
-    //       ? `Cannot resolve module "${name}".`
-    //       : err.toString();
-    //   }
-    // },
-  };
-})();
+    );
+  })(),
+  panic: newLambda(stringType, neverType),
+  benchmark: (() => {
+    const a = newVar();
+    const b = newVar();
+    return newLambda(newLambda(a, b), numberType);
+  })(),
+  // TODO: Implement these types as well
+  // "<": Ord a => a -> a -> Boolean,
+  // ">": Ord a => a -> a -> Boolean,
+  // "<=": Ord a => a -> a -> Boolean,
+  // ">=": Ord a => a -> a -> Boolean,
+  // "@": (k: string) => (x: any) => x[k],
+  // has: (k: string) => (x: any) => k in x,
+  // group:
+  //   (f: (x: any) => string) =>
+  //   (x: Record<any, any>[]) => {
+  //     const groups: Record<string, any> = {};
+  //     for (const obj of x) {
+  //       const key = f(obj);
+  //       if (!groups[key]) groups[key] = [];
+  //       groups[key].push(obj);
+  //     }
+  //     return groups;
+  //   },
+  // replace:
+  //   (key: keyof any) =>
+  //   (value: any) =>
+  //   (target: any) => {
+  //     if (Array.isArray(target)) {
+  //       const clone = target.slice();
+  //       clone.splice(key as number, 1, value);
+  //       return clone;
+  //     } else {
+  //       const clone = { ...target };
+  //       clone[key] = value;
+  //       return clone;
+  //     }
+  //   },
+  // TODO: Union with nothing
+  head: (() => {
+    const a = newVar();
+    return newLambda(newList(a), a);
+  })(),
+  // last: (xs: any[]) => xs[xs.length - 1] ?? nothing,
+  // sort:
+  //   (f: (b: any) => (a: any) => number) =>
+  //   (xs: any[]) =>
+  //     xs.slice().sort((a, b) => f(a)(b)),
+  // "sort-by": (key: string | Function) => (xs: any[]) =>
+  //   xs
+  //     .slice()
+  //     .sort((a, b) =>
+  //       typeof key === "function"
+  //         ? key(a) > key(b)
+  //           ? -1
+  //           : key(b) > key(a)
+  //           ? 1
+  //           : 0
+  //         : a[key] > b[key]
+  //         ? 1
+  //         : b[key] > a[key]
+  //         ? -1
+  //         : 0
+  //     ),
+  // partition:
+  //   (f: (x: any) => boolean) => (xs: any[]) => {
+  //     const parts: [any[], any[]] = [[], []];
+  //     for (const x of xs) parts[f(x) ? 1 : 0].push(x);
+  //     return parts;
+  //   },
+  // size: (x: any) =>
+  //   (typeof x === "string"
+  //     ? Array.from(new Intl.Segmenter().segment(x))
+  //     : Object.keys(x)
+  //   ).length,
+  // max: (a: any) => (b: any) => Math.max(a, b),
+  // min: (a: any) => (b: any) => Math.min(a, b),
+  // show: (x: any) => {
+  //   // TODO: Serialise as odd values instead of js values
+  //   console.log(serialise(x));
+  //   return x;
+  // },
+  // import: (name: string) => {
+  //   try {
+  //     const input = readFileSync(
+  //       path.parse(name).ext ? name : name + ".odd",
+  //       "utf8"
+  //     );
+  //     return _eval(parse(input), defaultEnv, input)[1];
+  //   } catch (err: any) {
+  //     // TODO: use `makeError`
+  //     throw err.code === "ENOENT"
+  //       ? `Cannot resolve module "${name}".`
+  //       : err.toString();
+  //   }
+  // },
+};
 
-type Substitutions = ReadonlyArray<Substitution>;
-
+// TODO: Should probably use a Map for this?
 type Substitution = readonly [TypeVar, Type];
+type Substitutions = ReadonlyArray<Substitution>;
 
 export const infer = (
   tree: Tree,
@@ -454,7 +502,6 @@ export const infer = (
         tree,
         input
       );
-
       return [valueType, subs, appliedEnv];
     }
     case "number":
@@ -507,6 +554,26 @@ export const infer = (
         allSubs,
         tree,
         input
+      );
+
+      console.log(
+        `\n[lambda]\nparam\t|-> ${stringify(paramVar, {
+          color: true,
+        })}\nbody\t|-> ${stringify(bodyType, {
+          color: true,
+        })}\n` +
+          allSubs
+            .map(sub =>
+              sub
+                .map(x =>
+                  stringify(x, { color: true })
+                )
+                .join("\t|-> ")
+            )
+            .join("\n") +
+          `\nfinal\t|-> ${stringify(finalType, {
+            color: true,
+          })}`
       );
 
       return [finalType, allSubs, env];
@@ -644,9 +711,8 @@ export const infer = (
       return [returnType, allSubs, env2];
     }
     case "list": {
-      // map f [x, ...xs] = [f x, ...(map f xs)];
       if ((tree as Branch).children.length === 0)
-        return [newList(neverType), [], env];
+        return [newList(newVar()), [], env];
 
       const [type, subs, newEnv] = (
         tree as Branch
@@ -756,51 +822,71 @@ export const infer = (
       ];
     }
     case "match": {
-      const [matchType] = infer(
+      const [lhsType] = infer(
         (tree as Branch).children[0]!,
         env,
         input
       );
-      const [returnType, allSubs] = (
-        tree as Branch
-      ).children
+
+      const rhsVar = newVar();
+      const rhsSubs = (tree as Branch).children
         .slice(1)
-        .reduce(
-          ([type, subs], child) => {
-            const [pattern, expr] = (child as Branch)
-              .children as [Branch, Branch];
-            const [env2, subs2] = extractPatterns(
-              pattern,
-              matchType,
-              input
-            );
-            const [caseType, subs3] = infer(
-              expr,
-              applyEnv(
-                { ...env, ...env2 },
-                compose(subs, subs2, child, input),
+        .reduce((subs, child) => {
+          const [pattern, value] = (child as Branch)
+            .children as [Tree, Tree];
+
+          const [patterns, patternSubs] =
+            extractPatterns(pattern, lhsType, input);
+          const [valueType, valueSubs] = infer(
+            value,
+            { ...env, ...patterns },
+            input
+          );
+          return compose(
+            unify(rhsVar, valueType, child, input),
+            compose(
+              subs,
+              compose(
+                valueSubs,
+                patternSubs,
                 child,
                 input
               ),
+              child,
               input
-            );
-            const subs4 = compose(
-              subs3,
-              unify(type, caseType, tree, input),
-              tree,
-              input
-            );
-            return [
-              apply(type, subs4, tree, input),
-              subs4,
-            ] as const;
-          },
-          [newVar(), []] as readonly [
-            Type,
-            Substitutions
-          ]
-        );
-      return [returnType, allSubs, env];
+            ),
+            child,
+            input
+          );
+        }, [] as Substitutions);
+
+      const finalType = apply(
+        rhsVar,
+        rhsSubs,
+        tree,
+        input
+      );
+
+      // map f xs = case xs of [] = [], [x, ...xs] = [f x, ...(map f xs)];
+      console.log(
+        `[case]\nrhsVar\t|-> ${stringify(rhsVar, {
+          color: true,
+        })}\n` +
+          rhsSubs
+            .map(sub =>
+              sub
+                .map(x =>
+                  stringify(x, { color: true })
+                )
+                .join("\t|-> ")
+            )
+            .join("\n") +
+          `\nfinal\t|-> ${stringify(finalType, {
+            color: true,
+          })}`
+      );
+
+      return [finalType, rhsSubs, env];
     }
     case "typeclass": {
       const [name, param, ...methods] = (
