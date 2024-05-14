@@ -38,16 +38,25 @@ Feel free to contribute. [Please read our contributing guidelines](./CONTRIBUTIN
 
 Firstly, make sure you have installed NodeJS and its package manager, npm.
 
-Odd is guaranteed to work with [NodeJS version 20.11.1](https://nodejs.org/dist/v20.11.1/), but should be compatible with earlier versions down to v12 (inclusive, possibly requiring the `--harmony` flag).
+Odd is guaranteed to work with [Bun version 1.1.7](https://bun.sh/) and [NodeJS version 20.11.1](https://nodejs.org/dist/v20.11.1/), but should be compatible with earlier Node versions down to v12 (inclusive, possibly requiring the `--harmony` flag).
+
+We recommend you use [Yarn](https://yarnpkg.com/getting-started/install) as a package manager over npm. Of course, using npm is fully supported, and it comes with Node out-of-the-box!
 
 Afterwards, open up your shell of choice and run the following commands:
 
 ```sh
-npm i; # install dependencies
-npm run repl; # start a repl
+yarn; # install dependencies (you can use npm i).
+bun run repl; # start a repl
 ```
 
-> ℹ️ When Odd is finished, it will be a standalone executable requiring no separate Node installation, or any other dependency.
+> ℹ️ When Odd is finished, it will be a standalone executable requiring no separate runtime installation, or any other dependency.
+
+As of `v0.4.0-alpha`, you can compile the source to a binary yourself, using the `build` command:
+
+```sh
+bun run build; # compile
+./build # run the compiled binary (choose the correct architecture).
+```
 
 For a more in-depth look at how Odd works, [have a look at the documentation](docs/syntax.md).
 
@@ -61,7 +70,7 @@ Some work has yet to be done for odd to release as v1.0. The following is a list
 - [x] **0.1**: CLI REPL
 - [x] **0.2**: Modules
 - [x] **0.3**: Pattern matching
-- [x] **0.4**: Type system
+- [ ] **0.4**: Type system (ℹ️ _available for testing in v0.4.0-alpha_)
 - [ ] **0.5**: LSP for proper editor integration
 - [ ] **0.6**: Intelligble and helpful errors
 

@@ -3,12 +3,15 @@
   "name": "odd",
   "version": "0.4.0-alpha",
   "scripts": {
-    "repl": "tsc && (cls || clear) && node --enable-source-maps dist/core/run.js",
-    "test": "tsc && (cls || clear) && node --enable-source-maps dist/test/run.js"
+    "repl": "bun src/core/run.ts",
+    "test": "bun src/test/run.ts",
+    "build": "bun build --target=bun-windows-x64 --compile --minify --sourcemap ./src/core/run.ts --outfile build/windows-x64/odd && bun build --target=bun-linux-x64 --compile --minify --sourcemap ./src/core/run.ts --outfile build/linux-x64/odd && bun build --target=bun-darwin-x64 --compile --minify --sourcemap ./src/core/run.ts --outfile build/darwin-x64/odd"
   },
   "devDependencies": {
-    "@types/node": "^20.12.7",
     "typescript": "^5.4.5"
   },
-  "license": "MIT"
+  "license": "MIT",
+  "dependencies": {
+    "@types/bun": "^1.1.1"
+  }
 }
