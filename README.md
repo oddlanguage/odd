@@ -36,6 +36,10 @@ Feel free to contribute. [Please read our contributing guidelines](./CONTRIBUTIN
 
 ## 🖥️ Usage
 
+Download the latest release from the sidebar.
+
+### Local development
+
 Firstly, make sure you have installed NodeJS and its package manager, npm.
 
 Odd is guaranteed to work with [Bun version 1.1.7](https://bun.sh/) and [NodeJS version 20.11.1](https://nodejs.org/dist/v20.11.1/), but should be compatible with earlier Node versions down to v12 (inclusive, possibly requiring the `--harmony` flag).
@@ -49,13 +53,13 @@ yarn; # install dependencies (you can use npm i).
 bun run repl; # start a repl
 ```
 
-> ℹ️ When Odd is finished, it will be a standalone executable requiring no separate runtime installation, or any other dependency.
+### Compiling from source
 
-As of `v0.4.0-alpha`, you can compile the source to a binary yourself, using the `build` command:
+You can compile the source to a binary yourself, using the `build` command:
 
 ```sh
 bun run build; # compile
-./build # run the compiled binary (choose the correct architecture).
+./build/YOUR_ARCH/odd # run the repl binary (choose the correct architecture for your system).
 ```
 
 For a more in-depth look at how Odd works, [have a look at the documentation](docs/syntax.md).
