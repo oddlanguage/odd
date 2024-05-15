@@ -556,25 +556,25 @@ export const infer = (
         input
       );
 
-      console.log(
-        `\n[lambda]\nparam\t|-> ${stringify(paramVar, {
-          color: true,
-        })}\nbody\t|-> ${stringify(bodyType, {
-          color: true,
-        })}\n` +
-          allSubs
-            .map(sub =>
-              sub
-                .map(x =>
-                  stringify(x, { color: true })
-                )
-                .join("\t|-> ")
-            )
-            .join("\n") +
-          `\nfinal\t|-> ${stringify(finalType, {
-            color: true,
-          })}`
-      );
+      // console.log(
+      //   `\n[lambda]\nparam\t|-> ${stringify(paramVar, {
+      //     color: true,
+      //   })}\nbody\t|-> ${stringify(bodyType, {
+      //     color: true,
+      //   })}\n` +
+      //     allSubs
+      //       .map(sub =>
+      //         sub
+      //           .map(x =>
+      //             stringify(x, { color: true })
+      //           )
+      //           .join("\t|-> ")
+      //       )
+      //       .join("\n") +
+      //     `\nfinal\t|-> ${stringify(finalType, {
+      //       color: true,
+      //     })}`
+      // );
 
       return [finalType, allSubs, env];
     }
@@ -654,12 +654,46 @@ export const infer = (
 
       // TODO: Implement this through typeclasses
       // e.g. (Indexable a, Index b) => b -> a -> a[b]
-      if (
-        isParametric(lhsType) &&
-        (lhsType.constructor === recordType ||
-          lhsType.constructor === listType)
-      ) {
-        throw "Not implemented.";
+      if (isParametric(lhsType)) {
+        if (lhsType.constructor === recordType) {
+          const [rhsType] = infer(rhs, env1, input);
+          if (rhsType !== lhsType.children[0]) {
+            throw makeError(input, [
+              {
+                reason: `Cannot index ${stringify(
+                  lhsType,
+                  {
+                    color: true,
+                  }
+                )} with ${stringify(rhsType, {
+                  color: true,
+                })}.`,
+                at: rhs.offset,
+                size: rhs.size,
+              },
+            ]);
+          }
+          return [lhsType.children[1]!, lhsSubs, env1];
+        } else if (lhsType.constructor === listType) {
+          const [rhsType] = infer(rhs, env1, input);
+          if (rhsType !== lhsType.children[0]) {
+            throw makeError(input, [
+              {
+                reason: `Cannot index ${stringify(
+                  lhsType,
+                  {
+                    color: true,
+                  }
+                )} with ${stringify(rhsType, {
+                  color: true,
+                })}.`,
+                at: rhs.offset,
+                size: rhs.size,
+              },
+            ]);
+          }
+          return [lhsType.children[0]!, lhsSubs, env1];
+        }
       }
 
       const argVar = newVar();
@@ -712,7 +746,7 @@ export const infer = (
     }
     case "list": {
       if ((tree as Branch).children.length === 0)
-        return [newList(newVar()), [], env];
+        return [newList(neverType), [], env];
 
       const [type, subs, newEnv] = (
         tree as Branch
@@ -868,23 +902,23 @@ export const infer = (
       );
 
       // map f xs = case xs of [] = [], [x, ...xs] = [f x, ...(map f xs)];
-      console.log(
-        `[case]\nrhsVar\t|-> ${stringify(rhsVar, {
-          color: true,
-        })}\n` +
-          rhsSubs
-            .map(sub =>
-              sub
-                .map(x =>
-                  stringify(x, { color: true })
-                )
-                .join("\t|-> ")
-            )
-            .join("\n") +
-          `\nfinal\t|-> ${stringify(finalType, {
-            color: true,
-          })}`
-      );
+      // console.log(
+      //   `[case]\nrhsVar\t|-> ${stringify(rhsVar, {
+      //     color: true,
+      //   })}\n` +
+      //     rhsSubs
+      //       .map(sub =>
+      //         sub
+      //           .map(x =>
+      //             stringify(x, { color: true })
+      //           )
+      //           .join("\t|-> ")
+      //       )
+      //       .join("\n") +
+      //     `\nfinal\t|-> ${stringify(finalType, {
+      //       color: true,
+      //     })}`
+      // );
 
       return [finalType, rhsSubs, env];
     }
@@ -940,6 +974,7 @@ const apply = (
   } else if (isVar(target)) {
     for (const [tvar, sub] of subs) {
       if (tvar.var === target.var) {
+        if (sub === neverType) continue;
         return apply(sub, subs, tree, input);
       }
     }
@@ -982,13 +1017,8 @@ const compose = (
   b: Substitutions,
   tree: Tree,
   input: string
-): Substitutions => {
-  const result = union(a)(
-    b.map(([tvar, tsub]) => [
-      tvar,
-      apply(tsub, a, tree, input),
-    ])
-  ).reduce((subs, [tvarA, subA]) => {
+): Substitutions =>
+  union(a)(b).reduce((subs, [tvarA, subA]) => {
     const subB = subs.find(
       ([tvarB]) => tvarB.var === tvarA.var
     )?.[1];
@@ -998,8 +1028,6 @@ const compose = (
         : [[tvarA, subA]]
     );
   }, [] as Substitutions);
-  return result;
-};
 
 const unify = (
   a: Type,
