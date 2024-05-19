@@ -1,6 +1,7 @@
 import { createInterface } from "node:readline";
 import _eval from "./eval.js";
 import parse, { defaultEnv } from "./odd.js";
+import { makeError } from "./problem.js";
 import {
   defaultTypeEnv,
   infer,
@@ -25,22 +26,62 @@ export default async (versionString: string) => {
     const input = line.trim();
     history.push(input);
     if (input.startsWith("!")) {
-      const command = input.slice(1);
+      const [command, ...args] = input
+        .trim()
+        .slice(1)
+        .split(/\s+/);
       switch (command) {
         case "clear": {
           process.stdout.write("\x1B[2J\x1B[0;0f> ");
           continue;
         }
         case "env": {
+          if (args[0] && env[args[0]] === undefined) {
+            process.stderr.write(
+              makeError(input, [
+                {
+                  reason: `Environment does not contain the name "${args[0]}".\n> `,
+                  at: input.indexOf(args[0]),
+                  size: args[0].length,
+                },
+              ])
+            );
+            continue;
+          }
+          const target = args[0]
+            ? {
+                [args[0]]: env[args[0]],
+              }
+            : env;
           process.stdout.write(
-            Object.values(env)
+            Object.values(target)
               .map(showOddValue)
               .join("\n") + "\n> "
           );
           continue;
         }
         case "tenv": {
-          const entries = Object.entries(typeEnv).map(
+          if (
+            args[0] &&
+            typeEnv[args[0]] === undefined
+          ) {
+            process.stderr.write(
+              makeError(input, [
+                {
+                  reason: `Type environment does not contain the name "${args[0]}".\n> `,
+                  at: input.indexOf(args[0]),
+                  size: args[0].length,
+                },
+              ])
+            );
+            continue;
+          }
+          const target = args[0]
+            ? {
+                [args[0]]: typeEnv[args[0]],
+              }
+            : typeEnv;
+          const entries = Object.entries(target).map(
             ([k, v]) =>
               [showOddValue(env[k]), v] as const
           );
