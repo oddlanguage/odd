@@ -23,11 +23,15 @@ export default async (versionString: string) => {
     output: process.stdout,
   });
   for await (const line of clapp) {
+    if (line === undefined) {
+      // Bun emits undefined when sending SIGINT
+      process.stdout.write("Bye!");
+      process.exit(0);
+    }
     const input = line.trim();
     history.push(input);
     if (input.startsWith("!")) {
       const [command, ...args] = input
-        .trim()
         .slice(1)
         .split(/\s+/);
       switch (command) {
