@@ -18,7 +18,8 @@
     "importHelpers": true,
     "lib": ["ESNext"],
     "moduleResolution": "NodeNext",
-    "sourceMap": true
+    "sourceMap": true,
+    "rootDir": "src"
   },
-  "include": ["./src"]
+  "include": ["src"]
 }

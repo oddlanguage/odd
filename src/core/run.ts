@@ -23,18 +23,18 @@ if (input) {
     throw "Architecture names can only contain alphanumerical characters and hyphens.";
   }
 
+  let run: (input: string) => Promise<string>;
   try {
-    const { default: run } = await import(
-      `./arch/${options.arch}.js`
-    );
-    const content = await run(input);
-    if (output) {
-      await writeFile(output, content);
-    } else {
-      process.stdout.write(content);
-    }
+    run = (await import(`./arch/${options.arch}.js`))
+      .default;
   } catch (_) {
     throw `Unknown architecture "${options.arch}".`;
+  }
+  const content = await run(input);
+  if (output) {
+    await writeFile(output, content);
+  } else {
+    process.stdout.write(content);
   }
 } else {
   (await import("./repl.js")).default(
