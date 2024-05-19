@@ -6,6 +6,7 @@ import {
   ansi,
   equal,
   union,
+  unique,
 } from "./util.js";
 
 export type Type =
@@ -132,15 +133,86 @@ const isConstrainedType = (
 const isClass = (type: Type): type is TypeClass =>
   (type as TypeClass).type === "class";
 
+const free = (type: Type): ReadonlyArray<TypeVar> => {
+  if (isAtomic(type)) {
+    return [];
+  } else if (isVar(type)) {
+    return [type];
+  } else if (isParametric(type)) {
+    return unique(
+      type.children.flatMap(free),
+      x => x.var
+    );
+  } else if (isClass(type)) {
+    return [type.var];
+  } else if (isConstrainedType(type)) {
+    return free(type.constructor);
+  }
+  throw `Cannot get free variables from ${stringify(
+    type
+  )}`;
+};
+
+const normalise = (type: Type): Type => {
+  const freeVars = free(type);
+
+  const sub = (type: Type): Type => {
+    if (isAtomic(type)) {
+      return type;
+    } else if (isVar(type)) {
+      return {
+        ...type,
+        var: freeVars.findIndex(
+          x => x.var === type.var
+        ),
+      };
+    } else if (isParametric(type)) {
+      return {
+        ...type,
+        children: type.children.map(sub),
+      };
+    } else if (isClass(type)) {
+      return {
+        ...type,
+        var: sub(type.var) as TypeVar,
+        methods: Object.fromEntries(
+          Object.entries(type.methods).map(
+            ([k, v]) => [k, sub(v)]
+          )
+        ),
+      };
+    } else if (isConstrainedType(type)) {
+      return {
+        ...type,
+        constructor: sub(type.constructor),
+        var: sub(type.var) as TypeVar,
+        class: sub(type.class) as TypeClass,
+      };
+    }
+    throw `Cannot normalise ${stringify(type)}`;
+  };
+
+  return sub(type);
+};
+
 const alphabet = "abcdefghijklmnopqrstuvwxyz";
 const subscript = "₀₁₂₃₄₅₆₇₈₉";
 export const stringify = (
   type: Type,
-  options: { color?: boolean } = {}
+  options: {
+    colour?: boolean;
+    normalise?: boolean;
+  } = {}
 ): string => {
+  if (options.normalise) {
+    // TODO: This is super ugly. Don't mutate!
+    type = normalise(type);
+    options.normalise = false;
+  }
+
   if (isAtomic(type)) {
     const str = type.description!;
-    return options.color ? ansi.yellow(str) : str;
+    return options.colour ? ansi.yellow(str) : str;
   } else if (isVar(type)) {
     const str =
       alphabet[type.var] ??
@@ -152,7 +224,7 @@ export const stringify = (
         ]
           .map(x => subscript[Number(x)])
           .join("");
-    return options.color ? ansi.italic(str) : str;
+    return options.colour ? ansi.italic(str) : str;
   } else if (isParametric(type)) {
     if (type.infix) {
       return type.children
@@ -165,7 +237,7 @@ export const stringify = (
         )
         .join(
           ` ${
-            options.color
+            options.colour
               ? ansi.magenta(type.infix)
               : type.infix
           } `
@@ -177,7 +249,7 @@ export const stringify = (
     }
   } else if (isConstrainedType(type)) {
     return `(${
-      options.color
+      options.colour
         ? ansi.blue(type.class.name.description!)
         : type.class.name.description
     } ${stringify(type.var, options)}) => ${stringify(
@@ -202,7 +274,7 @@ export const stringify = (
   }
 
   throw `Cannot stringify "${
-    (type as any).type ?? type
+    (type as Exclude<Type, symbol>).type ?? type
   }"`;
 };
 
@@ -642,10 +714,10 @@ export const infer = (
                 reason: `Cannot index ${stringify(
                   lhsType,
                   {
-                    color: true,
+                    colour: true,
                   }
                 )} with ${stringify(rhsType, {
-                  color: true,
+                  colour: true,
                 })}.`,
                 at: rhs.offset,
                 size: rhs.size,
@@ -661,10 +733,10 @@ export const infer = (
                 reason: `Cannot index ${stringify(
                   lhsType,
                   {
-                    color: true,
+                    colour: true,
                   }
                 )} with ${stringify(rhsType, {
-                  color: true,
+                  colour: true,
                 })}.`,
                 at: rhs.offset,
                 size: rhs.size,
@@ -1021,9 +1093,9 @@ const unify = (
       throw makeError(input, [
         {
           reason: `Recursive types "${stringify(a, {
-            color: true,
+            colour: true,
           })}" and "${stringify(b, {
-            color: true,
+            colour: true,
           })}".`,
           at: tree.offset,
           size: tree.size,
@@ -1045,8 +1117,8 @@ const unify = (
   throw makeError(input, [
     {
       reason: `Cannot unify "${stringify(a, {
-        color: true,
-      })}" and "${stringify(b, { color: true })}"`,
+        colour: true,
+      })}" and "${stringify(b, { colour: true })}"`,
       at: tree.offset,
       size: tree.size,
     },

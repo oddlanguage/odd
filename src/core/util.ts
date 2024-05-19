@@ -187,7 +187,8 @@ export const equal = <
 };
 
 export const unique = <T>(
-  items: ReadonlyArray<T>
+  items: ReadonlyArray<T>,
+  by?: (item: T) => keyof any
 ): ReadonlyArray<T> => {
   if (isPrimitive(items[0]))
     return [...new Set(items)];
@@ -199,7 +200,14 @@ export const unique = <T>(
       : uniques
     ).push(item);
   }
-  return uniques;
+  return by
+    ? Object.values(
+        uniques.reduce(
+          (acc, x) => ({ ...acc, [by(x)]: x }),
+          {} as Record<keyof any, T>
+        )
+      )
+    : uniques;
 };
 
 export const last = <T>(arr: ReadonlyArray<T>) =>

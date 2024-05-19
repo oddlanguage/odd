@@ -42,7 +42,7 @@ export default async (versionString: string) => {
                 Object.entries(typeEnv).map(
                   ([k, t]) => [
                     k,
-                    stringify(t, { color: true }),
+                    stringify(t, { colour: true }),
                   ]
                 )
               )
@@ -83,7 +83,10 @@ export default async (versionString: string) => {
       process.stdout.write(
         showOddValue(result) +
           " : " +
-          stringify(type, { color: true }) +
+          stringify(type, {
+            colour: true,
+            normalise: true,
+          }) +
           "\n"
       );
       env = newEnv;
