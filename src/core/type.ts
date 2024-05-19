@@ -2,7 +2,6 @@ import { operatorRegex } from "./odd.js";
 import { Branch, Token, Tree } from "./parse.js";
 import { makeError } from "./problem.js";
 import {
-  Mutable,
   ReadonlyRecord,
   ansi,
   equal,
@@ -556,26 +555,6 @@ export const infer = (
         input
       );
 
-      // console.log(
-      //   `\n[lambda]\nparam\t|-> ${stringify(paramVar, {
-      //     color: true,
-      //   })}\nbody\t|-> ${stringify(bodyType, {
-      //     color: true,
-      //   })}\n` +
-      //     allSubs
-      //       .map(sub =>
-      //         sub
-      //           .map(x =>
-      //             stringify(x, { color: true })
-      //           )
-      //           .join("\t|-> ")
-      //       )
-      //       .join("\n") +
-      //     `\nfinal\t|-> ${stringify(finalType, {
-      //       color: true,
-      //     })}`
-      // );
-
       return [finalType, allSubs, env];
     }
     case "name":
@@ -748,27 +727,45 @@ export const infer = (
       if ((tree as Branch).children.length === 0)
         return [newList(neverType), [], env];
 
-      const [type, subs, newEnv] = (
+      const [type, subs] = (
         tree as Branch
       ).children.reduce(
-        ([type, subs, env], child) => {
-          const [newType, newSubs, newEnv] = infer(
-            child.type === "destructuring"
-              ? (child as Branch).children[0]!
-              : child,
-            env,
-            input
-          );
-
-          // TODO: This is a weird edge case, and I'm not sure if it's correct :)
+        ([type, subs], child) => {
+          let newType: Type;
+          let newSubs: Substitutions;
           if (child.type === "destructuring") {
-            const x = newVar();
-            (newSubs as Mutable<Substitutions>).push(
-              [x, newType],
-              [x, newList(newVar())]
+            [newType, newSubs] = infer(
+              (child as Branch).children[0]!,
+              env,
+              input
+            );
+            const subsToGetToList = unify(
+              newType,
+              newList(type),
+              child,
+              input
+            );
+            newSubs = compose(
+              newSubs,
+              subsToGetToList,
+              child,
+              input
+            );
+            newType = apply(
+              newType,
+              newSubs,
+              child,
+              input
+            );
+            newType = (newType as ParametricType)
+              .children[0]!;
+          } else {
+            [newType, newSubs] = infer(
+              child,
+              env,
+              input
             );
           }
-
           const allSubs = compose(
             subs,
             newSubs,
@@ -781,29 +778,19 @@ export const infer = (
             child,
             input
           );
-          const actualNewType =
-            child.type === "destructuring"
-              ? (appliedType as ParametricType)
-                  .children[0]!
-              : appliedType;
           return [
             apply(
-              actualNewType,
-              unify(type, actualNewType, child, input),
+              appliedType,
+              unify(type, appliedType, child, input),
               child,
               input
             ),
             allSubs,
-            applyEnv(newEnv, allSubs, child, input),
-          ] as const;
+          ];
         },
-        [
-          newVar() as Type,
-          [] as Substitutions,
-          env,
-        ] as const
+        [newVar(), []] as [Type, Substitutions]
       );
-      return [newList(type), subs, newEnv];
+      return [newList(type), subs, env];
     }
     case "record": {
       // TODO: Allow arbitrary key types
@@ -826,6 +813,7 @@ export const infer = (
             env,
             input
           );
+          // TODO: This is going to break just like it did for Lists
           const actualNewType =
             child.type === "destructuring"
               ? (newType as ParametricType)
@@ -840,13 +828,13 @@ export const infer = (
             ),
             compose(subs, newSubs, child, input),
             { ...env, ...newEnv },
-          ] as const;
+          ];
         },
-        [
-          newVar() as Type,
-          [] as Substitutions,
-          env,
-        ] as const
+        [newVar(), [], env] as [
+          Type,
+          Substitutions,
+          TypeEnv
+        ]
       );
       return [
         // TODO: Allow arbitrary key types
@@ -901,25 +889,6 @@ export const infer = (
         input
       );
 
-      // map f xs = case xs of [] = [], [x, ...xs] = [f x, ...(map f xs)];
-      // console.log(
-      //   `[case]\nrhsVar\t|-> ${stringify(rhsVar, {
-      //     color: true,
-      //   })}\n` +
-      //     rhsSubs
-      //       .map(sub =>
-      //         sub
-      //           .map(x =>
-      //             stringify(x, { color: true })
-      //           )
-      //           .join("\t|-> ")
-      //       )
-      //       .join("\n") +
-      //     `\nfinal\t|-> ${stringify(finalType, {
-      //       color: true,
-      //     })}`
-      // );
-
       return [finalType, rhsSubs, env];
     }
     case "typeclass": {
@@ -972,10 +941,16 @@ const apply = (
   if (isAtomic(target)) {
     return target;
   } else if (isVar(target)) {
-    for (const [tvar, sub] of subs) {
+    for (let i = 0; i < subs.length; i++) {
+      const [tvar, sub] = subs[i]!;
       if (tvar.var === target.var) {
         if (sub === neverType) continue;
-        return apply(sub, subs, tree, input);
+        return apply(
+          sub,
+          subs.toSpliced(i, 1),
+          tree,
+          input
+        );
       }
     }
     return target;
@@ -1078,13 +1053,21 @@ const unify = (
   ]);
 };
 
-const occurs = (a: Type, b: Type): boolean => {
+const occurs = (
+  a: Type,
+  b: Type,
+  root = true
+): boolean => {
   if (isParametric(a)) {
-    return a.children.some(child => occurs(child, b));
+    return a.children.some(child =>
+      occurs(child, b, false)
+    );
   } else if (isParametric(b)) {
-    return b.children.some(child => occurs(child, a));
+    return b.children.some(child =>
+      occurs(child, a, false)
+    );
   }
-  return equal(a, b);
+  return root ? false : equal(a, b);
 };
 
 const extractPatterns = (
