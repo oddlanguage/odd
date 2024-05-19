@@ -8,10 +8,8 @@
     "build": "bun build --compile --minify --sourcemap ./src/core/run.ts --outfile build/odd"
   },
   "devDependencies": {
+    "@types/bun": "^1.1.1",
     "typescript": "^5.4.5"
   },
-  "license": "MIT",
-  "dependencies": {
-    "@types/bun": "^1.1.1"
-  }
+  "license": "MIT"
 }
