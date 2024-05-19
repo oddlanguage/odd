@@ -78,7 +78,7 @@ export default async (versionString: string) => {
           }
           const target = args[0]
             ? {
-                [args[0]]: typeEnv[args[0]],
+                [args[0]]: typeEnv[args[0]]!,
               }
             : typeEnv;
           const entries = Object.entries(target).map(
