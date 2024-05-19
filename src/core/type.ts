@@ -149,7 +149,8 @@ const free = (type: Type): ReadonlyArray<TypeVar> => {
     return free(type.constructor);
   }
   throw `Cannot get free variables from ${stringify(
-    type
+    type,
+    { colour: true, normalise: true }
   )}`;
 };
 
@@ -189,7 +190,10 @@ const normalise = (type: Type): Type => {
         class: sub(type.class) as TypeClass,
       };
     }
-    throw `Cannot normalise ${stringify(type)}`;
+    throw `Cannot normalise ${stringify(type, {
+      colour: true,
+      normalise: true,
+    })}`;
   };
 
   return sub(type);
@@ -715,9 +719,11 @@ export const infer = (
                   lhsType,
                   {
                     colour: true,
+                    normalise: true,
                   }
                 )} with ${stringify(rhsType, {
                   colour: true,
+                  normalise: true,
                 })}.`,
                 at: rhs.offset,
                 size: rhs.size,
@@ -734,9 +740,11 @@ export const infer = (
                   lhsType,
                   {
                     colour: true,
+                    normalise: true,
                   }
                 )} with ${stringify(rhsType, {
                   colour: true,
+                  normalise: true,
                 })}.`,
                 at: rhs.offset,
                 size: rhs.size,
@@ -1094,8 +1102,10 @@ const unify = (
         {
           reason: `Recursive types "${stringify(a, {
             colour: true,
+            normalise: true,
           })}" and "${stringify(b, {
             colour: true,
+            normalise: true,
           })}".`,
           at: tree.offset,
           size: tree.size,
@@ -1118,7 +1128,11 @@ const unify = (
     {
       reason: `Cannot unify "${stringify(a, {
         colour: true,
-      })}" and "${stringify(b, { colour: true })}"`,
+        normalise: true,
+      })}" and "${stringify(b, {
+        colour: true,
+        normalise: true,
+      })}"`,
       at: tree.offset,
       size: tree.size,
     },

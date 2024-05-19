@@ -125,6 +125,7 @@ test("Type inference (map case 1)", () => {
       expected.source
     }\nBut got\n  ${stringify(type, {
       colour: true,
+      normalise: true,
     })}`;
 });
 
@@ -147,5 +148,6 @@ test("Type inference (map case 2)", () => {
       expected.source
     }\nBut got\n  ${stringify(type, {
       colour: true,
+      normalise: true,
     })}`;
 });

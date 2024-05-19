@@ -19,7 +19,8 @@ test("The type of a class expression is itself", () => {
     )
   ) {
     throw `Expected:\n  ${code}\nBut got\n  ${stringify(
-      type
+      type,
+      { colour: true, normalise: true }
     )}`;
   }
 });
@@ -37,7 +38,10 @@ test("Class expressions extend the type environment", () => {
   if (env["Eq"] !== type) {
     throw `Expected env["Eq"] to be:\n  ${stringify(
       env["Eq"]
-    )}\nBut got:\n  ${stringify(type)}`;
+    )}\nBut got:\n  ${stringify(type, {
+      colour: true,
+      normalise: true,
+    })}`;
   }
 });
 
