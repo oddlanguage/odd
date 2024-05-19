@@ -123,7 +123,9 @@ test("Type inference (map case 1)", () => {
   if (!expected.test(stringify(type)))
     return `Expected\n  ${
       expected.source
-    }\nBut got\n  ${stringify(type, { color: true })}`;
+    }\nBut got\n  ${stringify(type, {
+      colour: true,
+    })}`;
 });
 
 test("Type inference (map case 2)", () => {
@@ -143,5 +145,7 @@ test("Type inference (map case 2)", () => {
   if (!expected.test(stringify(type)))
     return `Expected\n  ${
       expected.source
-    }\nBut got\n  ${stringify(type, { color: true })}`;
+    }\nBut got\n  ${stringify(type, {
+      colour: true,
+    })}`;
 });
