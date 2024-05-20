@@ -1,10 +1,13 @@
-import parse from "../core/odd.js";
+import _eval from "../core/eval.js";
+import parse, { defaultEnv } from "../core/odd.js";
 import test from "../core/test.js";
 import {
   defaultTypeEnv,
   infer,
+  numberType,
   stringify,
 } from "../core/type.js";
+import { equal, showOddValue } from "../core/util.js";
 
 test("The type of a class expression is itself", () => {
   const code = `class Eq a where (==) : a -> a -> Boolean`;
@@ -42,6 +45,63 @@ test("Class expressions extend the type environment", () => {
       colour: true,
       normalise: true,
     })}`;
+  }
+});
+
+test("List Never propagation", () => {
+  const code = `prepend 1 []`;
+  const parsed = parse(code);
+  const [type] = infer(parsed, defaultTypeEnv, code);
+  if (stringify(type) !== "List Number") {
+    return `Expected List Number but got ${stringify(
+      type,
+      {
+        colour: true,
+        normalise: true,
+      }
+    )}`;
+  }
+  const [value] = _eval(parsed, defaultEnv, code);
+  if (!equal(value, [1])) {
+    return `Expected [ 1 ] but got ${showOddValue(
+      value
+    )}`;
+  }
+});
+
+test("Never type short-circuit", () => {
+  const code = `foo x = panic x`;
+  const [type] = infer(
+    parse(code),
+    defaultTypeEnv,
+    code
+  );
+  if (stringify(type) !== "String -> Never") {
+    return `Expected String -> Never but got ${stringify(
+      type,
+      { colour: true, normalise: true }
+    )}`;
+  }
+});
+
+test("Never type in patterns", () => {
+  const code = `case ([1]) of [] = infinity, [x] = x;`;
+  const parsed = parse(code);
+  const [type] = infer(parsed, defaultTypeEnv, code);
+  if (stringify(type) !== "Number") {
+    return `Expected ${stringify(numberType, {
+      colour: true,
+      normalise: true,
+    })} but got ${stringify(type, {
+      colour: true,
+      normalise: true,
+    })}`;
+  }
+  const [value] = _eval(parsed, defaultEnv, code);
+  if (!equal(value, 1)) {
+    return `Expected ${showOddValue(
+      1
+    )} but got ${showOddValue(value)}`;
   }
 });
 

@@ -106,7 +106,7 @@ test("Match expressions do not pollute scope", () => {
     return showOddValue(diff(defaultEnv, env));
 });
 
-test("Type inference (map case 1)", () => {
+test("Application constraint propagation in case expression", () => {
   const code = `
 		map f xs = case xs of
 			[] = [],
@@ -129,9 +129,9 @@ test("Type inference (map case 1)", () => {
     })}`;
 });
 
-test("Type inference (map case 2)", () => {
+test("List destructuring in case expression", () => {
   const code = `
-		map f [x, ...xs] = case xs of
+		map f xs = case xs of
 			[] = [],
 			[x, ...xs] = [f x, ...(map f xs)];
 	`;
@@ -150,4 +150,9 @@ test("Type inference (map case 2)", () => {
       colour: true,
       normalise: true,
     })}`;
+});
+
+test("Match expressions are exhaustive", () => {
+  // TODO: Implement lol
+  return "Not implemented.";
 });
