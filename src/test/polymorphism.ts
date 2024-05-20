@@ -17,7 +17,7 @@ test("The type of a class expression is itself", () => {
     code
   );
   if (
-    !/class Eq (\w+) where \(==\) : \1 -> \1 -> Boolean/.test(
+    !/class Eq (\S+) where \(==\) : \1 -> \1 -> Boolean/.test(
       stringify(type)
     )
   ) {
