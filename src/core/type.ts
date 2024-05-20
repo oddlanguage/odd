@@ -430,24 +430,28 @@ export const defaultTypeEnv: TypeEnv = {
     const b = newVar();
     return newLambda(newLambda(a, b), numberType);
   })(),
-  // TODO: Implement these types as well
   // "<": Ord a => a -> a -> Boolean,
   // ">": Ord a => a -> a -> Boolean,
   // "<=": Ord a => a -> a -> Boolean,
   // ">=": Ord a => a -> a -> Boolean,
-  // "@": (k: string) => (x: any) => x[k],
-  // has: (k: string) => (x: any) => k in x,
-  // group:
-  //   (f: (x: any) => string) =>
-  //   (x: Record<any, any>[]) => {
-  //     const groups: Record<string, any> = {};
-  //     for (const obj of x) {
-  //       const key = f(obj);
-  //       if (!groups[key]) groups[key] = [];
-  //       groups[key].push(obj);
-  //     }
-  //     return groups;
-  //   },
+  // "@": Indexable a => b -> a -> a b,
+  has: newLambda(
+    stringType,
+    newLambda(
+      newRecord(stringType, anyType),
+      booleanType
+    )
+  ),
+  group: (() => {
+    const a = newVar();
+    return newLambda(
+      newLambda(a, stringType),
+      newLambda(
+        newList(a),
+        newRecord(stringType, newList(a))
+      )
+    );
+  })(),
   // replace:
   //   (key: keyof any) =>
   //   (value: any) =>
@@ -467,59 +471,53 @@ export const defaultTypeEnv: TypeEnv = {
     const a = newVar();
     return newLambda(newList(a), a);
   })(),
-  // last: (xs: any[]) => xs[xs.length - 1] ?? nothing,
-  // sort:
-  //   (f: (b: any) => (a: any) => number) =>
-  //   (xs: any[]) =>
-  //     xs.slice().sort((a, b) => f(a)(b)),
-  // "sort-by": (key: string | Function) => (xs: any[]) =>
-  //   xs
-  //     .slice()
-  //     .sort((a, b) =>
-  //       typeof key === "function"
-  //         ? key(a) > key(b)
-  //           ? -1
-  //           : key(b) > key(a)
-  //           ? 1
-  //           : 0
-  //         : a[key] > b[key]
-  //         ? 1
-  //         : b[key] > a[key]
-  //         ? -1
-  //         : 0
-  //     ),
-  // partition:
-  //   (f: (x: any) => boolean) => (xs: any[]) => {
-  //     const parts: [any[], any[]] = [[], []];
-  //     for (const x of xs) parts[f(x) ? 1 : 0].push(x);
-  //     return parts;
-  //   },
-  // size: (x: any) =>
-  //   (typeof x === "string"
-  //     ? Array.from(new Intl.Segmenter().segment(x))
-  //     : Object.keys(x)
-  //   ).length,
-  // max: (a: any) => (b: any) => Math.max(a, b),
-  // min: (a: any) => (b: any) => Math.min(a, b),
-  // show: (x: any) => {
-  //   // TODO: Serialise as odd values instead of js values
-  //   console.log(serialise(x));
-  //   return x;
-  // },
-  // import: (name: string) => {
-  //   try {
-  //     const input = readFileSync(
-  //       path.parse(name).ext ? name : name + ".odd",
-  //       "utf8"
-  //     );
-  //     return _eval(parse(input), defaultEnv, input)[1];
-  //   } catch (err: any) {
-  //     // TODO: use `makeError`
-  //     throw err.code === "ENOENT"
-  //       ? `Cannot resolve module "${name}".`
-  //       : err.toString();
-  //   }
-  // },
+  last: (() => {
+    const a = newVar();
+    return newLambda(newList(a), a);
+  })(),
+  sort: (() => {
+    const a = newVar();
+    return newLambda(
+      newLambda(a, newLambda(a, numberType)),
+      newLambda(newList(a), newList(a))
+    );
+  })(),
+  "sort-by": (() => {
+    const a = newVar();
+    return newLambda(
+      newLambda(a, numberType),
+      newLambda(newList(a), newList(a))
+    );
+  })(),
+  partition: (() => {
+    const a = newVar();
+    return newLambda(
+      newLambda(a, booleanType),
+      newLambda(newList(a), newList(newList(a)))
+    );
+  })(),
+  size: (() => {
+    const a = newVar();
+    return newLambda(a, numberType);
+  })(),
+  min: (() => {
+    const a = newVar();
+    return newLambda(a, newLambda(a, a));
+  })(),
+  max: (() => {
+    const a = newVar();
+    return newLambda(a, newLambda(a, a));
+  })(),
+  show: newLambda(anyType, stringType),
+  log: newLambda(anyType, nothingType),
+  import: newLambda(
+    stringType,
+    newRecord(stringType, anyType)
+  ),
+  print: (() => {
+    const a = newVar();
+    return newLambda(a, a);
+  })(),
 };
 
 // TODO: Should probably use a Map for this?

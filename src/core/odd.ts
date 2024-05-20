@@ -724,25 +724,18 @@ export const defaultEnv: ReadonlyRecord = {
     (f: (b: any) => (a: any) => number) =>
     (xs: any[]) =>
       xs.slice().sort((a, b) => f(a)(b)),
-  "sort-by": (key: string | Function) => (xs: any[]) =>
-    xs
-      .slice()
-      .sort((a, b) =>
-        typeof key === "function"
-          ? key(a) > key(b)
-            ? -1
-            : key(b) > key(a)
-            ? 1
-            : 0
-          : a[key] > b[key]
-          ? 1
-          : b[key] > a[key]
-          ? -1
-          : 0
-      ),
+  "sort-by":
+    <T>(by: (x: T) => number) =>
+    (xs: T[]) =>
+      xs
+        .slice()
+        .sort((a, b) =>
+          by(a) > by(b) ? -1 : by(b) > by(a) ? 1 : 0
+        ),
   partition:
-    (f: (x: any) => boolean) => (xs: any[]) => {
-      const parts: [any[], any[]] = [[], []];
+    <T>(f: (x: T) => boolean) =>
+    (xs: T[]) => {
+      const parts: [T[], T[]] = [[], []];
       for (const x of xs) parts[f(x) ? 1 : 0].push(x);
       return parts;
     },
@@ -755,10 +748,11 @@ export const defaultEnv: ReadonlyRecord = {
   append: (x: any) => (xs: any[]) => xs.concat(x),
   max: (a: any) => (b: any) => Math.max(a, b),
   min: (a: any) => (b: any) => Math.min(a, b),
-  show: (x: any) => {
+  print: (x: any) => {
     console.log(showOddValue(x));
     return x;
   },
+  show: (x: any) => x.toString(),
   import: (name: string) => {
     try {
       const input = readFileSync(
