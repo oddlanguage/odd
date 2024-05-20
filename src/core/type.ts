@@ -1179,6 +1179,12 @@ const extractPatterns = (
   env?: TypeEnv
 ): readonly [TypeEnv, Substitutions] => {
   switch (pattern.type) {
+    case "boolean": {
+      return [
+        {},
+        unify(type, booleanType, pattern, input),
+      ];
+    }
     case "wildcard": {
       return [{}, []];
     }
