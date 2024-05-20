@@ -44,11 +44,11 @@ export default async (versionString: string) => {
             process.stderr.write(
               makeError(input, [
                 {
-                  reason: `Environment does not contain the name "${args[0]}".\n> `,
+                  reason: `Environment does not contain the name "${args[0]}".`,
                   at: input.indexOf(args[0]),
                   size: args[0].length,
                 },
-              ])
+              ]) + "\n> "
             );
             continue;
           }
