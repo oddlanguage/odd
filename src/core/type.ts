@@ -799,9 +799,20 @@ export const infer = (
         tree,
         input
       ) as ParametricType;
-      const returnType = applied.children[1]!;
 
-      return [returnType, allSubs, env2];
+      const appliedSubs = compose(
+        unify(
+          apply(argType, allArgsSubs, lhs, input),
+          applied.children[0]!,
+          rhs,
+          input
+        ),
+        allSubs,
+        tree,
+        input
+      );
+      const returnType = applied.children[1]!;
+      return [returnType, appliedSubs, env2];
     }
     case "list": {
       if ((tree as Branch).children.length === 0)
@@ -938,7 +949,12 @@ export const infer = (
             .children as [Tree, Tree];
 
           const [patterns, patternSubs] =
-            extractPatterns(pattern, lhsType, input);
+            extractPatterns(
+              pattern,
+              lhsType,
+              input,
+              env
+            );
           const [valueType, valueSubs] = infer(
             value,
             { ...env, ...patterns },
@@ -1126,13 +1142,13 @@ const unify = (
 
   throw makeError(input, [
     {
-      reason: `Cannot unify "${stringify(a, {
+      reason: `Cannot unify ${stringify(a, {
         colour: true,
         normalise: true,
-      })}" and "${stringify(b, {
+      })} and ${stringify(b, {
         colour: true,
         normalise: true,
-      })}"`,
+      })}`,
       at: tree.offset,
       size: tree.size,
     },
