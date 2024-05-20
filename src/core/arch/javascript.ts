@@ -65,7 +65,7 @@ const stringify = (
         node as Branch
       ).children.map(node => stringify(node, input));
       return `${
-        /^[[{]]/.test(pattern!)
+        /^[[{]/.test(pattern!)
           ? `(${pattern})`
           : pattern
       } => ${
@@ -124,6 +124,28 @@ const stringify = (
             : " "),
         ""
       )}]`;
+    }
+    case "record-pattern": {
+      return `{ ${(node as Branch).children
+        .map(child => stringify(child, input))
+        .join(", ")} }`;
+    }
+    case "field-pattern": {
+      return stringify(
+        (node as Branch).children[0]!,
+        input
+      );
+    }
+    case "list-pattern": {
+      return `[ ${(node as Branch).children
+        .map(child => stringify(child, input))
+        .join(", ")} ]`;
+    }
+    case "rest-pattern": {
+      return `...${stringify(
+        (node as Branch).children[0]!,
+        input
+      )}`;
     }
     default: {
       throw makeError(input, [
