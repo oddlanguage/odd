@@ -104,5 +104,6 @@ test("Fields can reference outer scope", () => {
     code
   );
 
-  if (result !== 1) `Expected 1 but got ${result}`;
+  if (result !== 1)
+    `Expected\n  1\nbut got\n  ${result}`;
 });

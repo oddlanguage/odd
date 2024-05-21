@@ -39,7 +39,7 @@ test("Class expressions extend the type environment", () => {
     throw `Environment does not contain "Eq" class.`;
   }
   if (env["Eq"] !== type) {
-    throw `Expected env["Eq"] to be:\n  ${stringify(
+    throw `Expected:\n  ${stringify(
       env["Eq"]
     )}\nBut got:\n  ${stringify(type, {
       colour: true,
@@ -53,7 +53,7 @@ test("List Never propagation", () => {
   const parsed = parse(code);
   const [type] = infer(parsed, defaultTypeEnv, code);
   if (stringify(type) !== "List Number") {
-    return `Expected List Number but got ${stringify(
+    return `Expected\n  List Number\nbut got\n  ${stringify(
       type,
       {
         colour: true,
@@ -63,7 +63,7 @@ test("List Never propagation", () => {
   }
   const [value] = _eval(parsed, defaultEnv, code);
   if (!equal(value, [1])) {
-    return `Expected [ 1 ] but got ${showOddValue(
+    return `Expected\n  [ 1 ]\nbut got\n  ${showOddValue(
       value
     )}`;
   }
@@ -77,7 +77,7 @@ test("Never type short-circuit", () => {
     code
   );
   if (stringify(type) !== "String -> Never") {
-    return `Expected String -> Never but got ${stringify(
+    return `Expected\n  String -> Never\nbut got\n  ${stringify(
       type,
       { colour: true, normalise: true }
     )}`;
@@ -89,10 +89,10 @@ test("Never type in patterns", () => {
   const parsed = parse(code);
   const [type] = infer(parsed, defaultTypeEnv, code);
   if (stringify(type) !== "Number") {
-    return `Expected ${stringify(numberType, {
+    return `Expected\n  ${stringify(numberType, {
       colour: true,
       normalise: true,
-    })} but got ${stringify(type, {
+    })}\nbut got\n  ${stringify(type, {
       colour: true,
       normalise: true,
     })}`;

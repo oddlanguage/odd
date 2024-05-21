@@ -13,8 +13,11 @@ test("Declared values are stored in scope", () => {
   const parsed = parse(code);
   const [, , env] = _eval(parsed, defaultEnv, code);
 
-  if (env["a"] !== 1)
-    return `Expected 1 but got ${env["a"]}`;
+  if (env["a"] !== 1) {
+    return `Expected\n  1\nbut got\n  ${showOddValue(
+      env["a"]
+    )}`;
+  }
 });
 
 test("Declarations evaluate to rhs", () => {
@@ -22,8 +25,11 @@ test("Declarations evaluate to rhs", () => {
   const parsed = parse(code);
   const [result] = _eval(parsed, defaultEnv, code);
 
-  if (result !== 1)
-    return `Expected 1 but got ${result}`;
+  if (result !== 1) {
+    return `Expected\n  1\nbut got\n  ${showOddValue(
+      result
+    )}`;
+  }
 });
 
 test("Function declarations are desugared into lambdas", () => {
@@ -36,8 +42,9 @@ test("Function declarations are desugared into lambdas", () => {
       b,
       ([key]) => !["offset", "size"].includes(key)
     )
-  )
+  ) {
     return showOddValue(diff(a, b));
+  }
 });
 
 test("Custom infix operators", () => {
@@ -45,8 +52,11 @@ test("Custom infix operators", () => {
   const parsed = parse(code);
   const [result] = _eval(parsed, defaultEnv, code);
 
-  if (result !== 7)
-    return `Expected 7 but got ${result}`;
+  if (result !== 7) {
+    return `Expected\n  7\nbut got\n  ${showOddValue(
+      result
+    )}`;
+  }
 });
 
 test("Custom infix operators preserve environment", () => {
@@ -57,12 +67,14 @@ test("Custom infix operators preserve environment", () => {
   const parsed = parse(code);
   const [, , env] = _eval(parsed, defaultEnv, code);
 
-  if (typeof env["%^&"] !== "function")
+  if (typeof env["%^&"] !== "function") {
     return `Operator %^& was not defined or is not a function`;
+  }
   if (
     !equal(env, defaultEnv, ([key]) => key !== "%^&")
-  )
+  ) {
     return `Environment was altered outside of %^&`;
+  }
 });
 
 test("Infix declarations are desugared into lambdas", () => {
@@ -75,8 +87,9 @@ test("Infix declarations are desugared into lambdas", () => {
       b,
       ([key]) => !["offset", "size"].includes(key)
     )
-  )
+  ) {
     return showOddValue(diff(a, b));
+  }
 });
 
 test("Infix declarations allow arbitrary patterns", () => {
@@ -87,8 +100,9 @@ test("Infix declarations allow arbitrary patterns", () => {
   const parsed = parse(code);
   const [result] = _eval(parsed, defaultEnv, code);
 
-  if (result !== 3)
-    return `Expected 3 but got ${result}`;
+  if (result !== 3) {
+    return `Expected\n  3\nbut got\n  ${result}`;
+  }
 });
 
 test("Nth-order list pattern destructuring", () => {
@@ -96,16 +110,26 @@ test("Nth-order list pattern destructuring", () => {
   const parsed = parse(code);
   const [, , env] = _eval(parsed, defaultEnv, code);
 
-  if (env["a"] !== 1)
-    return `Expected 1 but got ${env["a"]}`;
-  if (env["b"] !== 2)
-    return `Expected 2 but got ${env["b"]}`;
-  if (env["c"] !== 3)
-    return `Expected 3 but got ${env["c"]}`;
-  if (!equal(env["de"], [4, 5]))
-    return `Expected [4, 5] but got ${showOddValue(
+  if (env["a"] !== 1) {
+    return `Expected\n  1\nbut got\n  ${showOddValue(
+      env["a"]
+    )}`;
+  }
+  if (env["b"] !== 2) {
+    return `Expected\n  2\nbut got\n  ${showOddValue(
+      env["b"]
+    )}`;
+  }
+  if (env["c"] !== 3) {
+    return `Expected\n  3\nbut got\n  ${showOddValue(
+      env["c"]
+    )}`;
+  }
+  if (!equal(env["de"], [4, 5])) {
+    return `Expected\n  [4, 5]\nbut got\n  ${showOddValue(
       env["de"]
     )}`;
+  }
 });
 
 test("Nth-order record pattern destructuring", () => {
@@ -113,12 +137,21 @@ test("Nth-order record pattern destructuring", () => {
   const parsed = parse(code);
   const [, , env] = _eval(parsed, defaultEnv, code);
 
-  if (env["a"] !== 1)
-    return `Expected 1 but got ${env["a"]}`;
-  if (env["c"] !== 2)
-    return `Expected 2 but got ${env["c"]}`;
-  if (env["e"] !== 3)
-    return `Expected 3 but got ${env["e"]}`;
+  if (env["a"] !== 1) {
+    return `Expected\n  1\nbut got\n  ${showOddValue(
+      env["a"]
+    )}`;
+  }
+  if (env["c"] !== 2) {
+    return `Expected\n  2\nbut got\n  ${showOddValue(
+      env["c"]
+    )}`;
+  }
+  if (env["e"] !== 3) {
+    return `Expected\n  3\nbut got\n  ${showOddValue(
+      env["e"]
+    )}`;
+  }
 });
 
 test("List destructuring rest pattern", () => {
@@ -126,14 +159,16 @@ test("List destructuring rest pattern", () => {
   const parsed = parse(code);
   const [, , env] = _eval(parsed, defaultEnv, code);
 
-  if (env["a"] !== 1)
-    return `Expected 1 but got ${showOddValue(
+  if (env["a"] !== 1) {
+    return `Expected\n  1\nbut got\n  ${showOddValue(
       env["a"]
     )}`;
-  if (!equal(env["b"], [2, 3]))
-    return `Expected [2, 3] but got ${showOddValue(
+  }
+  if (!equal(env["b"], [2, 3])) {
+    return `Expected\n  [2, 3]\nbut got\n  ${showOddValue(
       env["b"]
     )}`;
+  }
 });
 
 test("Record destructuring rest pattern", () => {
@@ -141,18 +176,31 @@ test("Record destructuring rest pattern", () => {
   const parsed = parse(code);
   const [, , env] = _eval(parsed, defaultEnv, code);
 
-  if (env["a"] !== 1)
-    return `Expected 1 but got ${env["a"]}`;
-  if (env["b"] !== 2)
-    return `Expected 2 but got ${env["b"]}`;
-  if (env["c"] !== 3)
-    return `Expected 3 but got ${env["c"]}`;
-  if (env["d"] !== 4)
-    return `Expected 4 but got ${env["d"]}`;
-  if (!equal(env["x"], { y: 5, z: 6 }))
+  if (env["a"] !== 1) {
+    return `Expected\n  1\nbut got\n  ${showOddValue(
+      env["a"]
+    )}`;
+  }
+  if (env["b"] !== 2) {
+    return `Expected\n  2\nbut got\n  ${showOddValue(
+      env["b"]
+    )}`;
+  }
+  if (env["c"] !== 3) {
+    return `Expected\n  3\nbut got\n  ${showOddValue(
+      env["c"]
+    )}`;
+  }
+  if (env["d"] !== 4) {
+    return `Expected\n  4\nbut got\n  ${showOddValue(
+      env["d"]
+    )}`;
+  }
+  if (!equal(env["x"], { y: 5, z: 6 })) {
     return `Expected { y: 5, z: 6 } but got ${showOddValue(
       env["x"]
     )}`;
+  }
 });
 
 test("Self recursion", () => {
@@ -164,8 +212,9 @@ test("Self recursion", () => {
   const parsed = parse(code);
   const [result] = _eval(parsed, defaultEnv, code);
 
-  if (result !== 55)
-    return `Expected 55 but got ${result}`;
+  if (result !== 55) {
+    return `Expected\n  55\nbut got\n${result}`;
+  }
 });
 
 test("Mutual recursion", () => {
@@ -190,8 +239,9 @@ test("Mutual recursion", () => {
     code
   );
 
-  if (result !== true)
-    return `Expected true but got ${result}`;
+  if (result !== true) {
+    return `Expected\n  true\nbut got\n${result}`;
+  }
 });
 
 test("Curried declarations are folded properly", () => {
@@ -257,6 +307,7 @@ test("Curried declarations are folded properly", () => {
   };
   const got = parse("a b = 0");
 
-  if (!equal(expected, got))
+  if (!equal(expected, got)) {
     return showOddValue(diff(expected, got));
+  }
 });

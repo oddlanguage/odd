@@ -21,7 +21,7 @@ test("Match expression selects correct case", () => {
   );
 
   if (result !== true)
-    `Expected true but got ${result}`;
+    `Expected\n  true\nbut got\n  ${result}`;
 });
 
 test("Match expression correctly selects wildcard", () => {
@@ -33,7 +33,7 @@ test("Match expression correctly selects wildcard", () => {
   );
 
   if (result !== true)
-    `Expected true but got ${result}`;
+    `Expected\n  true\nbut got\n  ${result}`;
 });
 
 test("Matches do not fall through", () => {
@@ -45,7 +45,7 @@ test("Matches do not fall through", () => {
   );
 
   if (result !== true)
-    `Expected true but got ${result}`;
+    `Expected\n  true\nbut got\n  ${result}`;
 });
 
 test("List pattern case", () => {
@@ -56,7 +56,8 @@ test("List pattern case", () => {
     code
   );
 
-  if (result !== 1) `Expected 1 but got ${result}`;
+  if (result !== 1)
+    `Expected\n  1\nbut got\n  ${result}`;
 });
 
 test("List rest pattern case", () => {
@@ -68,7 +69,7 @@ test("List rest pattern case", () => {
   );
 
   if (!equal(result, [1, 2]))
-    `Expected [1, 2] but got ${result}`;
+    `Expected\n  [1, 2]\nbut got\n  ${result}`;
 });
 
 test("Record pattern case", () => {
@@ -79,7 +80,8 @@ test("Record pattern case", () => {
     code
   );
 
-  if (result !== 1) `Expected 1 but got ${result}`;
+  if (result !== 1)
+    `Expected\n  1\nbut got\n  ${result}`;
 });
 
 test("Record rest pattern case", () => {
@@ -91,7 +93,7 @@ test("Record rest pattern case", () => {
   );
 
   if (!equal(result, { a: 1, b: 2 }))
-    return `Expected { a: 1, b: 2 } but got ${result}`;
+    return `Expected\n  { a: 1, b: 2 }\nbut got\n  ${result}`;
 });
 
 test("Match expressions do not pollute scope", () => {

@@ -12,8 +12,9 @@ test("Infix operators", () => {
   const parsed = parse(code);
   const [result] = _eval(parsed, defaultEnv, code);
 
-  if (result !== 2)
-    return `Expected 2 but got ${result}`;
+  if (result !== 2) {
+    return `Expected\n  2\nbut got\n  ${result}`;
+  }
 });
 
 test("Operators are left-associative", () => {
@@ -64,7 +65,9 @@ test("Operators can be literally applied", () => {
   const parsed = parse(code);
   const [result] = _eval(parsed, defaultEnv, code);
 
-  if (result !== 2) `Expected 2 but got ${result}`;
+  if (result !== 2) {
+    return `Expected\n  2\nbut got\n  ${result}`;
+  }
 });
 
 test("Literal application follows natural order", () => {
@@ -75,7 +78,9 @@ test("Literal application follows natural order", () => {
   const parsed2 = parse(code2);
   const [b] = _eval(parsed2, defaultEnv, code2);
 
-  if (a !== b) `Expected ${a} to equal ${b}`;
+  if (a !== b) {
+    return `Expected\n  ${a}\nto equal\n  ${b}`;
+  }
 });
 
 test("Boolean operators don't evaluate both sides", () => {

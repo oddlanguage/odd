@@ -40,7 +40,7 @@ test("First-order record pattern argument destructuring", () => {
   const [result] = _eval(parsed, defaultEnv, code);
 
   if (result !== 1)
-    return `Expected 1 but got ${result}`;
+    return `Expected\n  1\nbut got\n  ${result}`;
 });
 
 test("First-order list pattern argument destructuring", () => {
@@ -49,7 +49,7 @@ test("First-order list pattern argument destructuring", () => {
   const [result] = _eval(parsed, defaultEnv, code);
 
   if (result !== 1)
-    return `Expected 1 but got ${result}`;
+    return `Expected\n  1\nbut got\n  ${result}`;
 });
 
 test("Lambdas are folded properly", () => {

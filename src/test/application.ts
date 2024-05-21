@@ -19,8 +19,9 @@ test("Function application", () => {
   const parsed = parse(code);
   const [result] = _eval(parsed, defaultEnv, code);
 
-  if (result !== 1)
-    return `Expected 1 but got ${result}`;
+  if (result !== 1) {
+    return `Expected\n  1\nbut got\n  ${result}`;
+  }
 });
 
 test("Literal application", () => {
@@ -28,8 +29,9 @@ test("Literal application", () => {
   const parsed = parse(code);
   const [result] = _eval(parsed, defaultEnv, code);
 
-  if (result !== 1)
-    return `Expected 1 but got ${result}`;
+  if (result !== 1) {
+    return `Expected\n  1\nbut got\n  ${result}`;
+  }
 });
 
 test("Record access", () => {
@@ -37,8 +39,9 @@ test("Record access", () => {
   const parsed = parse(code);
   const [result] = _eval(parsed, defaultEnv, code);
 
-  if (result !== 1)
-    return `Expected 1 but got ${result}`;
+  if (result !== 1) {
+    return `Expected\n  1\nbut got\n  ${result}`;
+  }
 });
 
 test("List access", () => {
@@ -46,8 +49,9 @@ test("List access", () => {
   const parsed = parse(code);
   const [result] = _eval(parsed, defaultEnv, code);
 
-  if (result !== 1)
-    return `Expected 1 but got ${result}`;
+  if (result !== 1) {
+    return `Expected\n  1\nbut got\n  ${result}`;
+  }
 });
 
 test("Application has higher precedence than infix", () => {
@@ -55,8 +59,9 @@ test("Application has higher precedence than infix", () => {
   const parsed = parse(code);
   const [result] = _eval(parsed, defaultEnv, code);
 
-  if (result !== 2)
-    return `Expected 2 but got ${result}`;
+  if (result !== 2) {
+    return `Expected\n  2\nbut got\n  ${result}`;
+  }
 });
 
 test("Record access and application", () => {
@@ -74,8 +79,9 @@ test("Record access and application", () => {
     )
   )
     return showOddValue(diff(tree1, tree2));
-  if (result !== 2)
-    return `Expected 2 but got ${result}`;
+  if (result !== 2) {
+    return `Expected\n  2\nbut got\n  ${result}`;
+  }
 });
 
 test("Record access types", () => {
@@ -86,9 +92,9 @@ test("Record access types", () => {
     code
   );
   if (type !== numberType) {
-    return `Expected ${stringify(numberType, {
+    return `Expected\n  ${stringify(numberType, {
       colour: true,
-    })} but got ${stringify(type, {
+    })}\nbut got\n  ${stringify(type, {
       colour: true,
       normalise: true,
     })}`;
@@ -103,10 +109,10 @@ test("Can't access records with wrong type", () => {
       defaultTypeEnv,
       code
     );
-    return `Expected type inference to fail, but got "${stringify(
+    return `Expected\n  FAIL\nbut got\n  ${stringify(
       type,
       { colour: true, normalise: true }
-    )}"`;
+    )}`;
   } catch (err) {
     if (
       typeof err !== "string" ||
@@ -129,9 +135,9 @@ test("List access types", () => {
     code
   );
   if (type !== numberType) {
-    return `Expected ${stringify(numberType, {
+    return `Expected\n  ${stringify(numberType, {
       colour: true,
-    })} but got ${stringify(type, {
+    })}\nbut got\n  ${stringify(type, {
       colour: true,
       normalise: true,
     })}`;
@@ -146,10 +152,10 @@ test("Can't access lists with wrong type", () => {
       defaultTypeEnv,
       code
     );
-    return `Expected type inference to fail, but got "${stringify(
+    return `Expected\n  FAIL\nbut got\n  ${stringify(
       type,
       { colour: true, normalise: true }
-    )}"`;
+    )}`;
   } catch (err) {
     if (
       typeof err !== "string" ||
@@ -177,10 +183,10 @@ test("Type inference rejects wrong arguments", () => {
       defaultTypeEnv,
       code
     );
-    return `Expected type inference to fail, but got type "${stringify(
+    return `Expected\n  FAIL\nbut got\n  ${stringify(
       type,
       { colour: true, normalise: true }
-    )}"`;
+    )}`;
   } catch (err) {
     if (
       typeof err !== "string" ||
