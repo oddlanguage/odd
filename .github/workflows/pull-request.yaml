@@ -23,6 +23,6 @@ jobs:
           path: "**/node_modules"
           key: ${{ runner.os }}-node_modules-${{ hashFiles('**/bun.lockb') }}
       - name: Install dependencies
-        run: yarn --frozen-lockfile
+        run: bun install --production --frozen-lockfile
       - name: Run tests
         run: bun run test
