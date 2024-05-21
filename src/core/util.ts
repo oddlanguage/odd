@@ -350,7 +350,7 @@ export const getCursorPos = () =>
         process.stdin.readableEncoding ?? undefined;
       const wasRaw = process.stdin.isRaw;
       process.stdin.setEncoding("utf8");
-      process.stdin.setRawMode(true);
+      process.stdin.setRawMode?.(true);
       process.stdout.write("\u001b[6n");
       for await (const data of process.stdin) {
         const [y, x] = JSON.stringify(data)
@@ -359,7 +359,7 @@ export const getCursorPos = () =>
           ?.slice(1)
           .map(parseInt) as [number, number];
         process.stdin.setEncoding(encoding);
-        process.stdin.setRawMode(wasRaw);
+        process.stdin.setRawMode?.(wasRaw);
         resolve([x - 1, y - 1]);
         return;
       }
