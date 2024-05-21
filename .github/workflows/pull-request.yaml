@@ -12,15 +12,16 @@ jobs:
     runs-on: macos-latest
     steps:
       - uses: actions/checkout@v4
-      - uses: oven-sh/setup-bun@v1
+      - name: Set up Bun
+        uses: oven-sh/setup-bun@v1
         with:
           bun-version: 1.0.8
-      - name: Use cache
+      - name: Check cache
         uses: actions/cache@v4
         with:
           path: "**/node_modules"
           key: ${{ runner.os }}-node_modules-${{ hashFiles('**/bun.lockb') }}
       - name: Install dependencies
-        run: bun install --production --frozen-lockfile
+        run: yarn --frozen-lockfile
       - name: Run tests
         run: bun run test
