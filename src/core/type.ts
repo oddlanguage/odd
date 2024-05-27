@@ -424,6 +424,7 @@ export const defaultTypeEnv: TypeEnv = {
       newLambda(newList(a), newList(a))
     );
   })(),
+  a: neverType,
   panic: newLambda(stringType, neverType),
   benchmark: (() => {
     const a = newVar();
