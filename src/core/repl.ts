@@ -143,7 +143,7 @@ export default async (versionString: string) => {
         input
       );
       process.stdout.write(
-        showOddValue(result) +
+        showOddValue(await result) +
           " : " +
           stringify(type, {
             colour: true,
@@ -182,7 +182,7 @@ export default async (versionString: string) => {
                 }\n\`\`\``,
               })
             ).toString()}\n`
-          : error.toString() + "\n"
+          : error?.toString() + "\n"
       );
     }
   }

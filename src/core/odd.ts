@@ -1,5 +1,6 @@
-import { readFileSync } from "node:fs";
+import * as fs from "node:fs/promises";
 import path from "node:path";
+import url from "node:url";
 import _eval from "./eval.js";
 import {
   Branch,
@@ -639,6 +640,10 @@ export default parse;
 
 export const nothing = Symbol("nothing");
 
+const __IMPORT_CACHE: Record<
+  string,
+  ReadonlyRecord<string, any>
+> = {};
 // TODO: write these declarations in odd itself through a prelude
 export const defaultEnv: ReadonlyRecord = {
   "==": (b: any) => (a: any) => equal(a, b),
@@ -748,23 +753,60 @@ export const defaultEnv: ReadonlyRecord = {
   append: (x: any) => (xs: any[]) => xs.concat(x),
   max: (a: any) => (b: any) => Math.max(a, b),
   min: (a: any) => (b: any) => Math.min(a, b),
-  print: (x: any) => {
+  log: (x: any) => {
     console.log(showOddValue(x));
     return x;
   },
   show: (x: any) => x.toString(),
-  import: (name: string) => {
+  import: async (name: string) => {
+    const moduleURL = (() => {
+      try {
+        return new URL(name);
+      } catch (_) {
+        const parsed = path.parse(name);
+        return new URL(
+          url.pathToFileURL(
+            path.resolve(
+              url.fileURLToPath(import.meta.url),
+              "../../..",
+              parsed.ext ? name : name + ".odd"
+            )
+          )
+        );
+      }
+    })();
     try {
-      const input = readFileSync(
-        path.parse(name).ext ? name : name + ".odd",
-        "utf8"
-      );
-      return _eval(parse(input), defaultEnv, input)[1];
+      const urlStr = moduleURL.toString();
+      if (__IMPORT_CACHE[urlStr]) {
+        return __IMPORT_CACHE[urlStr];
+      } else {
+        const input = moduleURL.protocol.startsWith(
+          "http"
+        )
+          ? await fetch(urlStr).then(res => {
+              if (res.status !== 200) {
+                throw res;
+              } else {
+                return res.text();
+              }
+            })
+          : await fs.readFile(moduleURL, "utf8");
+        const [, result] = _eval(
+          parse(input),
+          defaultEnv,
+          input
+        );
+        return (__IMPORT_CACHE[urlStr] = result!);
+      }
     } catch (err: any) {
       // TODO: use `makeError`
-      throw err.code === "ENOENT"
-        ? `Cannot resolve module "${name}".`
-        : err.toString();
+      if (
+        err.code === "ENOENT" ||
+        err instanceof Response
+      ) {
+        throw `Cannot resolve module "${moduleURL}".`;
+      }
+      throw err;
     }
   },
   panic: (reason: string) => {

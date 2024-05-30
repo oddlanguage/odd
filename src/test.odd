@@ -4,11 +4,11 @@ x {y,...t} [z,...u] = { y, z, a = [ 1, { z }, {}, [], ''wahooo'', 5 ] };
 b = 5;
 
 -- This beauty prints some data
-print ([
+log ([
 	{ a = 1 } ''a'',
 	x {y=5,m=''a'',b} [''[[]]'']
 ] 1);
 
-log [[[x]]] = print x;
+get [[[x]]] = log x;
 
-log [[[''wahooo'']]]
+get [[[''wahooo'']]]

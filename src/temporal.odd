@@ -1,0 +1,23 @@
+-- Parses a full ISO datetime string into its constituents.
+-- For example: 2024-05-28T20:00:00
+parse-datetime string =
+	do
+		[date, time] = split /[ T]/ string,
+		{ ...(parse-date date), ...(parse-time time) },
+	end;
+
+-- Parses a full ISO date string into its constituents.
+-- For example: 2024-05-28
+parse-date string =
+	do
+		[year, month, day] = split ''-'' date,
+		{ year, month, day  },
+	end;
+
+-- Parses a full ISO time string into its constituents.
+-- For example: 20:00
+parse-time string =
+	do
+		[hour, minute, second] = split '':'' time,
+		{ hour, minute, second },
+	end;

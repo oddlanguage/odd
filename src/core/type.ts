@@ -509,12 +509,11 @@ export const defaultTypeEnv: TypeEnv = {
     return newLambda(a, newLambda(a, a));
   })(),
   show: newLambda(anyType, stringType),
-  log: newLambda(anyType, nothingType),
   import: newLambda(
     stringType,
     newRecord(stringType, anyType)
   ),
-  print: (() => {
+  log: (() => {
     const a = newVar();
     return newLambda(a, a);
   })(),
