@@ -29,10 +29,9 @@ export const showOddValue = (x: any): string =>
         })()
       )
     : Array.isArray(x)
-    ? `[ ${x.map(showOddValue).join(", ")} ]`.replace(
-        "[  ]",
-        "[]"
-      )
+    ? `[ ${x
+        .map(x => showOddValue(x.value))
+        .join(", ")} ]`.replace("[  ]", "[]")
     : typeof x === "function"
     ? (() => {
         let name = x.name ? x.name : ansi.italic("ƒ");
@@ -47,7 +46,7 @@ export const showOddValue = (x: any): string =>
         return ansi.cyan(name);
       })()
     : x.constructor === Object
-    ? `{ ${Object.entries(x)
+    ? `{ ${Object.entries(x.value)
         .map(entry =>
           entry
             .map(showOddValue)
@@ -123,6 +122,20 @@ export const ansi = {
       "\x1b[47m" + string + "\x1b[0m",
     grey: (string: string) =>
       "\x1b[100m" + string + "\x1b[0m",
+    lightRed: (string: string) =>
+      "\x1b[101m" + string + "\x1b[0m",
+    lightGreen: (string: string) =>
+      "\x1b[102m" + string + "\x1b[0m",
+    lightYellow: (string: string) =>
+      "\x1b[103m" + string + "\x1b[0m",
+    lightBlue: (string: string) =>
+      "\x1b[104m" + string + "\x1b[0m",
+    lightPurple: (string: string) =>
+      "\x1b[105m" + string + "\x1b[0m",
+    lightCyan: (string: string) =>
+      "\x1b[106m" + string + "\x1b[0m",
+    lightGrey: (string: string) =>
+      "\x1b[107m" + string + "\x1b[0m",
   },
   clear: (string: string) =>
     string.replaceAll(
@@ -384,4 +397,14 @@ export const union =
       union[JSON.stringify(x)] ??= x;
     }
     return Object.values(union) as ReadonlyArray<T>;
+  };
+
+export const partition =
+  <T>(predicate: (x: T) => boolean) =>
+  (xs: T[]) => {
+    const result = [[], []] as readonly [T[], T[]];
+    for (const x of xs) {
+      result[predicate(x) ? 0 : 1].push(x);
+    }
+    return result;
   };

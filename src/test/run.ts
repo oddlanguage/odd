@@ -1,12 +1,34 @@
 import { readFile, readdir } from "node:fs/promises";
 import Path from "node:path";
 import NodeURL from "node:url";
-import { Worker } from "node:worker_threads";
-import {
-  ansi,
-  getCursorPos,
-  pluralise,
-} from "../core/util.js";
+import { ansi, partition } from "../core/util.js";
+
+export type Message = Register | Result;
+
+type Result = Success | Failure | Timeout;
+
+type Register = Readonly<{
+  type: "register";
+  description: string;
+}>;
+
+type Success = Readonly<{
+  type: "success";
+  description: string;
+}>;
+
+type Timeout = Readonly<{
+  type: "timeout";
+  description: string;
+}>;
+
+type Failure = Readonly<{
+  type: "failure";
+  description: string;
+  error: string;
+}>;
+
+type ResultWithPath = Result & { path: string };
 
 const CWD = Path.dirname(
   NodeURL.fileURLToPath(import.meta.url)
@@ -20,128 +42,119 @@ const files = (
     !import.meta.url.endsWith(file)
 );
 
-type Result = Success | Failure;
-
-type Success = Readonly<{
-  type: "success";
-  description: string;
-}>;
-
-type Failure = Readonly<{
-  type: "failure";
-  description: string;
-  error: string;
-}>;
-
 const loadingChars = ["⠋", "⠙", "⠸", "⠴", "⠦", "⠇"];
 const { version } = JSON.parse(
   await readFile("package.json", "utf-8")
 );
-const [, startY] = await getCursorPos();
-console.log(`Running Odd v${version} test suite`);
-let total = 0;
+console.log(`\nRunning Odd v${version} test suite\n`);
+
 let done = 0;
-const failures: Record<string, Failure[]> = {};
-for (let line = 0; line < files.length; line++) {
-  const file = files[line]!;
-  const worker = new Worker(Path.join(CWD, file));
-  let loadingCharIndex = 0;
-  let totalFile = 0;
-  let doneFile = 0;
-  let didFail = false;
-  const interval = setInterval(() => {
-    process.stdout.cursorTo(0, startY + line + 1);
-    process.stdout.write(
-      loadingChars[
-        loadingCharIndex++ % loadingChars.length
-      ] +
-        " " +
-        file
-    );
-  }, 100);
-  let before: number;
-  worker.on(
-    "message",
-    (payload: "register" | Result) => {
-      if (payload === "register") {
-        total += 1;
-        totalFile += 1;
-        before = performance.now();
-      } else {
-        done += 1;
-        doneFile += 1;
+let total = 0;
 
-        if (payload.type === "failure") {
-          didFail = true;
-          (failures[file] ??= []).push(payload);
-        }
+let i = 0;
+const ticker = setInterval(() => {
+  const char =
+    loadingChars[(i = (i + 1) % loadingChars.length)]!;
+  process.stdout.clearLine(0);
+  process.stdout.cursorTo(0);
+  process.stdout.write(
+    ansi.bold(
+      ansi.bg.lightGrey(
+        ansi.black(
+          ` ${char} PROCESSING ${done}/${total} `
+        )
+      )
+    )
+  );
+}, 100);
 
-        if (doneFile === totalFile) {
-          clearInterval(interval);
-          process.stdout.cursorTo(
-            0,
-            startY + line + 1
-          );
-          process.stdout.clearLine(1);
-          console.log(
-            `${didFail ? "❌" : "✅"} ` +
-              file +
-              ansi.grey(
-                " ".repeat(
-                  files.reduce((longest, file) =>
-                    file.length > longest.length
-                      ? file
-                      : longest
-                  ).length -
-                    file.length +
-                    1
-                ) +
-                  `(${Math.floor(
-                    performance.now() - before
-                  )}ms)`
-              )
-          );
-
-          if (done === total) {
-            process.stdout.cursorTo(
-              0,
-              startY + files.length + 2
-            );
-            const ok =
-              Object.keys(failures).length === 0;
-            if (!ok) {
-              console.log(
-                `${pluralise(
-                  "test",
-                  Object.values(failures).flat().length
-                )} failed in ${pluralise(
-                  "file",
-                  Object.keys(failures).length
-                )}:\n`
-              );
-            } else {
-              console.log(
-                `${ansi.bold(
-                  ansi.green("Done!")
-                )} No issues found 😎`
-              );
+const results = (
+  await Promise.all(
+    files.map(file => {
+      const { promise, resolve } =
+        Promise.withResolvers<ResultWithPath[]>();
+      const path = Path.resolve(CWD, file);
+      const worker = new Worker(path);
+      const messages: ResultWithPath[] = [];
+      let totalInThisFile = 0;
+      worker.addEventListener(
+        "message",
+        ({
+          data: message,
+        }: Bun.MessageEvent<Message>) => {
+          switch (message.type) {
+            case "register": {
+              total += 1;
+              totalInThisFile += 1;
+              break;
             }
-            for (const [
-              file,
-              issues,
-            ] of Object.entries(failures)) {
-              for (const issue of issues) {
-                console.log(
-                  ansi.bold(`[${file}]`) +
-                    ` ${issue.description}\n` +
-                    `${issue.error}\n`
-                );
+            case "success":
+            case "failure":
+            case "timeout": {
+              done += 1;
+              messages.push({ ...message, path });
+              if (
+                messages.length === totalInThisFile
+              ) {
+                worker.terminate();
+                resolve(messages);
               }
+              break;
             }
-            process.exit(ok ? 0 : 1);
           }
         }
-      }
-    }
-  );
+      );
+      return promise;
+    })
+  )
+).flat();
+
+const [passed, failed] = partition(
+  ({ type }: ResultWithPath) => type === "success"
+)(results);
+clearInterval(ticker);
+process.stdout.clearLine(0);
+process.stdout.cursorTo(0);
+const maxChars = Math.max(
+  passed.length,
+  failed.length
+).toString().length;
+console.log(
+  ansi.green(
+    ` ✓ ${passed.length
+      .toString()
+      .padStart(maxChars, " ")} PASSED\n`
+  ) +
+    ansi[failed.length ? "red" : "black"](
+      ` ⨯ ${failed.length
+        .toString()
+        .padStart(maxChars, " ")} FAILED\n\n`
+    ) +
+    (failed.length
+      ? failed
+          .map(
+            f =>
+              ansi.bg.lightGrey(
+                ansi.grey(` ${Path.basename(f.path)} `)
+              ) +
+              " " +
+              ansi.bold(
+                ansi.red("⨯ " + f.description)
+              ) +
+              "\n" +
+              (
+                (f as Failure).error ??
+                ansi.yellow(" ▲ Timed out ")
+              )
+                .split("\n")
+                .map(line => "  " + line)
+                .join("\n")
+          )
+          .join("\n\n")
+      : "No issues found! 😎") +
+    "\n"
+);
+
+if (failed.length) {
+  process.exit(1);
 }

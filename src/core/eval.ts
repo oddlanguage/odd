@@ -7,6 +7,7 @@ type Eval = (
   tree: Tree,
   env: ReadonlyRecord,
   input: string
+  // TODO: Figure out how to have permissions working
 ) => readonly [
   value: any,
   extracted: ReadonlyRecord | null,
@@ -74,7 +75,7 @@ const program: Eval = (tree, env, input) =>
         newEnv,
       ];
     },
-    [nothing, {}, { ...env }] as const
+    [nothing, {}, { ...env }]
   );
 
 const declaration: Eval = (tree, env, input) => {
