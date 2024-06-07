@@ -14,4 +14,4 @@ jobs:
       - uses: actions/checkout@v4
       - uses: oven-sh/setup-bun@v1
       - run: bun install --production --frozen-lockfile
-      - run: bun run test
+      - run: script -e -c "bun run test"
