@@ -1,4 +1,5 @@
-import { readFile, writeFile } from "node:fs/promises";
+import { writeFile } from "node:fs/promises";
+import { version } from "../../package.json";
 
 const args = process.argv.slice(2);
 
@@ -38,10 +39,6 @@ if (input) {
   }
 } else {
   (await import("./repl.js")).default(
-    `Odd v${
-      JSON.parse(
-        await readFile("package.json", "utf-8")
-      ).version
-    } repl`
+    `Odd v${version} repl`
   );
 }
