@@ -19,7 +19,8 @@
     "lib": ["ESNext"],
     "moduleResolution": "NodeNext",
     "sourceMap": true,
-    "rootDir": "src"
+    "rootDir": "src",
+    "resolveJsonModule": true
   },
   "include": ["src"]
 }

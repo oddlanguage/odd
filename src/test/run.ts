@@ -55,8 +55,7 @@ let i = 0;
 const ticker = setInterval(() => {
   const char =
     loadingChars[(i = (i + 1) % loadingChars.length)]!;
-  // Clearline is broken in bun action
-  process.stdout.write("\x1b[2K");
+  process.stdout.clearLine(0);
   process.stdout.cursorTo(0);
   process.stdout.write(
     ansi.bold(
@@ -114,8 +113,7 @@ const [passed, failed] = partition(
   ({ type }: ResultWithPath) => type === "success"
 )(results);
 clearInterval(ticker);
-// Clearline is broken in bun action
-process.stdout.write("\x1b[2K");
+process.stdout.clearLine(0);
 process.stdout.cursorTo(0);
 const maxChars = Math.max(
   passed.length,

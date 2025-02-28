@@ -1,15 +1,15 @@
 {
   "type": "module",
   "name": "odd",
-  "version": "0.4.0-alpha.2",
+  "version": "0.4.0-alpha.3",
   "scripts": {
     "repl": "bun src/core/run.ts",
     "test": "bun src/test/run.ts",
     "build": "bun build --compile --minify --sourcemap ./src/core/run.ts --outfile build/odd"
   },
   "devDependencies": {
-    "@types/bun": "1.1.2",
-    "typescript": "5.4.5"
+    "@types/bun": "1.2.4",
+    "typescript": "5.7.3"
   },
   "license": "MIT"
 }
